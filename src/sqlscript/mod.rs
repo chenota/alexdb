@@ -1,14 +1,27 @@
 mod lexer {
-    pub enum Token {
+    pub enum TokenKind {
         PlusKw,
-        Integer(i64)
+        Integer
+    }
+    pub enum TokenValue {
+        None,
+        Float(f64),
+        String(String),
+        Integer(i64),
+        Boolean(bool)
+    }
+    pub struct Token {
+        pub kind: TokenKind,
+        pub value: TokenValue,
+        pub start: usize,
+        pub end: usize
     }
     pub struct Lexer {
         stream: String,
         pos: u64
     }
     impl Lexer {
-        fn produce(&mut self) -> (Token, u64) {
+        fn produce(&mut self) -> Token {
             (Token::PlusKw, 0)
         }
         fn reset(&mut self) -> () {
