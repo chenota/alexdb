@@ -1,7 +1,7 @@
 mod lexer {
     pub enum TokenKind {
         PlusKw,
-        Integer
+        Integer,
     }
     pub enum TokenValue {
         None,
@@ -16,6 +16,17 @@ mod lexer {
         pub start: usize,
         pub end: usize
     }
+    // Value generation functions
+    fn none_value(_: &str) -> TokenValue { TokenValue::None }
+    fn int_value(s: &str) -> TokenValue { TokenValue::Integer(s.parse::<i64>().unwrap()) }
+    // Associates a kind of token with a regular expression that matches it, a function to derive a value.
+    // If token kind is none, won't generate a token
+    const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
+        // Operators
+        (Some(TokenKind::PlusKw), r"\+", none_value),
+        // Values
+        (Some(TokenKind::Integer), r"(-?)[0-9]+", int_value),
+    ];
     pub struct Lexer {
         stream: String,
         pos: u64
