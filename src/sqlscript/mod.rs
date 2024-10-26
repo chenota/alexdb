@@ -61,7 +61,7 @@ mod lexer {
         // Values
         (Some(TokenKind::Integer), reg!(r"(-?)[0-9]+"), int_value),
         (Some(TokenKind::Float), reg!(r"(-?)[0-9]+\.[0-9]+"), float_value),
-        (Some(TokenKind::Identifier), reg!(r"[a-zA-Z]+"), ident_value),
+        (Some(TokenKind::Identifier), reg!(r"[a-zA-Z][a-zA-Z0-9]*"), ident_value),
         (Some(TokenKind::String), reg!(r"'[^']*'"), string_value),
         // Whitespace
         (None, reg!(r"[ \t]+"), none_value),
@@ -83,7 +83,7 @@ mod lexer {
             // Length of stream
             let stream_len: usize = self.stream.len();
             // Check if length left to go
-            if self.pos < stream_len - 1 {
+            if self.pos < stream_len {
                 // Longest token
                 let mut longest_token: Option<Token> = None;
                 let mut longest_token_len: usize = 0;
