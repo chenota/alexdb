@@ -1,6 +1,6 @@
 mod lexer {
     use regex::Regex;
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub enum TokenKind {
         EOF,
         PlusKw,
@@ -35,13 +35,23 @@ mod lexer {
         (Some(TokenKind::PlusKw), reg!(r"\+"), none_value),
         // Values
         (Some(TokenKind::Integer), reg!(r"(-?)[0-9]+"), int_value),
+        // Whitespace
+        (None, reg!(r"[ \t]+"), none_value),
     ];
     pub struct Lexer {
         stream: String,
         pos: usize
     }
     impl Lexer {
-        fn produce(&mut self) -> Token {
+        // Create new lexer
+        pub fn new(stream: String) -> Lexer {
+            Lexer {
+                stream: stream,
+                pos: 0
+            }
+        }
+        // Produce next token
+        pub fn produce(&mut self) -> Token {
             // Length of stream
             let stream_len: usize = self.stream.len();
             // Check if length left to go
@@ -80,7 +90,7 @@ mod lexer {
                 }
                 // Update self pos
                 self.pos += longest_token_len;
-                // Check if longest token is to be materialized or thrown away
+                // Check if longest token is to be materialized or thrown away (if throw away, produce next token)
                 match longest_token {
                     Some(token) => token,
                     None => self.produce()
@@ -95,7 +105,8 @@ mod lexer {
                 }
             }
         }
-        fn reset(&mut self) -> () {
+        // Reset lexer
+        pub fn reset(&mut self) -> () {
             self.pos = 0;
         }
     }
@@ -103,4 +114,67 @@ mod lexer {
 
 pub mod parser {
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn produce_first() -> Result<(), String> {
+        // Setup
+        let test_input: String = "4 + 5".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token
+        assert_eq!(next_token.kind, lexer::TokenKind::Integer);
+        Ok(())
+    }
+    #[test]
+    fn produce_second() -> Result<(), String> {
+        // Setup
+        let test_input: String = "45 + 53".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        test_lexer.produce();
+        let next_token = test_lexer.produce();
+        // Assert token
+        assert_eq!(next_token.kind, lexer::TokenKind::PlusKw);
+        Ok(())
+    }
+    #[test]
+    fn produce_int_value() -> Result<(), String> {
+        // Setup
+        let test_input: String = "432 + 5".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is integer type with correct value
+        match next_token.value {
+            lexer::TokenValue::Integer(x) => assert_eq!(x, 432),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn produce_eof() -> Result<(), String> {
+        // Setup
+        let test_input: String = "45 + 53".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        for _ in 0..3 { test_lexer.produce(); }
+        let next_token = test_lexer.produce();
+        // Assert token
+        assert_eq!(next_token.kind, lexer::TokenKind::EOF);
+        Ok(())
+    }
+    #[test]
+    fn lexer_reset() -> Result<(), String> {
+        // Setup
+        let test_input: String = "45 + 53".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        test_lexer.produce();
+        test_lexer.reset();
+        let next_token = test_lexer.produce();
+        // Assert token
+        assert_eq!(next_token.kind, lexer::TokenKind::Integer);
+        Ok(())
+    }
 }
