@@ -48,6 +48,11 @@ mod lexer {
     // Associates a kind of token with a regular expression that matches it, a function to derive a value.
     // If token kind is none, won't generate a token
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
+        // Keywords
+        (Some(TokenKind::Boolean), reg!(r"(false)|(true)"), bool_value),
+        // Grouping
+        (Some(TokenKind::LParen), reg!(r"\("), none_value),
+        (Some(TokenKind::RParen), reg!(r"\)"), none_value),
         // Operators
         (Some(TokenKind::PlusKw), reg!(r"\+"), none_value),
         (Some(TokenKind::MinusKw), reg!(r"-"), none_value),
@@ -57,11 +62,7 @@ mod lexer {
         (Some(TokenKind::Integer), reg!(r"(-?)[0-9]+"), int_value),
         (Some(TokenKind::Float), reg!(r"(-?)[0-9]+\.[0-9]+"), float_value),
         (Some(TokenKind::Identifier), reg!(r"[a-zA-Z]+"), ident_value),
-        (Some(TokenKind::Boolean), reg!(r"(false)|(true)"), bool_value),
         (Some(TokenKind::String), reg!(r"'[^']*'"), string_value),
-        // Grouping
-        (Some(TokenKind::LParen), reg!(r"\("), none_value),
-        (Some(TokenKind::RParen), reg!(r"\)"), none_value),
         // Whitespace
         (None, reg!(r"[ \t]+"), none_value),
     ];
@@ -179,6 +180,51 @@ mod tests {
             lexer::TokenValue::Integer(x) => assert_eq!(x, 432),
             _ => assert!(false)
         }
+        Ok(())
+    }
+    #[test]
+    fn produce_bool_value() -> Result<(), String> {
+        // Setup
+        let test_input: String = "false".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is boolean type
+        assert_eq!(next_token.kind, lexer::TokenKind::Boolean);
+        // Assert token is boolean type with correct value
+        match next_token.value {
+            lexer::TokenValue::Boolean(x) => assert_eq!(x, false),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn produce_ident_value() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is identifier type
+        assert_eq!(next_token.kind, lexer::TokenKind::Identifier);
+        // Assert token is correct type with correct value
+        match next_token.value {
+            lexer::TokenValue::String(x) => assert_eq!(x, "x"),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn produce_string_value() -> Result<(), String> {
+        // Setup
+        let test_input: String = "'I love cats!'".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is correct type with correct value
+        match next_token.value {
+            lexer::TokenValue::String(x) => assert_eq!(x, "I love cats!"),
+            _ => assert!(false)
+        }
+        // Assert token is identifier type
+        assert_eq!(next_token.kind, lexer::TokenKind::String);
         Ok(())
     }
     #[test]
