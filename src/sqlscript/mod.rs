@@ -2,9 +2,22 @@ mod lexer {
     use regex::Regex;
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub enum TokenKind {
+        // End of file
         EOF,
+        // Operators
         PlusKw,
+        MinusKw,
+        TimesKw,
+        DivKw,
+        // Values
         Integer,
+        Float,
+        Identifier,
+        Boolean,
+        String,
+        // Grouping
+        LParen,
+        RParen,
     }
     pub enum TokenValue {
         None,
@@ -28,13 +41,27 @@ mod lexer {
     // Value generation functions
     fn none_value(_: &str) -> TokenValue { TokenValue::None }
     fn int_value(s: &str) -> TokenValue { TokenValue::Integer(s.parse::<i64>().unwrap()) }
+    fn float_value(s: &str) -> TokenValue { TokenValue::Float(s.parse::<f64>().unwrap()) }
+    fn ident_value(s: &str) -> TokenValue { TokenValue::String(s.to_string()) }
+    fn bool_value(s: &str) -> TokenValue { TokenValue::Boolean(s == "true") }
+    fn string_value(s: &str) -> TokenValue { TokenValue::String(s[1..(s.len()-1)].to_string()) } // Remove leading and trailing quotes
     // Associates a kind of token with a regular expression that matches it, a function to derive a value.
     // If token kind is none, won't generate a token
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
         // Operators
         (Some(TokenKind::PlusKw), reg!(r"\+"), none_value),
+        (Some(TokenKind::MinusKw), reg!(r"-"), none_value),
+        (Some(TokenKind::TimesKw), reg!(r"\*"), none_value),
+        (Some(TokenKind::DivKw), reg!(r"/"), none_value),
         // Values
         (Some(TokenKind::Integer), reg!(r"(-?)[0-9]+"), int_value),
+        (Some(TokenKind::Float), reg!(r"(-?)[0-9]+\.[0-9]+"), float_value),
+        (Some(TokenKind::Identifier), reg!(r"[a-zA-Z]+"), ident_value),
+        (Some(TokenKind::Boolean), reg!(r"(false)|(true)"), bool_value),
+        (Some(TokenKind::String), reg!(r"'[^']*'"), string_value),
+        // Grouping
+        (Some(TokenKind::LParen), reg!(r"\("), none_value),
+        (Some(TokenKind::RParen), reg!(r"\)"), none_value),
         // Whitespace
         (None, reg!(r"[ \t]+"), none_value),
     ];
