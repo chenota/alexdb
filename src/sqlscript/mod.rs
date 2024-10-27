@@ -181,7 +181,7 @@ pub mod parser {
     }   
     impl Parser {
         // Constructor
-        fn new(stream: String) -> Parser {
+        pub fn new(stream: String) -> Parser {
             let mut lexer = lexer::Lexer::new(stream);
             Parser {
                 lexer: lexer,
