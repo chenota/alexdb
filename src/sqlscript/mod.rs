@@ -147,16 +147,24 @@ mod lexer {
         pub fn reset(&mut self) -> () {
             self.pos = 0;
         }
+        // Set/get position
+        pub fn set_pos(&mut self, pos: usize) -> () {
+            self.pos = pos;
+        }
+        pub fn get_pos(&self) -> usize {
+            self.pos
+        }
     }
 }
 
 pub mod parser {
-    use super::lexer;
+    use super::lexer::*;
+    use std::rc::Rc;
     mod parsetree {
         use std::rc::Rc;
         pub enum Script {
             ExprScript(Expr),
-            StmtScript(Val, Expr, Rc<Script>) // ident = expr; ...
+            StmtScript(String, Expr, Rc<Script>) // ident = expr; ...
         }
         pub enum Expr {
             BopExpr(Rc<Expr>, BopType, Rc<Expr>),
@@ -176,36 +184,80 @@ pub mod parser {
         }
     }
     pub struct Parser {
-        lexer: lexer::Lexer,
-        token: lexer::Token
+        lexer: Lexer,
+        token: Token
     }   
     impl Parser {
         // Constructor
         pub fn new(stream: String) -> Parser {
-            let mut lexer = lexer::Lexer::new(stream);
+            let mut lexer = Lexer::new(stream);
             Parser {
                 lexer: lexer,
                 token: lexer.produce()
             }
         }
         // Program control
-        fn peek(&self) -> &lexer::Token {
+        fn peek(&self) -> &Token {
             &self.token
         }
-        fn pop(&mut self) -> lexer::Token {
+        fn peek_ahead(&mut self) -> Token {
+            // Save current position
+            let pos_save = self.lexer.get_pos();
+            // Produce next token
+            let next_token = self.lexer.produce();
+            // Reset lexer
+            self.lexer.set_pos(pos_save);
+            // Return
+            next_token
+        }
+        fn pop(&mut self) -> Token {
             let token = self.token.clone();
             self.token = self.lexer.produce();
             token
         }
-        fn peek_expect(&self, kind: lexer::TokenKind) -> &lexer::Token {
+        fn peek_expect(&self, kind: TokenKind) -> &Token {
             let token = self.peek();
             if token.kind != kind { panic!("Parsing error") };
             token
         }
-        fn pop_expect(&mut self, kind: lexer::TokenKind) -> lexer::Token {
+        fn pop_expect(&mut self, kind: TokenKind) -> Token {
             let token = self.pop();
             if token.kind != kind { panic!("Parsing error") };
             token
+        }
+        // Parsing entry point
+        pub fn parse(&mut self) -> parsetree::Script {
+            // Reset lexer
+            self.lexer.reset();
+            // Call start symbol (script for now, will eventually be query)
+            self.script()
+        }
+        // Parsing functions
+        pub fn script(&mut self) -> parsetree::Script {
+            match self.peek_ahead().kind {
+                // If 2nd token is an assignment, parse as statement
+                TokenKind::AssignKw => {
+                    // Save ident value
+                    let ident_val: String = match self.token.value {
+                        TokenValue::String(x) => x.clone(),
+                        _ => panic!("Parsing error")
+                    };
+                    // Pop ident and assignment
+                    self.pop();
+                    self.pop();
+                    // Parse expr
+                    let expr: parsetree::Expr = self.expr();
+                    // Expect semicolon, pop it
+                    self.pop_expect(TokenKind::SemiKw);
+                    // Return constructed statement
+                    parsetree::Script::StmtScript(ident_val, expr, Rc::new(self.script()))
+                }
+                // Parse as expression
+                _ => parsetree::Script::ExprScript(self.expr())
+            }
+        }
+        pub fn expr(&mut self) -> parsetree::Expr {
+            
         }
     }
 }
