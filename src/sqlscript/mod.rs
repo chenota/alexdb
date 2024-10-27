@@ -255,7 +255,7 @@ pub mod parser {
             old_token
         }
         // Parsing entry point
-        pub fn parse(&mut self) -> parsetree::Script {
+        pub fn parse_script(&mut self) -> parsetree::Script {
             // Reset lexer
             self.lexer.reset();
             // Produce first token
@@ -497,7 +497,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "4".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -523,7 +523,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "5 + 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -556,7 +556,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "(5 + 10) - 3".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -589,7 +589,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "((((((((((((4))))))))))))".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -615,7 +615,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = 5; x".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -648,7 +648,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = (3+2)-1; x - 15".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -670,7 +670,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = 5; y = 10; x + y".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -695,7 +695,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "{a = 4; a} + 5".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -720,7 +720,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = {a = 4; a}; x".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -740,7 +740,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "-5".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -766,7 +766,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "0 - -1".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse_script();
         // Assert correct AST
         match ast {
             // Should be exprscript
