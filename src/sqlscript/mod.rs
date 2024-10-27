@@ -515,6 +515,21 @@ mod lexer_tests {
         Ok(())
     }
     #[test]
+    fn produce_bool_value_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "true".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is boolean type
+        assert_eq!(next_token.kind, lexer::TokenKind::Boolean);
+        // Assert token is boolean type with correct value
+        match next_token.value {
+            lexer::TokenValue::Boolean(x) => assert_eq!(x, true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
     fn produce_ident_value() -> Result<(), String> {
         // Setup
         let test_input: String = "x".to_string();
@@ -1159,7 +1174,7 @@ mod parser_tests {
     #[test]
     fn parser_cond_expr_1() -> Result<(), String> {
         // Setup
-        let test_input: String = "if true 1 else 0".to_string();
+        let test_input: String = "if true then 1 else 0".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse_script();
         // Assert correct AST
