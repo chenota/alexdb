@@ -69,8 +69,8 @@ mod lexer {
         (Some(TokenKind::TimesKw), reg!(r"\*"), none_value),
         (Some(TokenKind::DivKw), reg!(r"/"), none_value),
         // Values
-        (Some(TokenKind::Integer), reg!(r"(-?)[0-9]+"), int_value),
-        (Some(TokenKind::Float), reg!(r"(-?)[0-9]+\.[0-9]+"), float_value),
+        (Some(TokenKind::Integer), reg!(r"[0-9]+"), int_value),
+        (Some(TokenKind::Float), reg!(r"[0-9]+\.[0-9]+"), float_value),
         (Some(TokenKind::Identifier), reg!(r"[a-zA-Z][a-zA-Z0-9]*"), ident_value),
         (Some(TokenKind::String), reg!(r"'[^']*'"), string_value),
         // Whitespace
@@ -160,14 +160,14 @@ mod lexer {
 pub mod parser {
     use super::lexer::*;
     use std::rc::Rc;
-    mod parsetree {
+    pub mod parsetree {
         use std::rc::Rc;
         pub enum Script {
             ExprScript(Expr),
             StmtScript(String, Expr, Rc<Script>) // ident = expr; ...
         }
         pub enum Expr {
-            BopExpr(Rc<Expr>, BopType, Rc<Expr>),
+            BopExpr(Val, BopType, Rc<Expr>),
             ValExpr(Val)
         }
         pub enum Val {
@@ -175,12 +175,14 @@ pub mod parser {
             BoolVal(bool),
             StrVal(String),
             IdentVal(String),
+            FloatVal(f64),
         }
+        #[derive(PartialEq, Debug)]
         pub enum BopType {
-            Plus,
-            Minus,
-            Times,
-            Div
+            PlusBop,
+            MinusBop,
+            TimesBop,
+            DivBop
         }
     }
     pub struct Parser {
@@ -191,9 +193,10 @@ pub mod parser {
         // Constructor
         pub fn new(stream: String) -> Parser {
             let mut lexer = Lexer::new(stream);
+            let token = lexer.produce();
             Parser {
                 lexer: lexer,
-                token: lexer.produce()
+                token: token
             }
         }
         // Program control
@@ -210,10 +213,22 @@ pub mod parser {
             // Return
             next_token
         }
+        fn peek_bop(&self) -> Option<parsetree::BopType> {
+            // Peek first token
+            let token = self.peek();
+            // Match type, return appropriate value
+            match token.kind {
+                TokenKind::PlusKw => Some(parsetree::BopType::PlusBop),
+                TokenKind::MinusKw => Some(parsetree::BopType::MinusBop),
+                TokenKind::TimesKw => Some(parsetree::BopType::TimesBop),
+                TokenKind::DivKw => Some(parsetree::BopType::DivBop),
+                _ => None
+            }
+        }
         fn pop(&mut self) -> Token {
-            let token = self.token.clone();
+            let old_token = self.token.clone();
             self.token = self.lexer.produce();
-            token
+            old_token
         }
         fn peek_expect(&self, kind: TokenKind) -> &Token {
             let token = self.peek();
@@ -221,9 +236,9 @@ pub mod parser {
             token
         }
         fn pop_expect(&mut self, kind: TokenKind) -> Token {
-            let token = self.pop();
-            if token.kind != kind { panic!("Parsing error") };
-            token
+            let old_token = self.pop();
+            if old_token.kind != kind { panic!("Parsing error") };
+            old_token
         }
         // Parsing entry point
         pub fn parse(&mut self) -> parsetree::Script {
@@ -233,12 +248,12 @@ pub mod parser {
             self.script()
         }
         // Parsing functions
-        pub fn script(&mut self) -> parsetree::Script {
+        fn script(&mut self) -> parsetree::Script {
             match self.peek_ahead().kind {
                 // If 2nd token is an assignment, parse as statement
                 TokenKind::AssignKw => {
                     // Save ident value
-                    let ident_val: String = match self.token.value {
+                    let ident_val: String = match &self.token.value {
                         TokenValue::String(x) => x.clone(),
                         _ => panic!("Parsing error")
                     };
@@ -256,9 +271,55 @@ pub mod parser {
                 _ => parsetree::Script::ExprScript(self.expr())
             }
         }
-        pub fn expr(&mut self) -> parsetree::Expr {
-            
+        fn expr(&mut self) -> parsetree::Expr {
+            // Check first value
+            match self.peek().kind {
+                TokenKind::LParen => {
+                    // Pop lparen
+                    self.pop();
+                    // Parse expr
+                    let expr = self.expr();
+                    // Expect rparen, pop it
+                    self.pop_expect(TokenKind::RParen);
+                    // Return parsed expression
+                    expr
+                },
+                _ => {
+                    // Expect value at front
+                    let val = self.value();
+                    // Check if bop at front
+                    match self.peek_bop() {
+                        Some(bop) => {
+                            // Pop bop
+                            self.pop();
+                            // Return parsed expr
+                            parsetree::Expr::BopExpr(val, bop, Rc::new(self.expr()))
+                        },
+                        None => parsetree::Expr::ValExpr(val)
+                    }
+                }
+            }
         }
+        fn value(&mut self) -> parsetree::Val {
+            // Pop first token
+            let token = self.pop();
+            // Match type, return appropriate value
+            match token.value {
+                TokenValue::Integer(x) => parsetree::Val::IntVal(x),
+                TokenValue::Boolean(x) => parsetree::Val::BoolVal(x),
+                TokenValue::Float(x) => parsetree::Val::FloatVal(x),
+                // String could be either ident or string value
+                TokenValue::String(x) => {
+                    match token.kind {
+                        TokenKind::String => parsetree::Val::StrVal(x),
+                        TokenKind::Identifier => parsetree::Val::IdentVal(x),
+                        _ => panic!("Parsing error")
+                    }
+                }
+                _ => panic!("Parsing error")
+            }
+        }
+        
     }
 }
 
