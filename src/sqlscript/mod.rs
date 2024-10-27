@@ -980,4 +980,135 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_fun_expr_empty() -> Result<(), String> {
+        // Setup
+        let test_input: String = "fun -> 0.0".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse_script();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::ExprScript(e1) => {
+                // Check type of expr
+                match e1 {
+                    parsetree::Expr::FunExpr(params, body) => {
+                        match params {
+                            None => assert!(true),
+                            _ => assert!(false)
+                        }
+                        match body.as_ref() {
+                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_fun_expr_one() -> Result<(), String> {
+        // Setup
+        let test_input: String = "fun x -> x".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse_script();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::ExprScript(e1) => {
+                // Check type of expr
+                match e1 {
+                    parsetree::Expr::FunExpr(params, body) => {
+                        match params {
+                            Some(elist) => {
+                                match elist {
+                                    parsetree::ExprList::SingleList(_) => assert!(true),
+                                    _ => assert!(false)
+                                }
+                            },
+                            _ => assert!(false)
+                        }
+                        match body.as_ref() {
+                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_fun_expr_multi() -> Result<(), String> {
+        // Setup
+        let test_input: String = "fun x,y,z -> x".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse_script();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::ExprScript(e1) => {
+                // Check type of expr
+                match e1 {
+                    parsetree::Expr::FunExpr(params, body) => {
+                        match params {
+                            Some(elist) => {
+                                match elist {
+                                    parsetree::ExprList::MultiList(_,_) => assert!(true),
+                                    _ => assert!(false)
+                                }
+                            },
+                            _ => assert!(false)
+                        }
+                        match body.as_ref() {
+                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_fun_expr_stmt() -> Result<(), String> {
+        // Setup
+        let test_input: String = "f = fun x -> x; f(5)".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse_script();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::StmtScript(_, e1, _) => {
+                // Check type of expr
+                match e1 {
+                    parsetree::Expr::FunExpr(params, body) => {
+                        match params {
+                            Some(elist) => {
+                                match elist {
+                                    parsetree::ExprList::SingleList(_) => assert!(true),
+                                    _ => assert!(false)
+                                }
+                            },
+                            _ => assert!(false)
+                        }
+                        match body.as_ref() {
+                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
