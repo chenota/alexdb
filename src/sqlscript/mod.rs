@@ -677,4 +677,49 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_script_expr() -> Result<(), String> {
+        // Setup
+        let test_input: String = "{a = 4; a} + 5".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be stmtscript
+            parsetree::Script::ExprScript(e1) => {
+                // Check type of proceeding script
+                match e1 {
+                    parsetree::Expr::BopExpr(e11, _, _) => {
+                        match e11.as_ref() {
+                            parsetree::Expr::ScriptExpr(_) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_script_script_expr() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x = {a = 4; a}; x".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be stmtscript
+            parsetree::Script::StmtScript(_, e1, _) => {
+                // Check type of proceeding script
+                match e1 {
+                    parsetree::Expr::ScriptExpr(_) => assert!(true),
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
