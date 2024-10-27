@@ -1135,4 +1135,49 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_cond_expr_1() -> Result<(), String> {
+        // Setup
+        let test_input: String = "if true 1 else 0".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse_script();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::ExprScript(e1) => {
+                // Check type of expr
+                match e1 {
+                    parsetree::Expr::CondExpr(_, _, _) => assert!(true),
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_cond_expr_in_fun() -> Result<(), String> {
+        // Setup
+        let test_input: String = "max = fun x,y -> if x > y then x else y; max(15, 10)".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse_script();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::StmtScript(_, e1, _) => {
+                // Check type of expr
+                match e1 {
+                    parsetree::Expr::FunExpr(_, body) => {
+                        match body.as_ref() {
+                            parsetree::Expr::CondExpr(_, _, _) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
