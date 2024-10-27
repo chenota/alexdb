@@ -430,3 +430,63 @@ mod lexer_tests {
         Ok(())
     }
 }
+#[cfg(test)]
+mod parser_tests {
+    use super::parser::*;
+
+    #[test]
+    fn parser_integer() -> Result<(), String> {
+        // Setup
+        let test_input: String = "4".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be just expr
+            parsetree::Script::ExprScript(e1) => {
+                match e1 {
+                    // Should be val expr
+                    parsetree::Expr::ValExpr(v) => {
+                        // First value should be four
+                        match v {
+                            parsetree::Val::IntVal(x) => assert_eq!(x, 4),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn parser_basic_arithmetic() -> Result<(), String> {
+        // Setup
+        let test_input: String = "5 + 10".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be just expr
+            parsetree::Script::ExprScript(e1) => {
+                match e1 {
+                    // Should be bop expr
+                    parsetree::Expr::BopExpr(v, t, _) => {
+                        // Bop type should be plus
+                        assert_eq!(t, parsetree::BopType::PlusBop);
+                        // First value should be four
+                        match v {
+                            parsetree::Val::IntVal(x) => assert_eq!(x, 5),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+}
