@@ -182,7 +182,8 @@ pub mod parser {
             BopExpr(Rc<Expr>, BopType, Rc<Expr>),
             UopExpr(UopType, Rc<Expr>),
             ScriptExpr(Rc<Script>),
-            ValExpr(Val)
+            ValExpr(Val),
+            CallExpr(Rc<Expr>, Option<ExprList>)
         }
         pub enum Val {
             IntVal(i64),
@@ -192,8 +193,8 @@ pub mod parser {
             FloatVal(f64),
         }
         pub enum ExprList {
-            MultiList(Expr, Rc<ExprList>),
-            SingleList(Expr)
+            MultiList(Rc<Expr>, Rc<ExprList>),
+            SingleList(Rc<Expr>)
         }
         #[derive(PartialEq, Debug)]
         pub enum BopType {
@@ -329,15 +330,32 @@ pub mod parser {
                 },
                 _ => parsetree::Expr::ValExpr(self.value())
             };
+            // Check if postfix (call only postfix) at front
+            let second = match self.peek().kind {
+                TokenKind::LParen => {
+                    // Pop LParen
+                    self.pop();
+                    // Check if next is rparen. If not, parse exprlist
+                    let elist = match self.peek().kind {
+                        TokenKind::RParen => None,
+                        _ => Some(self.exprlist())
+                    };
+                    // Expect RParen
+                    self.pop_expect(TokenKind::RParen);
+                    // Construct expression
+                    parsetree::Expr::CallExpr(Rc::new(first), elist)
+                },
+                _ => first
+            };
             // Check if bop at front
             match self.peek_bop() {
                 Some(bop) => {
                     // Pop bop
                     self.pop();
                     // Return parsed expr
-                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr()))
+                    parsetree::Expr::BopExpr(Rc::new(second), bop, Rc::new(self.expr()))
                 },
-                None => first
+                None => second
             }
         }
         fn value(&mut self) -> parsetree::Val {
@@ -364,8 +382,8 @@ pub mod parser {
             let expr = self.expr();
             // Check if comma
             match self.peek().kind {
-                TokenKind::Comma => parsetree::ExprList::MultiList(expr, Rc::new(self.exprlist())),
-                _ => parsetree::ExprList::SingleList(expr)
+                TokenKind::Comma => parsetree::ExprList::MultiList(Rc::new(expr), Rc::new(self.exprlist())),
+                _ => parsetree::ExprList::SingleList(Rc::new(expr))
             }
         }
     }
