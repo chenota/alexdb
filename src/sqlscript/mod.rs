@@ -598,6 +598,19 @@ mod lexer_tests {
         Ok(())
     }
     #[test]
+    fn produce_if_kw() -> Result<(), String> {
+        // Setup
+        let test_input: String = "if true then 1 else 0".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is integer type with correct value
+        match next_token.kind {
+            lexer::TokenKind::IfKw => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
     fn lexer_reset() -> Result<(), String> {
         // Setup
         let test_input: String = "45 + 53".to_string();
