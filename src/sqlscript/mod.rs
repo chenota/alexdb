@@ -13,6 +13,8 @@ mod lexer {
         AssignKw,
         // Semicolon
         SemiKw,
+        // Comma,
+        Comma,
         // Values
         Integer,
         Float,
@@ -62,6 +64,8 @@ mod lexer {
         (Some(TokenKind::AssignKw), reg!(r"="), none_value),
         // Semicolon
         (Some(TokenKind::SemiKw), reg!(r";"), none_value),
+        // Comma
+        (Some(TokenKind::Comma), reg!(r","), none_value),
         // Grouping
         (Some(TokenKind::LParen), reg!(r"\("), none_value),
         (Some(TokenKind::RParen), reg!(r"\)"), none_value),
@@ -186,6 +190,10 @@ pub mod parser {
             StrVal(String),
             IdentVal(String),
             FloatVal(f64),
+        }
+        pub enum ExprList {
+            MultiList(Expr, Rc<ExprList>),
+            SingleList(Expr)
         }
         #[derive(PartialEq, Debug)]
         pub enum BopType {
@@ -351,7 +359,15 @@ pub mod parser {
                 _ => panic!("Parsing error")
             }
         }
-        
+        fn exprlist(&mut self) -> parsetree::ExprList {
+            // Parse expr
+            let expr = self.expr();
+            // Check if comma
+            match self.peek().kind {
+                TokenKind::Comma => parsetree::ExprList::MultiList(expr, Rc::new(self.exprlist())),
+                _ => parsetree::ExprList::SingleList(expr)
+            }
+        }
     }
 }
 
