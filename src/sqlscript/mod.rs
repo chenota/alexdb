@@ -418,6 +418,18 @@ mod lexer_tests {
         Ok(())
     }
     #[test]
+    fn produce_paren() -> Result<(), String> {
+        // Setup
+        let test_input: String = "( )".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        let next_next_token = test_lexer.produce();
+        // Assert token kind
+        assert_eq!(next_token.kind, lexer::TokenKind::LParen);
+        assert_eq!(next_next_token.kind, lexer::TokenKind::RParen);
+        Ok(())
+    }
+    #[test]
     fn lexer_reset() -> Result<(), String> {
         // Setup
         let test_input: String = "45 + 53".to_string();
@@ -465,6 +477,35 @@ mod parser_tests {
     fn parser_basic_arithmetic() -> Result<(), String> {
         // Setup
         let test_input: String = "5 + 10".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be just expr
+            parsetree::Script::ExprScript(e1) => {
+                match e1 {
+                    // Should be bop expr
+                    parsetree::Expr::BopExpr(v, t, _) => {
+                        // Bop type should be plus
+                        assert_eq!(t, parsetree::BopType::PlusBop);
+                        // First value should be four
+                        match v {
+                            parsetree::Val::IntVal(x) => assert_eq!(x, 5),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn parser_nontrivial_arithmetic() -> Result<(), String> {
+        // Setup
+        let test_input: String = "(5 + 10) - 3".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
