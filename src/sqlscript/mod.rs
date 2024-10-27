@@ -430,6 +430,21 @@ mod lexer_tests {
         Ok(())
     }
     #[test]
+    fn produce_int_after_plus() -> Result<(), String> {
+        // Setup
+        let test_input: String = "5 + 15".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        test_lexer.produce();
+        test_lexer.produce();
+        let next_token = test_lexer.produce();
+        // Assert token is integer type with correct value
+        match next_token.value {
+            lexer::TokenValue::Integer(x) => assert_eq!(x, 15),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
     fn lexer_reset() -> Result<(), String> {
         // Setup
         let test_input: String = "45 + 53".to_string();
