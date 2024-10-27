@@ -382,7 +382,12 @@ pub mod parser {
             let expr = self.expr();
             // Check if comma
             match self.peek().kind {
-                TokenKind::Comma => parsetree::ExprList::MultiList(Rc::new(expr), Rc::new(self.exprlist())),
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Parse next expr
+                    parsetree::ExprList::MultiList(Rc::new(expr), Rc::new(self.exprlist()))
+                },
                 _ => parsetree::ExprList::SingleList(Rc::new(expr))
             }
         }
