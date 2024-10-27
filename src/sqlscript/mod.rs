@@ -9,6 +9,11 @@ mod lexer {
         MinusKw,
         TimesKw,
         DivKw,
+        Gt,
+        Gte,
+        Lt,
+        Lte,
+        Eq,
         // Functions
         Arrow,
         FunKw,
@@ -70,6 +75,12 @@ mod lexer {
         (Some(TokenKind::IfKw), reg!(r"if"), none_value),
         (Some(TokenKind::ThenKw), reg!(r"then"), none_value),
         (Some(TokenKind::ElseKw), reg!(r"else"), none_value),
+        // Comparison
+        (Some(TokenKind::Gte), reg!(r">="), none_value),
+        (Some(TokenKind::Gt), reg!(r">"), none_value),
+        (Some(TokenKind::Lte), reg!(r"<="), none_value),
+        (Some(TokenKind::Lt), reg!(r"<"), none_value),
+        (Some(TokenKind::Eq), reg!(r"=="), none_value),
         // Function stuff
         (Some(TokenKind::Arrow), reg!(r"->"), none_value),
         (Some(TokenKind::FunKw), reg!(r"fun"), none_value),
@@ -216,7 +227,12 @@ pub mod parser {
             PlusBop,
             MinusBop,
             TimesBop,
-            DivBop
+            DivBop,
+            GtBop,
+            GteBop,
+            LtBop,
+            LteBop,
+            EqBop
         }
         #[derive(PartialEq, Debug)]
         pub enum UopType {
@@ -260,6 +276,11 @@ pub mod parser {
                 TokenKind::MinusKw => Some(parsetree::BopType::MinusBop),
                 TokenKind::TimesKw => Some(parsetree::BopType::TimesBop),
                 TokenKind::DivKw => Some(parsetree::BopType::DivBop),
+                TokenKind::Gt => Some(parsetree::BopType::GtBop),
+                TokenKind::Gte => Some(parsetree::BopType::GteBop),
+                TokenKind::Lt => Some(parsetree::BopType::LtBop),
+                TokenKind::Lte => Some(parsetree::BopType::LteBop),
+                TokenKind::Eq => Some(parsetree::BopType::EqBop),
                 _ => None
             }
         }
