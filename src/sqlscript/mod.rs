@@ -154,6 +154,10 @@ mod lexer {
         pub fn get_pos(&self) -> usize {
             self.pos
         }
+        // Testing
+        pub fn remaining_stream(&self) -> &str {
+            &self.stream.as_str()[self.pos..]
+        }
     }
 }
 
@@ -244,6 +248,8 @@ pub mod parser {
         pub fn parse(&mut self) -> parsetree::Script {
             // Reset lexer
             self.lexer.reset();
+            // Produce first token
+            self.token = self.lexer.produce();
             // Call start symbol (script for now, will eventually be query)
             self.script()
         }
