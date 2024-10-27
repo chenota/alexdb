@@ -71,7 +71,8 @@ mod lexer {
     // If token kind is none, won't generate a token
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
         // Keywords
-        (Some(TokenKind::Boolean), reg!(r"(false)|(true)"), bool_value),
+        (Some(TokenKind::Boolean), reg!(r"true"), bool_value),
+        (Some(TokenKind::Boolean), reg!(r"false"), bool_value),
         (Some(TokenKind::IfKw), reg!(r"if"), none_value),
         (Some(TokenKind::ThenKw), reg!(r"then"), none_value),
         (Some(TokenKind::ElseKw), reg!(r"else"), none_value),
@@ -600,7 +601,7 @@ mod lexer_tests {
     #[test]
     fn produce_if_kw() -> Result<(), String> {
         // Setup
-        let test_input: String = "if true then 1 else 0".to_string();
+        let test_input: String = "if true".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
         let next_token = test_lexer.produce();
         // Assert token is integer type with correct value
