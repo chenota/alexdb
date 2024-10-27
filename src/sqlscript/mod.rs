@@ -9,6 +9,9 @@ mod lexer {
         MinusKw,
         TimesKw,
         DivKw,
+        // Functions
+        Arrow,
+        FunKw,
         // Assignment
         AssignKw,
         // Semicolon
@@ -60,6 +63,9 @@ mod lexer {
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
         // Keywords
         (Some(TokenKind::Boolean), reg!(r"(false)|(true)"), bool_value),
+        // Function stuff
+        (Some(TokenKind::Arrow), reg!(r"->"), none_value),
+        (Some(TokenKind::FunKw), reg!(r"fun"), none_value),
         // Assignment
         (Some(TokenKind::AssignKw), reg!(r"="), none_value),
         // Semicolon
@@ -183,7 +189,8 @@ pub mod parser {
             UopExpr(UopType, Rc<Expr>),
             ScriptExpr(Rc<Script>),
             ValExpr(Val),
-            CallExpr(Rc<Expr>, Option<ExprList>)
+            CallExpr(Rc<Expr>, Option<ExprList>),
+            FunExpr(Option<ExprList>, Rc<Expr>)
         }
         pub enum Val {
             IntVal(i64),
@@ -327,6 +334,21 @@ pub mod parser {
                     let expr = self.expr();
                     // Return negated expression
                     parsetree::Expr::UopExpr(parsetree::UopType::NegUop, Rc::new(expr))
+                },
+                TokenKind::FunKw => {
+                    // Pop fun kw
+                    self.pop();
+                    // Get parameter list
+                    let paramlist = match self.peek().kind {
+                        TokenKind::Arrow => None,
+                        _ => Some(self.exprlist())
+                    };
+                    // Expect arrow, pop it
+                    self.pop_expect(TokenKind::Arrow);
+                    // Parse body
+                    let body = self.expr();
+                    // Put everything together
+                    parsetree::Expr::FunExpr(paramlist, Rc::new(body))
                 },
                 _ => parsetree::Expr::ValExpr(self.value())
             };
