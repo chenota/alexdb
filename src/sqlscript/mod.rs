@@ -466,7 +466,6 @@ mod lexer_tests {
 #[cfg(test)]
 mod parser_tests {
     use super::parser::*;
-
     #[test]
     fn parser_integer() -> Result<(), String> {
         // Setup
@@ -493,7 +492,6 @@ mod parser_tests {
         }
         Ok(())
     }
-
     #[test]
     fn parser_basic_arithmetic() -> Result<(), String> {
         // Setup
@@ -522,7 +520,6 @@ mod parser_tests {
         }
         Ok(())
     }
-
     #[test]
     fn parser_nontrivial_arithmetic() -> Result<(), String> {
         // Setup
@@ -544,6 +541,112 @@ mod parser_tests {
                             _ => assert!(false)
                         }
                     },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_very_nested() -> Result<(), String> {
+        // Setup
+        let test_input: String = "((((((((((((4))))))))))))".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be just expr
+            parsetree::Script::ExprScript(e1) => {
+                match e1 {
+                    // Should be val expr
+                    parsetree::Expr::ValExpr(v) => {
+                        // First value should be four
+                        match v {
+                            parsetree::Val::IntVal(x) => assert_eq!(x, 4),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_basic_stmt() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x = 5; x".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be stmtscript
+            parsetree::Script::StmtScript(id, e1, sc) => {
+                // Make sure ID is x
+                assert_eq!(id, "x");
+                // Check e1
+                match e1 {
+                    // Should be val expr w/ 5
+                    parsetree::Expr::ValExpr(v) => {
+                        match v {
+                            parsetree::Val::IntVal(x) => assert_eq!(x, 5),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+                // Check type of proceeding script
+                match sc.as_ref() {
+                    parsetree::Script::ExprScript(_) => assert!(true),
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_nontrivial_stmt() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x = (3+2)-1; x - 15".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be stmtscript
+            parsetree::Script::StmtScript(id, _, sc) => {
+                // Make sure ID is x
+                assert_eq!(id, "x");
+                // Check type of proceeding script
+                match sc.as_ref() {
+                    parsetree::Script::ExprScript(_) => assert!(true),
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_nested_stmt() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x = 5; y = 10; x + y".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be stmtscript
+            parsetree::Script::StmtScript(_, _, sc1) => {
+                // Check type of proceeding script
+                match sc1.as_ref() {
+                    parsetree::Script::StmtScript(_, _, sc2) => {
+                        match sc2.as_ref() {
+                            parsetree::Script::ExprScript(_) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
                     _ => assert!(false)
                 }
             }
