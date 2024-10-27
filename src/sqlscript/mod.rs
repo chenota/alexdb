@@ -171,7 +171,7 @@ pub mod parser {
             StmtScript(String, Expr, Rc<Script>) // ident = expr; ...
         }
         pub enum Expr {
-            BopExpr(Val, BopType, Rc<Expr>),
+            BopExpr(Rc<Expr>, BopType, Rc<Expr>),
             ValExpr(Val)
         }
         pub enum Val {
@@ -268,6 +268,7 @@ pub mod parser {
                     self.pop();
                     // Parse expr
                     let expr: parsetree::Expr = self.expr();
+                    println!("{:?}", self.peek().kind);
                     // Expect semicolon, pop it
                     self.pop_expect(TokenKind::SemiKw);
                     // Return constructed statement
@@ -279,7 +280,7 @@ pub mod parser {
         }
         fn expr(&mut self) -> parsetree::Expr {
             // Check first value
-            match self.peek().kind {
+            let first = match self.peek().kind {
                 TokenKind::LParen => {
                     // Pop lparen
                     self.pop();
@@ -290,20 +291,17 @@ pub mod parser {
                     // Return parsed expression
                     expr
                 },
-                _ => {
-                    // Expect value at front
-                    let val = self.value();
-                    // Check if bop at front
-                    match self.peek_bop() {
-                        Some(bop) => {
-                            // Pop bop
-                            self.pop();
-                            // Return parsed expr
-                            parsetree::Expr::BopExpr(val, bop, Rc::new(self.expr()))
-                        },
-                        None => parsetree::Expr::ValExpr(val)
-                    }
-                }
+                _ => parsetree::Expr::ValExpr(self.value())
+            };
+            // Check if bop at front
+            match self.peek_bop() {
+                Some(bop) => {
+                    // Pop bop
+                    self.pop();
+                    // Return parsed expr
+                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr()))
+                },
+                None => first
             }
         }
         fn value(&mut self) -> parsetree::Val {
@@ -508,8 +506,13 @@ mod parser_tests {
                         // Bop type should be plus
                         assert_eq!(t, parsetree::BopType::PlusBop);
                         // First value should be four
-                        match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(x, 5),
+                        match v.as_ref() {
+                            parsetree::Expr::ValExpr(y) => {
+                                match y {
+                                    parsetree::Val::IntVal(x) => assert_eq!(*x, 5),
+                                    _ => assert!(false)
+                                }
+                            },
                             _ => assert!(false)
                         }
                     },
@@ -532,12 +535,17 @@ mod parser_tests {
             parsetree::Script::ExprScript(e1) => {
                 match e1 {
                     // Should be bop expr
-                    parsetree::Expr::BopExpr(v, t, _) => {
+                    parsetree::Expr::BopExpr(_, t, v) => {
                         // Bop type should be plus
-                        assert_eq!(t, parsetree::BopType::PlusBop);
+                        assert_eq!(t, parsetree::BopType::MinusBop);
                         // First value should be four
-                        match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(x, 5),
+                        match v.as_ref() {
+                            parsetree::Expr::ValExpr(y) => {
+                                match y {
+                                    parsetree::Val::IntVal(x) => assert_eq!(*x, 3),
+                                    _ => assert!(false)
+                                }
+                            },
                             _ => assert!(false)
                         }
                     },
