@@ -735,4 +735,55 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_uop_expr() -> Result<(), String> {
+        // Setup
+        let test_input: String = "-5".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::ExprScript(e1) => {
+                // Check type of proceeding script
+                match e1 {
+                    parsetree::Expr::UopExpr(t, e2) => {
+                        assert_eq!(t, parsetree::UopType::NegUop);
+                        match e2.as_ref() {
+                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_uop_expr_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "0 - -1".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Script::ExprScript(e1) => {
+                // Check type of proceeding script
+                match e1 {
+                    parsetree::Expr::BopExpr(_, _, e2) => {
+                        match e2.as_ref() {
+                            parsetree::Expr::UopExpr(t, _) => assert_eq!(*t, parsetree::UopType::NegUop),
+                            _ => assert!(false)
+                        }
+                    },
+                    _ => assert!(false)
+                }
+            }
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
