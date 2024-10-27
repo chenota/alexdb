@@ -176,6 +176,7 @@ pub mod parser {
         }
         pub enum Expr {
             BopExpr(Rc<Expr>, BopType, Rc<Expr>),
+            UopExpr(UopType, Rc<Expr>),
             ScriptExpr(Rc<Script>),
             ValExpr(Val)
         }
@@ -192,6 +193,10 @@ pub mod parser {
             MinusBop,
             TimesBop,
             DivBop
+        }
+        #[derive(PartialEq, Debug)]
+        pub enum UopType {
+            NegUop,
         }
     }
     pub struct Parser {
@@ -305,6 +310,14 @@ pub mod parser {
                     self.pop_expect(TokenKind::RCBracket);
                     // Return parsed expression
                     parsetree::Expr::ScriptExpr(Rc::new(script))
+                },
+                TokenKind::MinusKw => {
+                    // Pop minus sign
+                    self.pop();
+                    // Parse expr
+                    let expr = self.expr();
+                    // Return negated expression
+                    parsetree::Expr::UopExpr(parsetree::UopType::NegUop, Rc::new(expr))
                 },
                 _ => parsetree::Expr::ValExpr(self.value())
             };
