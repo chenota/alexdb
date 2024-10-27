@@ -9,6 +9,10 @@ mod lexer {
         MinusKw,
         TimesKw,
         DivKw,
+        // Assignment
+        AssignKw,
+        // Semicolon
+        SemiKw,
         // Values
         Integer,
         Float,
@@ -19,6 +23,7 @@ mod lexer {
         LParen,
         RParen,
     }
+    #[derive(Clone)]
     pub enum TokenValue {
         None,
         Float(f64),
@@ -26,6 +31,7 @@ mod lexer {
         Integer(i64),
         Boolean(bool)
     }
+    #[derive(Clone)]
     pub struct Token {
         pub kind: TokenKind,
         pub value: TokenValue,
@@ -50,6 +56,10 @@ mod lexer {
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
         // Keywords
         (Some(TokenKind::Boolean), reg!(r"(false)|(true)"), bool_value),
+        // Assignment
+        (Some(TokenKind::AssignKw), reg!(r"="), none_value),
+        // Semicolon
+        (Some(TokenKind::SemiKw), reg!(r";"), none_value),
         // Grouping
         (Some(TokenKind::LParen), reg!(r"\("), none_value),
         (Some(TokenKind::RParen), reg!(r"\)"), none_value),
@@ -141,11 +151,67 @@ mod lexer {
 }
 
 pub mod parser {
-
+    use super::lexer;
+    mod parsetree {
+        use std::rc::Rc;
+        pub enum Script {
+            ExprScript(Expr),
+            StmtScript(Val, Expr, Rc<Script>) // ident = expr; ...
+        }
+        pub enum Expr {
+            BopExpr(Rc<Expr>, BopType, Rc<Expr>),
+            ValExpr(Val)
+        }
+        pub enum Val {
+            IntVal(i64),
+            BoolVal(bool),
+            StrVal(String),
+            IdentVal(String),
+        }
+        pub enum BopType {
+            Plus,
+            Minus,
+            Times,
+            Div
+        }
+    }
+    pub struct Parser {
+        lexer: lexer::Lexer,
+        token: lexer::Token
+    }   
+    impl Parser {
+        // Constructor
+        fn new(stream: String) -> Parser {
+            let mut lexer = lexer::Lexer::new(stream);
+            Parser {
+                lexer: lexer,
+                token: lexer.produce()
+            }
+        }
+        // Program control
+        fn peek(&self) -> &lexer::Token {
+            &self.token
+        }
+        fn pop(&mut self) -> lexer::Token {
+            let token = self.token.clone();
+            self.token = self.lexer.produce();
+            token
+        }
+        fn peek_expect(&self, kind: lexer::TokenKind) -> &lexer::Token {
+            let token = self.peek();
+            if token.kind != kind { panic!("Parsing error") };
+            token
+        }
+        fn pop_expect(&mut self, kind: lexer::TokenKind) -> lexer::Token {
+            let token = self.pop();
+            if token.kind != kind { panic!("Parsing error") };
+            token
+        }
+    }
 }
 
 #[cfg(test)]
-mod tests {
+mod lexer_tests {
     use super::*;
 
     #[test]
