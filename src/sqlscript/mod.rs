@@ -12,6 +12,10 @@ mod lexer {
         // Functions
         Arrow,
         FunKw,
+        // Conditional
+        IfKw,
+        ThenKw,
+        ElseKw,
         // Assignment
         AssignKw,
         // Semicolon
@@ -63,6 +67,9 @@ mod lexer {
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
         // Keywords
         (Some(TokenKind::Boolean), reg!(r"(false)|(true)"), bool_value),
+        (Some(TokenKind::IfKw), reg!(r"if"), none_value),
+        (Some(TokenKind::ThenKw), reg!(r"then"), none_value),
+        (Some(TokenKind::ElseKw), reg!(r"else"), none_value),
         // Function stuff
         (Some(TokenKind::Arrow), reg!(r"->"), none_value),
         (Some(TokenKind::FunKw), reg!(r"fun"), none_value),
@@ -190,7 +197,8 @@ pub mod parser {
             ScriptExpr(Rc<Script>),
             ValExpr(Val),
             CallExpr(Rc<Expr>, Option<ExprList>),
-            FunExpr(Option<ExprList>, Rc<Expr>)
+            FunExpr(Option<ExprList>, Rc<Expr>),
+            CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
         }
         pub enum Val {
             IntVal(i64),
@@ -349,6 +357,22 @@ pub mod parser {
                     let body = self.expr();
                     // Put everything together
                     parsetree::Expr::FunExpr(paramlist, Rc::new(body))
+                },
+                TokenKind::IfKw => {
+                    // Pop if kw
+                    self.pop();
+                    // Parse conditional
+                    let if_expr = self.expr();
+                    // Expect then keyword
+                    self.pop_expect(TokenKind::ThenKw);
+                    // Parse then expr
+                    let then_expr = self.expr();
+                    // Expect else kw
+                    self.pop_expect(TokenKind::ElseKw);
+                    // Parse else expr
+                    let else_expr = self.expr();
+                    // Put it all together
+                    parsetree::Expr::CondExpr(Rc::new(if_expr), Rc::new(then_expr), Rc::new(else_expr))
                 },
                 _ => parsetree::Expr::ValExpr(self.value())
             };
