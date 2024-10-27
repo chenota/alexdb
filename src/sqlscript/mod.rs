@@ -22,6 +22,8 @@ mod lexer {
         // Grouping
         LParen,
         RParen,
+        LCBracket,
+        RCBracket,
     }
     #[derive(Clone)]
     pub enum TokenValue {
@@ -63,6 +65,8 @@ mod lexer {
         // Grouping
         (Some(TokenKind::LParen), reg!(r"\("), none_value),
         (Some(TokenKind::RParen), reg!(r"\)"), none_value),
+        (Some(TokenKind::LCBracket), reg!(r"\{"), none_value),
+        (Some(TokenKind::RCBracket), reg!(r"\}"), none_value),
         // Operators
         (Some(TokenKind::PlusKw), reg!(r"\+"), none_value),
         (Some(TokenKind::MinusKw), reg!(r"-"), none_value),
@@ -172,6 +176,7 @@ pub mod parser {
         }
         pub enum Expr {
             BopExpr(Rc<Expr>, BopType, Rc<Expr>),
+            ScriptExpr(Rc<Script>),
             ValExpr(Val)
         }
         pub enum Val {
@@ -290,6 +295,16 @@ pub mod parser {
                     self.pop_expect(TokenKind::RParen);
                     // Return parsed expression
                     expr
+                },
+                TokenKind::LCBracket => {
+                    // Pop curly bracket
+                    self.pop();
+                    // Parse script
+                    let script = self.script();
+                    // Expect right curly bracket, pop it
+                    self.pop_expect(TokenKind::RCBracket);
+                    // Return parsed expression
+                    parsetree::Expr::ScriptExpr(Rc::new(script))
                 },
                 _ => parsetree::Expr::ValExpr(self.value())
             };
