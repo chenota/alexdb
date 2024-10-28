@@ -11,18 +11,18 @@ pub mod parser {
             Aggregate(String, Expr, String), // AGGREGATE <name> = <value> INTO <table>
             Column(String, Expr, String), // COLUMN <name> = <value> INTO <table>
         }
-        pub enum Block {
-            ExprBlock(Expr),
-            StmtBlock(String, Expr, Rc<Block>) // ident = expr; ...
-        }
         pub enum Expr {
             BopExpr(Rc<Expr>, BopType, Rc<Expr>),
             UopExpr(UopType, Rc<Expr>),
-            ScriptExpr(Rc<Block>),
+            BlockExpr(Block),
             ValExpr(Val),
             CallExpr(Rc<Expr>, Option<ExprList>),
             FunExpr(Option<IdentList>, Rc<Expr>),
             CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
+        }
+        pub enum Block {
+            ExprBlock(Rc<Expr>),
+            StmtBlock(String, Rc<Expr>, Rc<Block>) // ident = expr; ...
         }
         pub enum Val {
             IntVal(i64),
@@ -252,10 +252,10 @@ pub mod parser {
                     // Expect semicolon, pop it
                     self.pop_expect(TokenKind::SemiKw);
                     // Return constructed statement
-                    parsetree::Block::StmtBlock(ident_val, expr, Rc::new(self.block()))
+                    parsetree::Block::StmtBlock(ident_val, Rc::new(expr), Rc::new(self.block()))
                 }
                 // Parse as expression
-                _ => parsetree::Block::ExprBlock(self.expr())
+                _ => parsetree::Block::ExprBlock(Rc::new(self.expr()))
             }
         }
         fn expr(&mut self) -> parsetree::Expr {
@@ -279,7 +279,7 @@ pub mod parser {
                     // Expect right curly bracket, pop it
                     self.pop_expect(TokenKind::RCBracket);
                     // Return parsed expression
-                    parsetree::Expr::ScriptExpr(Rc::new(script))
+                    parsetree::Expr::BlockExpr(script)
                 },
                 TokenKind::MinusKw => {
                     // Pop minus sign
@@ -432,12 +432,12 @@ mod parser_tests {
         match ast {
             // Should be just expr
             parsetree::Block::ExprBlock(e1) => {
-                match e1 {
+                match e1.as_ref() {
                     // Should be val expr
                     parsetree::Expr::ValExpr(v) => {
                         // First value should be four
                         match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(x, 4),
+                            parsetree::Val::IntVal(x) => assert_eq!(*x, 4),
                             _ => assert!(false)
                         }
                     },
@@ -458,11 +458,11 @@ mod parser_tests {
         match ast {
             // Should be just expr
             parsetree::Block::ExprBlock(e1) => {
-                match e1 {
+                match e1.as_ref() {
                     // Should be bop expr
                     parsetree::Expr::BopExpr(v, t, _) => {
                         // Bop type should be plus
-                        assert_eq!(t, parsetree::BopType::PlusBop);
+                        assert_eq!(*t, parsetree::BopType::PlusBop);
                         // First value should be four
                         match v.as_ref() {
                             parsetree::Expr::ValExpr(y) => {
@@ -491,11 +491,11 @@ mod parser_tests {
         match ast {
             // Should be just expr
             parsetree::Block::ExprBlock(e1) => {
-                match e1 {
+                match e1.as_ref() {
                     // Should be bop expr
                     parsetree::Expr::BopExpr(_, t, v) => {
                         // Bop type should be plus
-                        assert_eq!(t, parsetree::BopType::MinusBop);
+                        assert_eq!(*t, parsetree::BopType::MinusBop);
                         // First value should be four
                         match v.as_ref() {
                             parsetree::Expr::ValExpr(y) => {
@@ -524,12 +524,12 @@ mod parser_tests {
         match ast {
             // Should be just expr
             parsetree::Block::ExprBlock(e1) => {
-                match e1 {
+                match e1.as_ref() {
                     // Should be val expr
                     parsetree::Expr::ValExpr(v) => {
                         // First value should be four
                         match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(x, 4),
+                            parsetree::Val::IntVal(x) => assert_eq!(*x, 4),
                             _ => assert!(false)
                         }
                     },
@@ -553,11 +553,11 @@ mod parser_tests {
                 // Make sure ID is x
                 assert_eq!(id, "x");
                 // Check e1
-                match e1 {
+                match e1.as_ref() {
                     // Should be val expr w/ 5
                     parsetree::Expr::ValExpr(v) => {
                         match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(x, 5),
+                            parsetree::Val::IntVal(x) => assert_eq!(*x, 5),
                             _ => assert!(false)
                         }
                     },
@@ -631,10 +631,10 @@ mod parser_tests {
             // Should be stmtscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::BopExpr(e11, _, _) => {
                         match e11.as_ref() {
-                            parsetree::Expr::ScriptExpr(_) => assert!(true),
+                            parsetree::Expr::BlockExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     }
@@ -656,8 +656,8 @@ mod parser_tests {
             // Should be stmtscript
             parsetree::Block::StmtBlock(_, e1, _) => {
                 // Check type of proceeding script
-                match e1 {
-                    parsetree::Expr::ScriptExpr(_) => assert!(true),
+                match e1.as_ref() {
+                    parsetree::Expr::BlockExpr(_) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -676,9 +676,9 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::UopExpr(t, e2) => {
-                        assert_eq!(t, parsetree::UopType::NegUop);
+                        assert_eq!(*t, parsetree::UopType::NegUop);
                         match e2.as_ref() {
                             parsetree::Expr::ValExpr(_) => assert!(true),
                             _ => assert!(false)
@@ -702,7 +702,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::BopExpr(_, _, e2) => {
                         match e2.as_ref() {
                             parsetree::Expr::UopExpr(t, _) => assert_eq!(*t, parsetree::UopType::NegUop),
@@ -727,7 +727,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::CallExpr(e1, args) => {
                         match args {
                             None => assert!(true),
@@ -756,7 +756,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::BopExpr(e2, _, _) => {
                         match e2.as_ref() {
                             parsetree::Expr::CallExpr(e3, args) => {
@@ -790,7 +790,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::BopExpr(_, _, _) => assert!(true),
                     _ => assert!(false)
                 }
@@ -810,7 +810,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::CallExpr(_, args) => {
                         match args {
                             Some(parsetree::ExprList::SingleList(_)) => assert!(true),
@@ -835,7 +835,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::CallExpr(_, args) => {
                         match args {
                             Some(parsetree::ExprList::MultiList(_,_)) => assert!(true),
@@ -860,7 +860,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
                         match params {
                             None => assert!(true),
@@ -889,7 +889,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
                         match params {
                             Some(elist) => {
@@ -923,7 +923,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
                         match params {
                             Some(elist) => {
@@ -957,7 +957,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::StmtBlock(_, e1, _) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
                         match params {
                             Some(elist) => {
@@ -991,7 +991,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::CondExpr(_, _, _) => assert!(true),
                     _ => assert!(false)
                 }
@@ -1011,7 +1011,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Block::StmtBlock(_, e1, _) => {
                 // Check type of expr
-                match e1 {
+                match e1.as_ref() {
                     parsetree::Expr::FunExpr(_, body) => {
                         match body.as_ref() {
                             parsetree::Expr::CondExpr(_, _, _) => assert!(true),
