@@ -426,4 +426,19 @@ mod lexer_tests {
         assert_eq!(next_token.kind, lexer::TokenKind::Integer);
         Ok(())
     }
+    #[test]
+    fn lexer_type_int() -> Result<(), String> {
+        // Setup
+        let test_input: String = "int".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token
+        assert_eq!(next_token.kind, lexer::TokenKind::IntKw);
+        // Assert value
+        match next_token.value {
+            lexer::TokenValue::Type(_) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
