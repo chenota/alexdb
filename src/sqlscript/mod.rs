@@ -1502,7 +1502,7 @@ mod parser_tests {
     #[test]
     fn parser_query_regaggregate() -> Result<(), String> {
         // Setup
-        let test_input: String = "REGISTER AGGREGATE max USING fun field1, field1new -> max(field1, field1new)".to_string();
+        let test_input: String = "REGISTER AGGREGATE max USING fun field1, field1new -> max(field1, field1new) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
@@ -1516,7 +1516,7 @@ mod parser_tests {
     #[test]
     fn parser_query_regcol() -> Result<(), String> {
         // Setup
-        let test_input: String = "REGISTER COLUMN awesome USING max(field1, field2)".to_string();
+        let test_input: String = "REGISTER COLUMN awesome USING max(field1, field2) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
