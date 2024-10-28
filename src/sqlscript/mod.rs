@@ -46,6 +46,10 @@ mod lexer {
         IntoKw,
         ValuesKw,
         AggregateKw,
+        RegisterKw,
+        ColumnKw,
+        FunctionKw,
+        UsingKw,
     }
     #[derive(Clone)]
     pub enum TokenValue {
@@ -92,6 +96,10 @@ mod lexer {
         (Some(TokenKind::IntoKw), reg!(r"INTO"), none_value),
         (Some(TokenKind::ValuesKw), reg!(r"VALUES"), none_value),
         (Some(TokenKind::AggregateKw), reg!(r"AGGREGATE"), none_value),
+        (Some(TokenKind::RegisterKw), reg!(r"REGISTER"), none_value),
+        (Some(TokenKind::ColumnKw), reg!(r"COLUMN"), none_value),
+        (Some(TokenKind::FunctionKw), reg!(r"FUNCTION"), none_value),
+        (Some(TokenKind::UsingKw), reg!(r"USING"), none_value),
         // Comparison
         (Some(TokenKind::Gte), reg!(r">="), none_value),
         (Some(TokenKind::Gt), reg!(r">"), none_value),
@@ -219,6 +227,9 @@ pub mod parser {
             Select(IdentList, String, Option<Script>), // SELECT _ FROM _ WHERE _ (where is optional)
             Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
             SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
+            RegisterFunction(String, Script), // REGISTER FUNCTION <name> USING <function>
+            RegisterAggregate(String, Script, String), // REGISTER AGGREGATE <name> USING <function> INTO <table>
+            RegisterColumn(String, Script, String), // REGISTER COLUMN <name> USING <function> INTO <table>
         }
         pub enum Script {
             ExprScript(Expr),
@@ -412,7 +423,51 @@ pub mod parser {
                     self.pop_expect(TokenKind::RParen);
                     // Return
                     parsetree::Query::Insert(tableid, colids, vlist)
-                }
+                },
+                TokenKind::RegisterKw => {
+                    // Check which kind of register
+                    match self.pop().kind {
+                        TokenKind::FunctionKw => {
+                            // Get function name
+                            let fname = self.ident();
+                            // Expect and pop USING
+                            self.pop_expect(TokenKind::UsingKw);
+                            // Parse script
+                            let scr = self.script();
+                            // Put together
+                            parsetree::Query::RegisterFunction(fname, scr)
+                        },
+                        TokenKind::AggregateKw => {
+                            // Get aggregate name
+                            let aname = self.ident();
+                            // Expect and pop USING
+                            self.pop_expect(TokenKind::UsingKw);
+                            // Parse script
+                            let src = self.script();
+                            // Expect and pop INTO
+                            self.pop_expect(TokenKind::IntoKw);
+                            // Parse table name
+                            let tname = self.ident();
+                            // Put together
+                            parsetree::Query::RegisterAggregate(aname, src, tname)
+                        },
+                        TokenKind::ColumnKw => {
+                            // Get column name
+                            let cname = self.ident();
+                            // Expect and pop USING
+                            self.pop_expect(TokenKind::UsingKw);
+                            // Parse script
+                            let src = self.script();
+                            // Expect and pop INTO
+                            self.pop_expect(TokenKind::IntoKw);
+                            // Parse table name
+                            let tname = self.ident();
+                            // Put together
+                            parsetree::Query::RegisterAggregate(cname, src, tname)
+                        },
+                        _ => panic!("Parsing error")
+                    }
+                },
                 _ => panic!("Parsing error")
             }
         }
