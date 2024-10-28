@@ -228,8 +228,8 @@ pub mod parser {
             Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
             SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
             RegisterFunction(String, Script), // REGISTER FUNCTION <name> USING <function>
-            RegisterAggregate(String, Script, String), // REGISTER AGGREGATE <name> USING <function> INTO <table>
-            RegisterColumn(String, Script, String), // REGISTER COLUMN <name> USING <function> INTO <table>
+            RegisterAggregate(String, String, Script), // REGISTER AGGREGATE <name> USING <function> INTO <table>
+            RegisterColumn(String, String, Script), // REGISTER COLUMN <name> USING INTO <table> <function> 
         }
         pub enum Script {
             ExprScript(Expr),
@@ -440,30 +440,30 @@ pub mod parser {
                         TokenKind::AggregateKw => {
                             // Get aggregate name
                             let aname = self.ident();
-                            // Expect and pop USING
-                            self.pop_expect(TokenKind::UsingKw);
-                            // Parse script
-                            let src = self.script();
                             // Expect and pop INTO
                             self.pop_expect(TokenKind::IntoKw);
                             // Parse table name
                             let tname = self.ident();
+                            // Expect and pop USING
+                            self.pop_expect(TokenKind::UsingKw);
+                            // Parse script
+                            let src = self.script();
                             // Put together
-                            parsetree::Query::RegisterAggregate(aname, src, tname)
+                            parsetree::Query::RegisterAggregate(aname, tname, src)
                         },
                         TokenKind::ColumnKw => {
                             // Get column name
                             let cname = self.ident();
-                            // Expect and pop USING
-                            self.pop_expect(TokenKind::UsingKw);
-                            // Parse script
-                            let src = self.script();
                             // Expect and pop INTO
                             self.pop_expect(TokenKind::IntoKw);
                             // Parse table name
                             let tname = self.ident();
+                            // Expect and pop USING
+                            self.pop_expect(TokenKind::UsingKw);
+                            // Parse script
+                            let src = self.script();
                             // Put together
-                            parsetree::Query::RegisterAggregate(cname, src, tname)
+                            parsetree::Query::RegisterAggregate(cname, tname, src)
                         },
                         _ => panic!("Parsing error")
                     }
@@ -1502,7 +1502,7 @@ mod parser_tests {
     #[test]
     fn parser_query_regaggregate() -> Result<(), String> {
         // Setup
-        let test_input: String = "REGISTER AGGREGATE max USING fun field1, field1new -> max(field1, field1new) INTO table".to_string();
+        let test_input: String = "REGISTER AGGREGATE max INTO table USING fun field1, field1new -> max(field1, field1new)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
@@ -1516,7 +1516,7 @@ mod parser_tests {
     #[test]
     fn parser_query_regcol() -> Result<(), String> {
         // Setup
-        let test_input: String = "REGISTER COLUMN awesome USING max(field1, field2) INTO table".to_string();
+        let test_input: String = "REGISTER COLUMN awesome INTO table USING max(field1, field2)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
