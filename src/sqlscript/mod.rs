@@ -42,6 +42,9 @@ mod lexer {
         SelectKw,
         FromKw,
         WhereKw,
+        InsertKw,
+        IntoKw,
+        ValuesKw,
     }
     #[derive(Clone)]
     pub enum TokenValue {
@@ -84,6 +87,9 @@ mod lexer {
         (Some(TokenKind::SelectKw), reg!(r"SELECT"), none_value),
         (Some(TokenKind::FromKw), reg!(r"FROM"), none_value),
         (Some(TokenKind::WhereKw), reg!(r"WHERE"), none_value),
+        (Some(TokenKind::InsertKw), reg!(r"INSERT"), none_value),
+        (Some(TokenKind::IntoKw), reg!(r"INTO"), none_value),
+        (Some(TokenKind::ValuesKw), reg!(r"VALUES"), none_value),
         // Comparison
         (Some(TokenKind::Gte), reg!(r">="), none_value),
         (Some(TokenKind::Gt), reg!(r">"), none_value),
@@ -208,7 +214,8 @@ pub mod parser {
     pub mod parsetree {
         use std::rc::Rc;
         pub enum Query {
-            Select(ExprList, String, Option<Script>) // SELECT _ FROM _ WHERE _ (where is optional)
+            Select(ExprList, String, Option<Script>), // SELECT _ FROM _ WHERE _ (where is optional)
+            Insert(String, Option<ExprList>, ExprList) // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
         }
         pub enum Script {
             ExprScript(Expr),
@@ -355,6 +362,39 @@ pub mod parser {
                     // Put everything together
                     parsetree::Query::Select(ilist, tableid, wherescript)
                 },
+                TokenKind::InsertKw => {
+                    // Expect and pop INTO
+                    self.pop_expect(TokenKind::IntoKw);
+                    // Parse table name
+                    let tableid = match self.value() {
+                        parsetree::Val::IdentVal(x) => x,
+                        _ => panic!("Parsing error")
+                    };
+                    // Get column ids
+                    let colids = match self.peek().kind {
+                        TokenKind::LParen => {
+                            // Pop lparen
+                            self.pop();
+                            // Parse identlist
+                            let ilist = self.identlist();
+                            // Expect and pop rparen
+                            self.pop_expect(TokenKind::RParen);
+                            // Return ilist 
+                            Some(ilist)
+                        },
+                        _ => None
+                    };
+                    // Expect and pop VALUES
+                    self.pop_expect(TokenKind::ValuesKw);
+                    // Expect and pop LPAREN
+                    self.pop_expect(TokenKind::LParen);
+                    // Parse values list
+                    let vlist = self.exprlist();
+                    // Expect and pop RPAREN
+                    self.pop_expect(TokenKind::RParen);
+                    // Return
+                    parsetree::Query::Insert(tableid, colids, vlist)
+                }
                 _ => panic!("Parsing error")
             }
         }
