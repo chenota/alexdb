@@ -1415,4 +1415,116 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_query_select_1() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT field1, field2 FROM tablename".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(_, _, _) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_query_select_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT field2 FROM tablename WHERE field1 > 100".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(_, _, _) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_query_insert_1() -> Result<(), String> {
+        // Setup
+        let test_input: String = "INSERT INTO table VALUES (1,1+1,3)".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Insert(_, _, _) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_query_insert_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "INSERT INTO table (field1, field2, field3) VALUES (1,2,3)".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Insert(_, _, _) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_query_selectagg() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT AGGREGATE ag1 FROM table".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::SelectAggregate(_, _,) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_query_regfun() -> Result<(), String> {
+        // Setup
+        let test_input: String = "REGISTER FUNCTION max USING fun x, y -> if x > y then x else y".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::RegisterFunction(_, _,) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_query_regaggregate() -> Result<(), String> {
+        // Setup
+        let test_input: String = "REGISTER AGGREGATE max USING fun field1, field1new -> max(field1, field1new)".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::RegisterAggregate(_, _, _) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_query_regcol() -> Result<(), String> {
+        // Setup
+        let test_input: String = "REGISTER COLUMN awesome USING max(field1, field2)".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::RegisterAggregate(_, _, _) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
