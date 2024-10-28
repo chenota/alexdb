@@ -38,6 +38,10 @@ mod lexer {
         RParen,
         LCBracket,
         RCBracket,
+        // SQL keywords
+        SelectKw,
+        FromKw,
+        WhereKw,
     }
     #[derive(Clone)]
     pub enum TokenValue {
@@ -76,6 +80,10 @@ mod lexer {
         (Some(TokenKind::IfKw), reg!(r"if"), none_value),
         (Some(TokenKind::ThenKw), reg!(r"then"), none_value),
         (Some(TokenKind::ElseKw), reg!(r"else"), none_value),
+        // SQL keywords
+        (Some(TokenKind::SelectKw), reg!(r"SELECT"), none_value),
+        (Some(TokenKind::FromKw), reg!(r"FROM"), none_value),
+        (Some(TokenKind::WhereKw), reg!(r"WHERE"), none_value),
         // Comparison
         (Some(TokenKind::Gte), reg!(r">="), none_value),
         (Some(TokenKind::Gt), reg!(r">"), none_value),
@@ -199,6 +207,9 @@ pub mod parser {
     use std::rc::Rc;
     pub mod parsetree {
         use std::rc::Rc;
+        pub enum Query {
+            Select(ExprList, String, Option<Script>) // SELECT _ FROM _ WHERE _ (where is optional)
+        }
         pub enum Script {
             ExprScript(Expr),
             StmtScript(String, Expr, Rc<Script>) // ident = expr; ...
@@ -309,6 +320,44 @@ pub mod parser {
             // Call start symbol (script for now, will eventually be query)
             self.script()
         }
+        // Parsing entry point
+        pub fn parse(&mut self) -> parsetree::Query {
+            // Reset lexer
+            self.lexer.reset();
+            // Produce first token
+            self.token = self.lexer.produce();
+            // Call start symbol (script for now, will eventually be query)
+            self.query()
+        }
+        fn query(&mut self) -> parsetree::Query {
+            // Match on first item
+            match self.pop().kind {
+                TokenKind::SelectKw => {
+                    // Parse identlist
+                    let ilist = self.identlist();
+                    // Expect and pop FROM keyword
+                    self.pop_expect(TokenKind::FromKw);
+                    // Parse single ident
+                    let tableid = match self.value() {
+                        parsetree::Val::IdentVal(x) => x,
+                        _ => panic!("Parsing error")
+                    };
+                    // Check if where clause
+                    let wherescript = match self.peek().kind {
+                        TokenKind::WhereKw => {
+                            // Pop where keyword
+                            self.pop();
+                            // Parse script
+                            Some(self.script())
+                        },
+                        _ => None
+                    };
+                    // Put everything together
+                    parsetree::Query::Select(ilist, tableid, wherescript)
+                },
+                _ => panic!("Parsing error")
+            }
+        }
         // Parsing functions
         fn script(&mut self) -> parsetree::Script {
             match self.peek_ahead().kind {
@@ -371,7 +420,7 @@ pub mod parser {
                     // Get parameter list
                     let paramlist = match self.peek().kind {
                         TokenKind::Arrow => None,
-                        _ => Some(self.exprlist())
+                        _ => Some(self.identlist())
                     };
                     // Expect arrow, pop it
                     self.pop_expect(TokenKind::Arrow);
@@ -457,6 +506,25 @@ pub mod parser {
                     parsetree::ExprList::MultiList(Rc::new(expr), Rc::new(self.exprlist()))
                 },
                 _ => parsetree::ExprList::SingleList(Rc::new(expr))
+            }
+        }
+        fn identlist(&mut self) -> parsetree::ExprList {
+            // Parse value
+            let val = self.value();
+            // Make sure val is ident
+            match val {
+                parsetree::Val::IdentVal(_) => (),
+                _ => panic!("Parsing error")
+            }
+            // Check if comma
+            match self.peek().kind {
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Parse next expr
+                    parsetree::ExprList::MultiList(Rc::new(parsetree::Expr::ValExpr(val)), Rc::new(self.exprlist()))
+                },
+                _ => parsetree::ExprList::SingleList(Rc::new(parsetree::Expr::ValExpr(val)))
             }
         }
     }
