@@ -719,6 +719,36 @@ mod lexer_tests {
         Ok(())
     }
     #[test]
+    fn produce_ident_value_underscore() -> Result<(), String> {
+        // Setup
+        let test_input: String = "field_two".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is identifier type
+        assert_eq!(next_token.kind, lexer::TokenKind::Identifier);
+        // Assert token is correct type with correct value
+        match next_token.value {
+            lexer::TokenValue::String(x) => assert_eq!(x, "field_two"),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn produce_ident_value_number() -> Result<(), String> {
+        // Setup
+        let test_input: String = "field2".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token is identifier type
+        assert_eq!(next_token.kind, lexer::TokenKind::Identifier);
+        // Assert token is correct type with correct value
+        match next_token.value {
+            lexer::TokenValue::String(x) => assert_eq!(x, "field2"),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
     fn produce_string_value() -> Result<(), String> {
         // Setup
         let test_input: String = "'I love cats!'".to_string();
