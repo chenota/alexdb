@@ -47,7 +47,12 @@ pub mod lexer {
         ValuesKw,
         AggregateKw,
         ColumnKw,
-        ConstKw
+        ConstKw,
+        // Type keywords
+        IntKw,
+        FloatKw,
+        StrKw,
+        BoolKw
     }
     #[derive(Clone)]
     pub enum TokenValue {
@@ -55,7 +60,8 @@ pub mod lexer {
         Float(f64),
         String(String),
         Integer(i64),
-        Boolean(bool)
+        Boolean(bool),
+        Type(ColType)
     }
     #[derive(Clone)]
     pub struct Token {
@@ -63,6 +69,13 @@ pub mod lexer {
         pub value: TokenValue,
         pub start: usize,
         pub end: usize
+    }
+    #[derive(Clone)]
+    pub enum ColType {
+        Integer,
+        Float,
+        String,
+        Boolean
     }
     // Add carrot to start
     macro_rules! reg{
@@ -77,6 +90,10 @@ pub mod lexer {
     fn ident_value(s: &str) -> TokenValue { TokenValue::String(s.to_string()) }
     fn bool_value(s: &str) -> TokenValue { TokenValue::Boolean(s == "true") }
     fn string_value(s: &str) -> TokenValue { TokenValue::String(s[1..(s.len()-1)].to_string()) } // Remove leading and trailing quotes
+    fn int_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Integer) }
+    fn float_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Float) }
+    fn str_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::String) }
+    fn bool_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Boolean) }
     // Associates a kind of token with a regular expression that matches it, a function to derive a value.
     // If token kind is none, won't generate a token
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
@@ -96,6 +113,11 @@ pub mod lexer {
         (Some(TokenKind::AggregateKw), reg!(r"AGGREGATE"), none_value),
         (Some(TokenKind::ColumnKw), reg!(r"COLUMN"), none_value),
         (Some(TokenKind::ConstKw), reg!(r"CONST"), none_value),
+        // Type keywords
+        (Some(TokenKind::IntKw), reg!(r"int"), int_type_value),
+        (Some(TokenKind::FloatKw), reg!(r"float"), float_type_value),
+        (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),
+        (Some(TokenKind::BoolKw), reg!(r"bool"), bool_type_value),
         // Comparison
         (Some(TokenKind::Gte), reg!(r">="), none_value),
         (Some(TokenKind::Gt), reg!(r">"), none_value),
@@ -217,7 +239,6 @@ pub mod lexer {
 #[cfg(test)]
 mod lexer_tests {
     use super::*;
-
     #[test]
     fn produce_first() -> Result<(), String> {
         // Setup
