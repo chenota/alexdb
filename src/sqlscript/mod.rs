@@ -46,10 +46,8 @@ mod lexer {
         IntoKw,
         ValuesKw,
         AggregateKw,
-        RegisterKw,
         ColumnKw,
-        FunctionKw,
-        UsingKw,
+        ConstKw
     }
     #[derive(Clone)]
     pub enum TokenValue {
@@ -96,10 +94,8 @@ mod lexer {
         (Some(TokenKind::IntoKw), reg!(r"INTO"), none_value),
         (Some(TokenKind::ValuesKw), reg!(r"VALUES"), none_value),
         (Some(TokenKind::AggregateKw), reg!(r"AGGREGATE"), none_value),
-        (Some(TokenKind::RegisterKw), reg!(r"REGISTER"), none_value),
         (Some(TokenKind::ColumnKw), reg!(r"COLUMN"), none_value),
-        (Some(TokenKind::FunctionKw), reg!(r"FUNCTION"), none_value),
-        (Some(TokenKind::UsingKw), reg!(r"USING"), none_value),
+        (Some(TokenKind::ConstKw), reg!(r"CONST"), none_value),
         // Comparison
         (Some(TokenKind::Gte), reg!(r">="), none_value),
         (Some(TokenKind::Gt), reg!(r">"), none_value),
@@ -224,12 +220,12 @@ pub mod parser {
     pub mod parsetree {
         use std::rc::Rc;
         pub enum Query {
-            Select(IdentList, String, Option<Script>), // SELECT _ FROM _ WHERE _ (where is optional)
+            Select(IdentList, String, Option<Expr>), // SELECT _ FROM _ WHERE _ (where is optional)
             Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
             SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
-            RegisterFunction(String, Script), // REGISTER FUNCTION <name> USING <function>
-            RegisterAggregate(String, String, Script), // REGISTER AGGREGATE <name> USING <function> INTO <table>
-            RegisterColumn(String, String, Script), // REGISTER COLUMN <name> USING INTO <table> <function> 
+            Const(String, Expr), // CONST <name> = <value>
+            Aggregate(String, Expr, String), // AGGREGATE <name> = <value> INTO <table>
+            Column(String, Expr, String), // COLUMN <name> = <value> INTO <table>
         }
         pub enum Script {
             ExprScript(Expr),
@@ -385,7 +381,7 @@ pub mod parser {
                                     // Pop where keyword
                                     self.pop();
                                     // Parse script
-                                    Some(self.script())
+                                    Some(self.expr())
                                 },
                                 _ => None
                             };
@@ -424,49 +420,31 @@ pub mod parser {
                     // Return
                     parsetree::Query::Insert(tableid, colids, vlist)
                 },
-                TokenKind::RegisterKw => {
-                    // Check which kind of register
-                    match self.pop().kind {
-                        TokenKind::FunctionKw => {
-                            // Get function name
-                            let fname = self.ident();
-                            // Expect and pop USING
-                            self.pop_expect(TokenKind::UsingKw);
-                            // Parse script
-                            let scr = self.script();
-                            // Put together
-                            parsetree::Query::RegisterFunction(fname, scr)
-                        },
-                        TokenKind::AggregateKw => {
-                            // Get aggregate name
-                            let aname = self.ident();
-                            // Expect and pop INTO
-                            self.pop_expect(TokenKind::IntoKw);
-                            // Parse table name
-                            let tname = self.ident();
-                            // Expect and pop USING
-                            self.pop_expect(TokenKind::UsingKw);
-                            // Parse script
-                            let src = self.script();
-                            // Put together
-                            parsetree::Query::RegisterAggregate(aname, tname, src)
-                        },
-                        TokenKind::ColumnKw => {
-                            // Get column name
-                            let cname = self.ident();
-                            // Expect and pop INTO
-                            self.pop_expect(TokenKind::IntoKw);
-                            // Parse table name
-                            let tname = self.ident();
-                            // Expect and pop USING
-                            self.pop_expect(TokenKind::UsingKw);
-                            // Parse script
-                            let src = self.script();
-                            // Put together
-                            parsetree::Query::RegisterAggregate(cname, tname, src)
-                        },
-                        _ => panic!("Parsing error")
-                    }
+                TokenKind::ConstKw => {
+                    // Parse single assignment
+                    let assign = self.singleassign();
+                    // Put together
+                    parsetree::Query::Const(assign.0, assign.1)
+                },
+                TokenKind::AggregateKw => {
+                    // Parse single equals
+                    let assign = self.singleassign();
+                    // Expect and pop INTO
+                    self.pop_expect(TokenKind::IntoKw);
+                    // Parse table name
+                    let tname = self.ident();
+                    // Put together
+                    parsetree::Query::Aggregate(assign.0, assign.1, tname)
+                },
+                TokenKind::ColumnKw => {
+                    // Parse single assign
+                    let assign = self.singleassign();
+                    // Expect and pop INTO
+                    self.pop_expect(TokenKind::IntoKw);
+                    // Parse table name
+                    let tname = self.ident();
+                    // Put together
+                    parsetree::Query::Column(assign.0, assign.1, tname)
                 },
                 _ => panic!("Parsing error")
             }
@@ -643,6 +621,16 @@ pub mod parser {
                 parsetree::Val::IdentVal(x) => x,
                 _ => panic!("Parsing error")
             }
+        }
+        fn singleassign(&mut self) -> (String, parsetree::Expr) {
+            // Parse ident
+            let id = self.ident();
+            // Expect and pop = sign
+            self.pop_expect(TokenKind::AssignKw);
+            // Parse expr
+            let expr = self.expr();
+            // Put together
+            (id, expr)
         }
     }
 }
@@ -1486,43 +1474,43 @@ mod parser_tests {
         Ok(())
     }
     #[test]
-    fn parser_query_regfun() -> Result<(), String> {
+    fn parser_query_const() -> Result<(), String> {
         // Setup
-        let test_input: String = "REGISTER FUNCTION max USING fun x, y -> if x > y then x else y".to_string();
+        let test_input: String = "CONST max = fun x, y -> if x > y then x else y".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::RegisterFunction(_, _,) => assert!(true),
+            parsetree::Query::Const(_, _,) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
     }
     #[test]
-    fn parser_query_regaggregate() -> Result<(), String> {
+    fn parser_query_aggregate() -> Result<(), String> {
         // Setup
-        let test_input: String = "REGISTER AGGREGATE max INTO table USING fun field1, field1new -> max(field1, field1new)".to_string();
+        let test_input: String = "AGGREGATE maxval = max(field1, current) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::RegisterAggregate(_, _, _) => assert!(true),
+            parsetree::Query::Aggregate(_, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
     }
     #[test]
-    fn parser_query_regcol() -> Result<(), String> {
+    fn parser_query_col() -> Result<(), String> {
         // Setup
-        let test_input: String = "REGISTER COLUMN awesome INTO table USING max(field1, field2)".to_string();
+        let test_input: String = "COLUMN awesome = max(field1, field2) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::RegisterAggregate(_, _, _) => assert!(true),
+            parsetree::Query::Column(_, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
