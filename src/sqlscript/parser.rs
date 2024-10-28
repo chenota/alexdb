@@ -123,7 +123,7 @@ pub mod parser {
             // Produce first token
             self.token = self.lexer.produce();
             // Call start symbol (script for now, will eventually be query)
-            self.script()
+            self.block()
         }
         // Parsing entry point
         pub fn parse(&mut self) -> parsetree::Query {
@@ -234,7 +234,7 @@ pub mod parser {
             }
         }
         // Parsing functions
-        fn script(&mut self) -> parsetree::Block {
+        fn block(&mut self) -> parsetree::Block {
             match self.peek_ahead().kind {
                 // If 2nd token is an assignment, parse as statement
                 TokenKind::AssignKw => {
@@ -252,7 +252,7 @@ pub mod parser {
                     // Expect semicolon, pop it
                     self.pop_expect(TokenKind::SemiKw);
                     // Return constructed statement
-                    parsetree::Block::StmtBlock(ident_val, expr, Rc::new(self.script()))
+                    parsetree::Block::StmtBlock(ident_val, expr, Rc::new(self.block()))
                 }
                 // Parse as expression
                 _ => parsetree::Block::ExprBlock(self.expr())
@@ -275,7 +275,7 @@ pub mod parser {
                     // Pop curly bracket
                     self.pop();
                     // Parse script
-                    let script = self.script();
+                    let script = self.block();
                     // Expect right curly bracket, pop it
                     self.pop_expect(TokenKind::RCBracket);
                     // Return parsed expression
