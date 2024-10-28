@@ -216,8 +216,8 @@ pub mod parser {
     pub mod parsetree {
         use std::rc::Rc;
         pub enum Query {
-            Select(ExprList, String, Option<Script>), // SELECT _ FROM _ WHERE _ (where is optional)
-            Insert(String, Option<ExprList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
+            Select(IdentList, String, Option<Script>), // SELECT _ FROM _ WHERE _ (where is optional)
+            Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
             SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
         }
         pub enum Script {
@@ -230,7 +230,7 @@ pub mod parser {
             ScriptExpr(Rc<Script>),
             ValExpr(Val),
             CallExpr(Rc<Expr>, Option<ExprList>),
-            FunExpr(Option<ExprList>, Rc<Expr>),
+            FunExpr(Option<IdentList>, Rc<Expr>),
             CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
         }
         pub enum Val {
@@ -243,6 +243,10 @@ pub mod parser {
         pub enum ExprList {
             MultiList(Rc<Expr>, Rc<ExprList>),
             SingleList(Rc<Expr>)
+        }
+        pub enum IdentList {
+            MultiList(String, Rc<IdentList>),
+            SingleList(String)
         }
         #[derive(PartialEq, Debug)]
         pub enum BopType {
@@ -562,23 +566,18 @@ pub mod parser {
                 _ => parsetree::ExprList::SingleList(Rc::new(expr))
             }
         }
-        fn identlist(&mut self) -> parsetree::ExprList {
+        fn identlist(&mut self) -> parsetree::IdentList {
             // Parse value
-            let val = self.value();
-            // Make sure val is ident
-            match val {
-                parsetree::Val::IdentVal(_) => (),
-                _ => panic!("Parsing error")
-            }
+            let val = self.ident();
             // Check if comma
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
                     self.pop();
                     // Parse next expr
-                    parsetree::ExprList::MultiList(Rc::new(parsetree::Expr::ValExpr(val)), Rc::new(self.exprlist()))
+                    parsetree::IdentList::MultiList(val, Rc::new(self.identlist()))
                 },
-                _ => parsetree::ExprList::SingleList(Rc::new(parsetree::Expr::ValExpr(val)))
+                _ => parsetree::IdentList::SingleList(val)
             }
         }
         fn ident(&mut self) -> String {
@@ -1230,7 +1229,7 @@ mod parser_tests {
                         match params {
                             Some(elist) => {
                                 match elist {
-                                    parsetree::ExprList::SingleList(_) => assert!(true),
+                                    parsetree::IdentList::SingleList(_) => assert!(true),
                                     _ => assert!(false)
                                 }
                             },
@@ -1264,7 +1263,7 @@ mod parser_tests {
                         match params {
                             Some(elist) => {
                                 match elist {
-                                    parsetree::ExprList::MultiList(_,_) => assert!(true),
+                                    parsetree::IdentList::MultiList(_,_) => assert!(true),
                                     _ => assert!(false)
                                 }
                             },
@@ -1298,7 +1297,7 @@ mod parser_tests {
                         match params {
                             Some(elist) => {
                                 match elist {
-                                    parsetree::ExprList::SingleList(_) => assert!(true),
+                                    parsetree::IdentList::SingleList(_) => assert!(true),
                                     _ => assert!(false)
                                 }
                             },
