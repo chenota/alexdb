@@ -11,14 +11,14 @@ pub mod parser {
             Aggregate(String, Expr, String), // AGGREGATE <name> = <value> INTO <table>
             Column(String, Expr, String), // COLUMN <name> = <value> INTO <table>
         }
-        pub enum Script {
-            ExprScript(Expr),
-            StmtScript(String, Expr, Rc<Script>) // ident = expr; ...
+        pub enum Block {
+            ExprBlock(Expr),
+            StmtBlock(String, Expr, Rc<Block>) // ident = expr; ...
         }
         pub enum Expr {
             BopExpr(Rc<Expr>, BopType, Rc<Expr>),
             UopExpr(UopType, Rc<Expr>),
-            ScriptExpr(Rc<Script>),
+            ScriptExpr(Rc<Block>),
             ValExpr(Val),
             CallExpr(Rc<Expr>, Option<ExprList>),
             FunExpr(Option<IdentList>, Rc<Expr>),
@@ -117,7 +117,7 @@ pub mod parser {
             old_token
         }
         // Parsing entry point
-        pub fn parse_script(&mut self) -> parsetree::Script {
+        pub fn parse_script(&mut self) -> parsetree::Block {
             // Reset lexer
             self.lexer.reset();
             // Produce first token
@@ -234,7 +234,7 @@ pub mod parser {
             }
         }
         // Parsing functions
-        fn script(&mut self) -> parsetree::Script {
+        fn script(&mut self) -> parsetree::Block {
             match self.peek_ahead().kind {
                 // If 2nd token is an assignment, parse as statement
                 TokenKind::AssignKw => {
@@ -252,10 +252,10 @@ pub mod parser {
                     // Expect semicolon, pop it
                     self.pop_expect(TokenKind::SemiKw);
                     // Return constructed statement
-                    parsetree::Script::StmtScript(ident_val, expr, Rc::new(self.script()))
+                    parsetree::Block::StmtBlock(ident_val, expr, Rc::new(self.script()))
                 }
                 // Parse as expression
-                _ => parsetree::Script::ExprScript(self.expr())
+                _ => parsetree::Block::ExprBlock(self.expr())
             }
         }
         fn expr(&mut self) -> parsetree::Expr {
@@ -431,7 +431,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 match e1 {
                     // Should be val expr
                     parsetree::Expr::ValExpr(v) => {
@@ -457,7 +457,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 match e1 {
                     // Should be bop expr
                     parsetree::Expr::BopExpr(v, t, _) => {
@@ -490,7 +490,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 match e1 {
                     // Should be bop expr
                     parsetree::Expr::BopExpr(_, t, v) => {
@@ -523,7 +523,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 match e1 {
                     // Should be val expr
                     parsetree::Expr::ValExpr(v) => {
@@ -549,7 +549,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Script::StmtScript(id, e1, sc) => {
+            parsetree::Block::StmtBlock(id, e1, sc) => {
                 // Make sure ID is x
                 assert_eq!(id, "x");
                 // Check e1
@@ -565,7 +565,7 @@ mod parser_tests {
                 }
                 // Check type of proceeding script
                 match sc.as_ref() {
-                    parsetree::Script::ExprScript(_) => assert!(true),
+                    parsetree::Block::ExprBlock(_) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -582,12 +582,12 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Script::StmtScript(id, _, sc) => {
+            parsetree::Block::StmtBlock(id, _, sc) => {
                 // Make sure ID is x
                 assert_eq!(id, "x");
                 // Check type of proceeding script
                 match sc.as_ref() {
-                    parsetree::Script::ExprScript(_) => assert!(true),
+                    parsetree::Block::ExprBlock(_) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -604,12 +604,12 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Script::StmtScript(_, _, sc1) => {
+            parsetree::Block::StmtBlock(_, _, sc1) => {
                 // Check type of proceeding script
                 match sc1.as_ref() {
-                    parsetree::Script::StmtScript(_, _, sc2) => {
+                    parsetree::Block::StmtBlock(_, _, sc2) => {
                         match sc2.as_ref() {
-                            parsetree::Script::ExprScript(_) => assert!(true),
+                            parsetree::Block::ExprBlock(_) => assert!(true),
                             _ => assert!(false)
                         }
                     }
@@ -629,7 +629,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1 {
                     parsetree::Expr::BopExpr(e11, _, _) => {
@@ -654,7 +654,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Script::StmtScript(_, e1, _) => {
+            parsetree::Block::StmtBlock(_, e1, _) => {
                 // Check type of proceeding script
                 match e1 {
                     parsetree::Expr::ScriptExpr(_) => assert!(true),
@@ -674,7 +674,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1 {
                     parsetree::Expr::UopExpr(t, e2) => {
@@ -700,7 +700,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1 {
                     parsetree::Expr::BopExpr(_, _, e2) => {
@@ -725,7 +725,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1 {
                     parsetree::Expr::CallExpr(e1, args) => {
@@ -754,7 +754,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1 {
                     parsetree::Expr::BopExpr(e2, _, _) => {
@@ -788,7 +788,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::BopExpr(_, _, _) => assert!(true),
@@ -808,7 +808,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::CallExpr(_, args) => {
@@ -833,7 +833,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::CallExpr(_, args) => {
@@ -858,7 +858,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::FunExpr(params, body) => {
@@ -887,7 +887,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::FunExpr(params, body) => {
@@ -921,7 +921,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::FunExpr(params, body) => {
@@ -955,7 +955,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::StmtScript(_, e1, _) => {
+            parsetree::Block::StmtBlock(_, e1, _) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::FunExpr(params, body) => {
@@ -989,7 +989,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::ExprScript(e1) => {
+            parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::CondExpr(_, _, _) => assert!(true),
@@ -1009,7 +1009,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Script::StmtScript(_, e1, _) => {
+            parsetree::Block::StmtBlock(_, e1, _) => {
                 // Check type of expr
                 match e1 {
                     parsetree::Expr::FunExpr(_, body) => {
