@@ -1180,4 +1180,18 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_query_create() -> Result<(), String> {
+        // Setup
+        let test_input: String = "CREATE TABLE people (age int, name str, height float)".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::CreateTable(name, _) => assert_eq!(name, "people"),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
