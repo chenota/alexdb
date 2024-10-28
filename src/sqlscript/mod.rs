@@ -124,7 +124,7 @@ mod lexer {
         // Values
         (Some(TokenKind::Integer), reg!(r"[0-9]+"), int_value),
         (Some(TokenKind::Float), reg!(r"[0-9]+\.[0-9]+"), float_value),
-        (Some(TokenKind::Identifier), reg!(r"[a-zA-Z][a-zA-Z0-9]*"), ident_value),
+        (Some(TokenKind::Identifier), reg!(r"[a-zA-Z]([a-zA-Z0-9]|_)*"), ident_value),
         (Some(TokenKind::String), reg!(r"'[^']*'"), string_value),
         // Whitespace
         (None, reg!(r"[ \t]+"), none_value),
