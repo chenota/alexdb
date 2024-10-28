@@ -363,10 +363,7 @@ pub mod parser {
                             // Expect and pop FROM keyword
                             self.pop_expect(TokenKind::FromKw);
                             // Parse single ident
-                            let tableid = match self.value() {
-                                parsetree::Val::IdentVal(x) => x,
-                                _ => panic!("Parsing error")
-                            };
+                            let tableid = self.ident();
                             // Check if where clause
                             let wherescript = match self.peek().kind {
                                 TokenKind::WhereKw => {
@@ -386,10 +383,7 @@ pub mod parser {
                     // Expect and pop INTO
                     self.pop_expect(TokenKind::IntoKw);
                     // Parse table name
-                    let tableid = match self.value() {
-                        parsetree::Val::IdentVal(x) => x,
-                        _ => panic!("Parsing error")
-                    };
+                    let tableid = self.ident();
                     // Get column ids
                     let colids = match self.peek().kind {
                         TokenKind::LParen => {
