@@ -45,6 +45,7 @@ mod lexer {
         InsertKw,
         IntoKw,
         ValuesKw,
+        AggregateKw,
     }
     #[derive(Clone)]
     pub enum TokenValue {
@@ -90,6 +91,7 @@ mod lexer {
         (Some(TokenKind::InsertKw), reg!(r"INSERT"), none_value),
         (Some(TokenKind::IntoKw), reg!(r"INTO"), none_value),
         (Some(TokenKind::ValuesKw), reg!(r"VALUES"), none_value),
+        (Some(TokenKind::AggregateKw), reg!(r"AGGREGATE"), none_value),
         // Comparison
         (Some(TokenKind::Gte), reg!(r">="), none_value),
         (Some(TokenKind::Gt), reg!(r">"), none_value),
@@ -215,7 +217,8 @@ pub mod parser {
         use std::rc::Rc;
         pub enum Query {
             Select(ExprList, String, Option<Script>), // SELECT _ FROM _ WHERE _ (where is optional)
-            Insert(String, Option<ExprList>, ExprList) // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
+            Insert(String, Option<ExprList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
+            SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
         }
         pub enum Script {
             ExprScript(Expr),
@@ -340,27 +343,44 @@ pub mod parser {
             // Match on first item
             match self.pop().kind {
                 TokenKind::SelectKw => {
-                    // Parse identlist
-                    let ilist = self.identlist();
-                    // Expect and pop FROM keyword
-                    self.pop_expect(TokenKind::FromKw);
-                    // Parse single ident
-                    let tableid = match self.value() {
-                        parsetree::Val::IdentVal(x) => x,
-                        _ => panic!("Parsing error")
-                    };
-                    // Check if where clause
-                    let wherescript = match self.peek().kind {
-                        TokenKind::WhereKw => {
-                            // Pop where keyword
+                    // Check if select aggregate or regular select
+                    match self.peek().kind {
+                        TokenKind::AggregateKw => {
+                            // Pop aggregate keyword
                             self.pop();
-                            // Parse script
-                            Some(self.script())
+                            // Parse single ident
+                            let agid = self.ident();
+                            // Expect and pop FROM keyword
+                            self.pop_expect(TokenKind::FromKw);
+                            // Parse table id
+                            let tabid = self.ident();
+                            // Put it together
+                            parsetree::Query::SelectAggregate(agid, tabid)
                         },
-                        _ => None
-                    };
-                    // Put everything together
-                    parsetree::Query::Select(ilist, tableid, wherescript)
+                        _ => {
+                            // Parse identlist
+                            let ilist = self.identlist();
+                            // Expect and pop FROM keyword
+                            self.pop_expect(TokenKind::FromKw);
+                            // Parse single ident
+                            let tableid = match self.value() {
+                                parsetree::Val::IdentVal(x) => x,
+                                _ => panic!("Parsing error")
+                            };
+                            // Check if where clause
+                            let wherescript = match self.peek().kind {
+                                TokenKind::WhereKw => {
+                                    // Pop where keyword
+                                    self.pop();
+                                    // Parse script
+                                    Some(self.script())
+                                },
+                                _ => None
+                            };
+                            // Put everything together
+                            parsetree::Query::Select(ilist, tableid, wherescript)
+                        }
+                    }
                 },
                 TokenKind::InsertKw => {
                     // Expect and pop INTO
@@ -565,6 +585,15 @@ pub mod parser {
                     parsetree::ExprList::MultiList(Rc::new(parsetree::Expr::ValExpr(val)), Rc::new(self.exprlist()))
                 },
                 _ => parsetree::ExprList::SingleList(Rc::new(parsetree::Expr::ValExpr(val)))
+            }
+        }
+        fn ident(&mut self) -> String {
+            // Parse value
+            let val = self.value();
+            // Extract string from ident
+            match val {
+                parsetree::Val::IdentVal(x) => x,
+                _ => panic!("Parsing error")
             }
         }
     }
