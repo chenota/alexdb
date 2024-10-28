@@ -3,6 +3,7 @@ pub mod parser {
     use std::rc::Rc;
     pub mod parsetree {
         use std::rc::Rc;
+        use super::super::super::lexer::lexer::ColType;
         pub enum Query {
             Select(IdentList, String, Option<Expr>), // SELECT _ FROM _ WHERE _ (where is optional)
             Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
@@ -10,6 +11,7 @@ pub mod parser {
             Const(String, Expr), // CONST <name> = <value>
             Aggregate(String, Expr, String), // AGGREGATE <name> = <value> INTO <table>
             Column(String, Expr, String), // COLUMN <name> = <value> INTO <table>
+            CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1, col2type2, ...)
         }
         pub enum Expr {
             BopExpr(Rc<Expr>, BopType, Rc<Expr>),
@@ -50,6 +52,10 @@ pub mod parser {
             LtBop,
             LteBop,
             EqBop
+        }
+        pub enum ColList {
+            MultiList(String, ColType, Rc<ColList>),
+            SingleList(String, ColType),
         }
         #[derive(PartialEq, Debug)]
         pub enum UopType {
@@ -229,6 +235,20 @@ pub mod parser {
                     let tname = self.ident();
                     // Put together
                     parsetree::Query::Column(assign.0, assign.1, tname)
+                },
+                TokenKind::CreateKw => {
+                    // Pop and expect table kw
+                    self.pop_expect(TokenKind::TableKw);
+                    // Read table name
+                    let tname = self.ident();
+                    // Expect and pop paren
+                    self.pop_expect(TokenKind::LParen);
+                    // Parse column list
+                    let clist = self.collist();
+                    // Expect and pop rparen
+                    self.pop_expect(TokenKind::RParen);
+                    // Return
+                    parsetree::Query::CreateTable(tname, clist)
                 },
                 _ => panic!("Parsing error")
             }
@@ -415,6 +435,29 @@ pub mod parser {
             let expr = self.expr();
             // Put together
             (id, expr)
+        }
+        fn collist(&mut self) -> parsetree::ColList {
+            // Parse column name
+            let colname = self.ident();
+            // Parse type
+            let t = self.parsetype();
+            // Check if comma or not
+            match self.peek().kind {
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Parse next pair
+                    parsetree::ColList::MultiList(colname, t, Rc::new(self.collist()))
+                },
+                _ => parsetree::ColList::SingleList(colname, t)
+            }
+        }
+        fn parsetype(&mut self) -> ColType {
+            // Extract type from token
+            match self.pop().value {
+                TokenValue::Type(x) => x,
+                _ => panic!("Parsing error")
+            }
         }
     }
 }
