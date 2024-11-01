@@ -14,8 +14,13 @@ pub mod generic {
 pub mod intcolumn {
     use super::generic::*;
 
-    struct Uncompressed {
+    pub struct Uncompressed {
         data: Vec<u64>
+    }
+    impl Uncompressed {
+        pub fn new() -> Uncompressed {
+            Uncompressed { data: Vec::new() }
+        }
     }
     impl Column<u64> for Uncompressed {
         fn insert(&mut self, data: u64) -> () {
@@ -30,8 +35,13 @@ pub mod intcolumn {
 pub mod floatcolumn {
     use super::generic::*;
 
-    struct Uncompressed {
+    pub struct Uncompressed {
         data: Vec<f64>
+    }
+    impl Uncompressed {
+        pub fn new() -> Uncompressed {
+            Uncompressed { data: Vec::new() }
+        }
     }
     impl Column<f64> for Uncompressed {
         fn insert(&mut self, data: f64) -> () {
@@ -46,8 +56,13 @@ pub mod floatcolumn {
 pub mod boolcolumn {
     use super::generic::*;
 
-    struct Uncompressed {
+    pub struct Uncompressed {
         data: Vec<bool>
+    }
+    impl Uncompressed {
+        pub fn new() -> Uncompressed {
+            Uncompressed { data: Vec::new() }
+        }
     }
     impl Column<bool> for Uncompressed {
         fn insert(&mut self, data: bool) -> () {
@@ -62,8 +77,13 @@ pub mod boolcolumn {
 pub mod stringcolumn {
     use super::generic::*;
 
-    struct Uncompressed {
+    pub struct Uncompressed {
         data: Vec<String>
+    }
+    impl Uncompressed {
+        pub fn new() -> Uncompressed {
+            Uncompressed { data: Vec::new() }
+        }
     }
     impl Column<String> for Uncompressed {
         fn insert(&mut self, data: String) -> () {
