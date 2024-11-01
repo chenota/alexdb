@@ -4,7 +4,7 @@ pub mod generic {
         fn extract(&self) -> Vec<T>;
     }
     pub enum ColumnContainer {
-        IntColumn(Box<dyn Column<u64>>),
+        IntColumn(Box<dyn Column<i64>>),
         FloatColumn(Box<dyn Column<f64>>),
         BooleanColumn(Box<dyn Column<bool>>),
         StringColumn(Box<dyn Column<String>>)
@@ -15,18 +15,18 @@ pub mod intcolumn {
     use super::generic::*;
 
     pub struct Uncompressed {
-        data: Vec<u64>
+        data: Vec<i64>
     }
     impl Uncompressed {
         pub fn new() -> Uncompressed {
             Uncompressed { data: Vec::new() }
         }
     }
-    impl Column<u64> for Uncompressed {
-        fn insert(&mut self, data: u64) -> () {
+    impl Column<i64> for Uncompressed {
+        fn insert(&mut self, data: i64) -> () {
             self.data.push(data)
         }
-        fn extract(&self) -> Vec<u64> {
+        fn extract(&self) -> Vec<i64> {
             self.data.clone()
         }
     }
