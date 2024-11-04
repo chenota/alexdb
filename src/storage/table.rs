@@ -3,7 +3,7 @@ pub mod table {
     use super::super::column::generic::ColumnContainer;
     use crate::sqlscript::lexer::lexer;
 
-    struct Table {
+    pub struct Table {
         table: Vec<ColumnContainer>,
         headers: Vec<String>
     }
@@ -35,5 +35,21 @@ pub mod table {
             // Return column at index
             &self.table[idx]
         }
+    }
+}
+
+#[cfg(test)]
+mod table_tests {
+    use super::*;
+    use crate::sqlscript::lexer::lexer;
+    #[test]
+    fn test_bool_column() -> Result<(), String> {
+        // Setup
+        let mut test_table = table::Table::new();
+        let col_name = "Test1".to_string();
+        // Create new column
+        test_table.add_column(col_name, lexer::ColType::Boolean);
+        // Add some data
+        Ok(())
     }
 }
