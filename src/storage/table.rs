@@ -8,7 +8,13 @@ pub mod table {
         headers: Vec<String>
     }
     impl Table {
-        fn add_column(&mut self, name: String, coltype: lexer::ColType) -> () {
+        pub fn new() -> Table {
+            Table {
+                table: Vec::new(),
+                headers: Vec::new()
+            }
+        }
+        pub fn add_column(&mut self, name: String, coltype: lexer::ColType) -> () {
             // Check that column does not already exist
             if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
             // Add table name to headers
@@ -21,7 +27,7 @@ pub mod table {
                 lexer::ColType::String => self.table.push(ColumnContainer::StringColumn(Box::new(column::stringcolumn::Uncompressed::new())))
             }
         }
-        fn get_column(&self, name: String) -> &ColumnContainer {
+        pub fn get_column(&self, name: String) -> &ColumnContainer {
             // Check that column exists
             if !self.headers.contains(&name) { panic!("Invalid column name") }
             // Find column index
