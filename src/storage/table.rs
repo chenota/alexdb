@@ -2,7 +2,7 @@ pub mod table {
     use super::super::column;
     use super::super::column::generic::ColumnContainer;
     use crate::sqlscript::lexer::lexer;
-    
+
     struct Table {
         table: Vec<ColumnContainer>,
         headers: Vec<String>
@@ -20,6 +20,14 @@ pub mod table {
                 lexer::ColType::Integer => self.table.push(ColumnContainer::IntColumn(Box::new(column::intcolumn::Uncompressed::new()))),
                 lexer::ColType::String => self.table.push(ColumnContainer::StringColumn(Box::new(column::stringcolumn::Uncompressed::new())))
             }
+        }
+        fn get_column(&self, name: String) -> &ColumnContainer {
+            // Check that column exists
+            if !self.headers.contains(&name) { panic!("Invalid column name") }
+            // Find column index
+            let idx = self.headers.iter().position(|r| *r == name).unwrap();
+            // Return column at index
+            &self.table[idx]
         }
     }
 }
