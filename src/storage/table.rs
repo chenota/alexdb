@@ -21,10 +21,10 @@ pub mod table {
             self.headers.push(name);
             // Push uncompressed column to table
             match coltype {
-                lexer::ColType::Boolean => self.table.push(ColumnContainer::BooleanColumn(Box::new(column::boolcolumn::Uncompressed::new()))),
-                lexer::ColType::Float => self.table.push(ColumnContainer::FloatColumn(Box::new(column::floatcolumn::Uncompressed::new()))),
-                lexer::ColType::Integer => self.table.push(ColumnContainer::IntColumn(Box::new(column::intcolumn::Uncompressed::new()))),
-                lexer::ColType::String => self.table.push(ColumnContainer::StringColumn(Box::new(column::stringcolumn::Uncompressed::new())))
+                lexer::ColType::Boolean => self.table.push(ColumnContainer::BooleanColumn(Box::new(column::generic::Uncompressed::new()))),
+                lexer::ColType::Float => self.table.push(ColumnContainer::FloatColumn(Box::new(column::generic::Uncompressed::new()))),
+                lexer::ColType::Integer => self.table.push(ColumnContainer::IntColumn(Box::new(column::generic::Uncompressed::new()))),
+                lexer::ColType::String => self.table.push(ColumnContainer::StringColumn(Box::new(column::generic::Uncompressed::new())))
             }
         }
         pub fn get_column(&self, name: String) -> &ColumnContainer {
