@@ -25,4 +25,11 @@ pub mod generic {
         BooleanColumn(Box<dyn Column<bool>>),
         StringColumn(Box<dyn Column<String>>)
     }
+    #[derive(Clone)]
+    pub enum DataContainer {
+        Int(Option<i64>),
+        Float(Option<f64>),
+        Boolean(Option<bool>),
+        String(Option<String>)
+    }
 }

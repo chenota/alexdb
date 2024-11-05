@@ -1,17 +1,20 @@
 pub mod table {
     use super::super::column;
     use super::super::column::generic::ColumnContainer;
+    use super::super::column::generic::DataContainer;
     use crate::sqlscript::lexer::lexer;
 
     pub struct Table {
         table: Vec<ColumnContainer>,
-        headers: Vec<String>
+        headers: Vec<String>,
+        size: usize
     }
     impl Table {
         pub fn new() -> Table {
             Table {
                 table: Vec::new(),
-                headers: Vec::new()
+                headers: Vec::new(),
+                size: 0
             }
         }
         pub fn add_column(&mut self, name: String, coltype: lexer::ColType) -> () {
@@ -34,6 +37,39 @@ pub mod table {
             let idx = self.headers.iter().position(|r| *r == name).unwrap();
             // Return column at index
             &self.table[idx]
+        }
+        pub fn add_row(&mut self, data: Vec<column::generic::DataContainer>) {
+            // Check that vector has appropriate number of items
+            if data.len() != self.table.len() { panic!("Incorrect number of items") }
+            // Add item to each column
+            for i in 0..data.len() {
+                match self.table[i] {
+                    ColumnContainer::IntColumn(mut vec) => {
+                        match data[i] {
+                            DataContainer::Int(x) => vec.as_mut().insert(x),
+                            _ => panic!("Bad data type")
+                        }
+                    },
+                    ColumnContainer::FloatColumn(mut vec) => {
+                        match data[i] {
+                            DataContainer::Float(x) => vec.as_mut().insert(x),
+                            _ => panic!("Bad data type")
+                        }
+                    },
+                    ColumnContainer::BooleanColumn(mut vec) => {
+                        match data[i] {
+                            DataContainer::Boolean(x) => vec.as_mut().insert(x),
+                            _ => panic!("Bad data type")
+                        }
+                    },
+                    ColumnContainer::StringColumn(mut vec) => {
+                        match data[i].clone() {
+                            DataContainer::String(x) => vec.as_mut().insert(x),
+                            _ => panic!("Bad data type")
+                        }
+                    }
+                }
+            }
         }
     }
 }
