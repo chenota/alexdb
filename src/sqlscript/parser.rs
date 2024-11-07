@@ -1231,4 +1231,50 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_select_limit_1() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT * FROM table1 WHERE x > 10 LIMIT 10".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(_ , _, whr, lim) => {
+                match lim {
+                    Some(_) => assert!(true),
+                    _ => assert!(false)
+                };
+                match whr {
+                    Some(_) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_select_limit_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT * FROM table1 LIMIT 10".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(_ , _, whr, lim) => {
+                match lim {
+                    Some(_) => assert!(true),
+                    _ => assert!(false)
+                };
+                match whr {
+                    None => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
