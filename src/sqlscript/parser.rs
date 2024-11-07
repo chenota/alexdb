@@ -5,7 +5,7 @@ pub mod parser {
         use std::rc::Rc;
         use super::super::super::lexer::lexer::ColType;
         pub enum Query {
-            Select(IdentList, String, Option<Expr>), // SELECT _ FROM _ WHERE _ (where is optional)
+            Select(IdentList, String, Option<Expr>, Option<Expr>), // SELECT _ FROM _ WHERE _ LIMIT _ (where and limit are optional)
             Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
             SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
             Const(String, Expr), // CONST <name> = <value>
@@ -184,8 +184,17 @@ pub mod parser {
                                 },
                                 _ => None
                             };
+                            let limitscript = match self.peek().kind {
+                                TokenKind::LimitKw => {
+                                    // Pop limit keyword
+                                    self.pop();
+                                    // Parse script
+                                    Some(self.expr())
+                                },
+                                _ => None
+                            };
                             // Put everything together
-                            parsetree::Query::Select(ilist, tableid, wherescript)
+                            parsetree::Query::Select(ilist, tableid, wherescript, limitscript)
                         }
                     }
                 },
@@ -1086,7 +1095,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_, _, _) => assert!(true),
+            parsetree::Query::Select(_, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1100,7 +1109,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_, _, _) => assert!(true),
+            parsetree::Query::Select(_, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1212,7 +1221,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(ids, _, _) => {
+            parsetree::Query::Select(ids, _, _, _) => {
                 match ids {
                     parsetree::IdentList::All => assert!(true),
                     _ => assert!(false)
