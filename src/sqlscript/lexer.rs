@@ -27,6 +27,9 @@ pub mod lexer {
         SemiKw,
         // Comma,
         Comma,
+        // Values (keyword)
+        UndefinedKw,
+        NullKw,
         // Values
         Integer,
         Float,
@@ -124,6 +127,9 @@ pub mod lexer {
         (Some(TokenKind::FloatKw), reg!(r"float"), float_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),
         (Some(TokenKind::BoolKw), reg!(r"bool"), bool_type_value),
+        // Value keywords
+        (Some(TokenKind::UndefinedKw), reg!(r"undefined"), str_type_value),
+        (Some(TokenKind::NullKw), reg!(r"null"), bool_type_value),
         // Comparison
         (Some(TokenKind::Gte), reg!(r">="), none_value),
         (Some(TokenKind::Gt), reg!(r">"), none_value),

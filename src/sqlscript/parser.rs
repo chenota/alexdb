@@ -33,6 +33,8 @@ pub mod parser {
             StrVal(String),
             IdentVal(String),
             FloatVal(f64),
+            UndefVal,
+            NullVal
         }
         pub enum ExprList {
             MultiList(Rc<Expr>, Rc<ExprList>),
@@ -402,6 +404,14 @@ pub mod parser {
                     match token.kind {
                         TokenKind::String => parsetree::Val::StrVal(x),
                         TokenKind::Identifier => parsetree::Val::IdentVal(x),
+                        _ => panic!("Parsing error")
+                    }
+                },
+                // None could either be undefined or null
+                TokenValue::None => {
+                    match token.kind {
+                        TokenKind::UndefinedKw => parsetree::Val::UndefVal,
+                        TokenKind::NullKw => parsetree::Val::NullVal,
                         _ => panic!("Parsing error")
                     }
                 }
