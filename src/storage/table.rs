@@ -43,26 +43,26 @@ pub mod table {
             if data.len() != self.table.len() { panic!("Incorrect number of items") }
             // Add item to each column
             for i in 0..data.len() {
-                match self.table[i] {
-                    ColumnContainer::IntColumn(mut vec) => {
+                match &mut self.table[i] {
+                    ColumnContainer::IntColumn(vec) => {
                         match data[i] {
                             DataContainer::Int(x) => vec.as_mut().insert(x),
                             _ => panic!("Bad data type")
                         }
                     },
-                    ColumnContainer::FloatColumn(mut vec) => {
+                    ColumnContainer::FloatColumn(vec) => {
                         match data[i] {
                             DataContainer::Float(x) => vec.as_mut().insert(x),
                             _ => panic!("Bad data type")
                         }
                     },
-                    ColumnContainer::BooleanColumn(mut vec) => {
+                    ColumnContainer::BooleanColumn(vec) => {
                         match data[i] {
                             DataContainer::Boolean(x) => vec.as_mut().insert(x),
                             _ => panic!("Bad data type")
                         }
                     },
-                    ColumnContainer::StringColumn(mut vec) => {
+                    ColumnContainer::StringColumn(vec) => {
                         match data[i].clone() {
                             DataContainer::String(x) => vec.as_mut().insert(x),
                             _ => panic!("Bad data type")
