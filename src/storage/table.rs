@@ -106,6 +106,15 @@ mod table_tests {
             },
             _ => assert!(false)
         }
+        match test_table.get_column(&col_name2) {
+            ColumnContainer::BooleanColumn(x) => {
+                match x.as_ref().extract()[0] {
+                    None => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
         Ok(())
     }
 }
