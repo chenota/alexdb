@@ -162,7 +162,12 @@ pub mod parser {
                         _ => {
                             // Parse identlist
                             let ilist = match self.peek().kind {
-                                TokenKind::AllKw => parsetree::IdentList::All,
+                                TokenKind::AllKw => {
+                                    // Pop *
+                                    self.pop();
+                                    // Return identlist all
+                                    parsetree::IdentList::All
+                                },
                                 _ => self.identlist()
                             };
                             // Expect and pop FROM keyword
