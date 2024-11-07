@@ -33,8 +33,7 @@ pub mod lexer {
         UndefinedKw,
         NullKw,
         // Values
-        Integer,
-        Float,
+        Number,
         Identifier,
         Boolean,
         String,
@@ -57,17 +56,15 @@ pub mod lexer {
         TableKw,
         LimitKw,
         // Type keywords
-        IntKw,
-        FloatKw,
+        NumberKw,
         StrKw,
         BoolKw
     }
     #[derive(Clone)]
     pub enum TokenValue {
         None,
-        Float(f64),
+        Number(f64),
         String(String),
-        Integer(i64),
         Boolean(bool),
         Type(ColType)
     }
@@ -80,8 +77,7 @@ pub mod lexer {
     }
     #[derive(Clone)]
     pub enum ColType {
-        Integer,
-        Float,
+        Number,
         String,
         Boolean
     }
@@ -93,13 +89,11 @@ pub mod lexer {
     }
     // Value generation functions
     fn none_value(_: &str) -> TokenValue { TokenValue::None }
-    fn int_value(s: &str) -> TokenValue { TokenValue::Integer(s.parse::<i64>().unwrap()) }
-    fn float_value(s: &str) -> TokenValue { TokenValue::Float(s.parse::<f64>().unwrap()) }
+    fn number_value (s: &str) -> TokenValue { TokenValue::Number(s.parse::<f64>().unwrap()) }
     fn ident_value(s: &str) -> TokenValue { TokenValue::String(s.to_string()) }
     fn bool_value(s: &str) -> TokenValue { TokenValue::Boolean(s == "true") }
     fn string_value(s: &str) -> TokenValue { TokenValue::String(s[1..(s.len()-1)].to_string()) } // Remove leading and trailing quotes
-    fn int_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Integer) }
-    fn float_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Float) }
+    fn num_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Number) }
     fn str_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::String) }
     fn bool_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Boolean) }
     // Associates a kind of token with a regular expression that matches it, a function to derive a value.
@@ -125,8 +119,7 @@ pub mod lexer {
         (Some(TokenKind::TableKw), reg!(r"TABLE"), none_value),
         (Some(TokenKind::LimitKw), reg!(r"LIMIT"), none_value),
         // Type keywords
-        (Some(TokenKind::IntKw), reg!(r"int"), int_type_value),
-        (Some(TokenKind::FloatKw), reg!(r"float"), float_type_value),
+        (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),
         (Some(TokenKind::BoolKw), reg!(r"bool"), bool_type_value),
         // Value keywords
@@ -161,8 +154,8 @@ pub mod lexer {
         (Some(TokenKind::TimesKw), reg!(r"\*"), none_value),
         (Some(TokenKind::DivKw), reg!(r"/"), none_value),
         // Values
-        (Some(TokenKind::Integer), reg!(r"[0-9]+"), int_value),
-        (Some(TokenKind::Float), reg!(r"[0-9]+\.[0-9]+"), float_value),
+        (Some(TokenKind::Number), reg!(r"[0-9]+\.[0-9]+"), number_value),
+        (Some(TokenKind::Number), reg!(r"[0-9]+"), number_value),
         (Some(TokenKind::Identifier), reg!(r"[a-zA-Z]([a-zA-Z0-9]|_)*"), ident_value),
         (Some(TokenKind::String), reg!(r"'[^']*'"), string_value),
         // Whitespace
@@ -263,7 +256,7 @@ mod lexer_tests {
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
         let next_token = test_lexer.produce();
         // Assert token
-        assert_eq!(next_token.kind, lexer::TokenKind::Integer);
+        assert_eq!(next_token.kind, lexer::TokenKind::Number);
         Ok(())
     }
     #[test]
@@ -285,7 +278,7 @@ mod lexer_tests {
         let next_token = test_lexer.produce();
         // Assert token is integer type with correct value
         match next_token.value {
-            lexer::TokenValue::Integer(x) => assert_eq!(x, 432),
+            lexer::TokenValue::Number(x) => assert_eq!(x, 432.0),
             _ => assert!(false)
         }
         Ok(())
@@ -413,7 +406,7 @@ mod lexer_tests {
         let next_token = test_lexer.produce();
         // Assert token is integer type with correct value
         match next_token.value {
-            lexer::TokenValue::Integer(x) => assert_eq!(x, 15),
+            lexer::TokenValue::Number(x) => assert_eq!(x, 15.0),
             _ => assert!(false)
         }
         Ok(())
@@ -440,22 +433,7 @@ mod lexer_tests {
         test_lexer.reset();
         let next_token = test_lexer.produce();
         // Assert token
-        assert_eq!(next_token.kind, lexer::TokenKind::Integer);
-        Ok(())
-    }
-    #[test]
-    fn lexer_type_int() -> Result<(), String> {
-        // Setup
-        let test_input: String = "int".to_string();
-        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
-        // Assert token
-        assert_eq!(next_token.kind, lexer::TokenKind::IntKw);
-        // Assert value
-        match next_token.value {
-            lexer::TokenValue::Type(_) => assert!(true),
-            _ => assert!(false)
-        }
+        assert_eq!(next_token.kind, lexer::TokenKind::Number);
         Ok(())
     }
 }

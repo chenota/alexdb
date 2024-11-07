@@ -20,15 +20,13 @@ pub mod generic {
         }
     }
     pub enum ColumnContainer {
-        IntColumn(Box<dyn Column<i64>>),
-        FloatColumn(Box<dyn Column<f64>>),
+        NumberColumn(Box<dyn Column<f64>>),
         BooleanColumn(Box<dyn Column<bool>>),
         StringColumn(Box<dyn Column<String>>)
     }
     #[derive(Clone)]
     pub enum DataContainer {
-        Int(Option<i64>),
-        Float(Option<f64>),
+        Number(Option<f64>),
         Boolean(Option<bool>),
         String(Option<String>)
     }

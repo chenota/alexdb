@@ -28,11 +28,10 @@ pub mod parser {
         }
         #[derive(Clone)]
         pub enum Val {
-            IntVal(i64),
-            BoolVal(bool),
+            NumVal(f64),
             StrVal(String),
             IdentVal(String),
-            FloatVal(f64),
+            BoolVal(bool),
             UndefVal,
             NullVal
         }
@@ -400,9 +399,8 @@ pub mod parser {
             let token = self.pop();
             // Match type, return appropriate value
             match token.value {
-                TokenValue::Integer(x) => parsetree::Val::IntVal(x),
+                TokenValue::Number(x) => parsetree::Val::NumVal(x),
                 TokenValue::Boolean(x) => parsetree::Val::BoolVal(x),
-                TokenValue::Float(x) => parsetree::Val::FloatVal(x),
                 // String could be either ident or string value
                 TokenValue::String(x) => {
                     match token.kind {
@@ -513,7 +511,7 @@ mod parser_tests {
                     parsetree::Expr::ValExpr(v) => {
                         // First value should be four
                         match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(*x, 4),
+                            parsetree::Val::NumVal(x) => assert_eq!(*x, 4.0),
                             _ => assert!(false)
                         }
                     },
@@ -543,7 +541,7 @@ mod parser_tests {
                         match v.as_ref() {
                             parsetree::Expr::ValExpr(y) => {
                                 match y {
-                                    parsetree::Val::IntVal(x) => assert_eq!(*x, 5),
+                                    parsetree::Val::NumVal(x) => assert_eq!(*x, 5.0),
                                     _ => assert!(false)
                                 }
                             },
@@ -576,7 +574,7 @@ mod parser_tests {
                         match v.as_ref() {
                             parsetree::Expr::ValExpr(y) => {
                                 match y {
-                                    parsetree::Val::IntVal(x) => assert_eq!(*x, 3),
+                                    parsetree::Val::NumVal(x) => assert_eq!(*x, 3.0),
                                     _ => assert!(false)
                                 }
                             },
@@ -605,7 +603,7 @@ mod parser_tests {
                     parsetree::Expr::ValExpr(v) => {
                         // First value should be four
                         match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(*x, 4),
+                            parsetree::Val::NumVal(x) => assert_eq!(*x, 4.0),
                             _ => assert!(false)
                         }
                     },
@@ -633,7 +631,7 @@ mod parser_tests {
                     // Should be val expr w/ 5
                     parsetree::Expr::ValExpr(v) => {
                         match v {
-                            parsetree::Val::IntVal(x) => assert_eq!(*x, 5),
+                            parsetree::Val::NumVal(x) => assert_eq!(*x, 5.0),
                             _ => assert!(false)
                         }
                     },
@@ -1216,7 +1214,7 @@ mod parser_tests {
     #[test]
     fn parser_query_create() -> Result<(), String> {
         // Setup
-        let test_input: String = "CREATE TABLE people (age int, name str, height float)".to_string();
+        let test_input: String = "CREATE TABLE people (age num, name str, height num)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
