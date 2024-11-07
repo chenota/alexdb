@@ -59,7 +59,13 @@ pub mod script {
             None
         }
     }
-    pub fn execute(scr: Expr, env: Environment) {
-
+    pub fn execute(script: &Expr, env: &mut Environment) -> Val {
+        match script {
+            Expr::BopExpr(e1, bop, e2) {
+                let v1 = execute(e1.as_ref(), env);
+                let v2 = execute(e2.as_ref(), env);
+            }
+            _ => panic!("Unimplemented")
+        }
     }
 }

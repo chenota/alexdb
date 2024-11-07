@@ -27,8 +27,8 @@ pub mod engine {
         fn execute_select(&self, fields: IdentList, tablename: String, whereclause: Option<Expr>, limitclause: Option<Expr>) -> Table {
             
         }
-        fn execute_script(&self, scr: Expr) {
-
+        fn execute_script(&self, script: Expr) -> Val {
+            
         }  
     }
 }
