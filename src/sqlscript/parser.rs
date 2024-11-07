@@ -39,7 +39,8 @@ pub mod parser {
         }
         pub enum IdentList {
             MultiList(String, Rc<IdentList>),
-            SingleList(String)
+            SingleList(String),
+            All
         }
         #[derive(PartialEq, Debug)]
         pub enum BopType {
@@ -160,7 +161,10 @@ pub mod parser {
                         },
                         _ => {
                             // Parse identlist
-                            let ilist = self.identlist();
+                            let ilist = match self.peek().kind {
+                                TokenKind::AllKw => parsetree::IdentList::All,
+                                _ => self.identlist()
+                            };
                             // Expect and pop FROM keyword
                             self.pop_expect(TokenKind::FromKw);
                             // Parse single ident

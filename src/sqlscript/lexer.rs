@@ -50,6 +50,7 @@ pub mod lexer {
         ConstKw,
         CreateKw,
         TableKw,
+        AllKw,
         // Type keywords
         IntKw,
         FloatKw,
@@ -117,6 +118,7 @@ pub mod lexer {
         (Some(TokenKind::ConstKw), reg!(r"CONST"), none_value),
         (Some(TokenKind::CreateKw), reg!(r"CREATE"), none_value),
         (Some(TokenKind::TableKw), reg!(r"TABLE"), none_value),
+        (Some(TokenKind::AllKw), reg!(r"\*"), none_value),
         // Type keywords
         (Some(TokenKind::IntKw), reg!(r"int"), int_type_value),
         (Some(TokenKind::FloatKw), reg!(r"float"), float_type_value),
