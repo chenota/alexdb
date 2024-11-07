@@ -1198,4 +1198,23 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_select_all() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT * FROM table1".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(ids, _, _) => {
+                match ids {
+                    parsetree::IdentList::All => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
