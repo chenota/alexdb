@@ -1,4 +1,6 @@
 pub mod script {
+    use core::f64;
+
     use crate::sqlscript::parser::parser::parsetree::*;
     pub struct Frame {
         names: Vec<String>,
@@ -57,6 +59,60 @@ pub mod script {
                 }
             };
             None
+        }
+    }
+    fn to_int(val: &Val) -> Val {
+        match val {
+            Val::BoolVal(x) => if *x {Val::IntVal(1)} else {Val::IntVal(0)},
+            Val::FloatVal(x) => Val::IntVal(*x as i64),
+            Val::IntVal(x) => Val::IntVal(*x),
+            Val::NullVal => Val::IntVal(0),
+            Val::UndefVal => Val::IntVal(0),
+            Val::StrVal(x) => {
+                match x.parse::<i64>() {
+                    Ok(v) => Val::IntVal(v),
+                    _ => Val::IntVal(0)
+                }
+            },
+            _ => panic!("Unexpected value")
+        }
+    }
+    fn to_bool(val: &Val) -> Val {
+        match val {
+            Val::BoolVal(x) => Val::BoolVal(*x),
+            Val::FloatVal(x) => Val::BoolVal(*x != 0.0),
+            Val::IntVal(x) => Val::BoolVal(*x != 0),
+            Val::NullVal => Val::BoolVal(false),
+            Val::UndefVal => Val::BoolVal(false),
+            Val::StrVal(x) => Val::BoolVal(x != ""),
+            _ => panic!("Unexpected value")
+        }
+    }
+    fn to_float(val: &Val) -> Val {
+        match val {
+            Val::BoolVal(x) => Val::FloatVal(if *x {1.0} else {0.0}),
+            Val::FloatVal(x) => Val::FloatVal(*x),
+            Val::IntVal(x) => Val::FloatVal(*x as f64),
+            Val::NullVal => Val::FloatVal(0.0),
+            Val::UndefVal => Val::FloatVal(f64::NAN),
+            Val::StrVal(x) => {
+                match x.parse::<f64>() {
+                    Ok(v) => Val::FloatVal(v),
+                    _ => Val::FloatVal(f64::NAN)
+                }
+            },
+            _ => panic!("Unexpected value")
+        }
+    }
+    fn to_str(val: &Val) -> Val {
+        match val {
+            Val::BoolVal(x) => Val::StrVal(if *x {"true".to_string()} else {"false".to_string()}),
+            Val::FloatVal(x) => Val::StrVal(x.to_string()),
+            Val::IntVal(x) => Val::StrVal(x.to_string()),
+            Val::NullVal => Val::StrVal("null".to_string()),
+            Val::UndefVal => Val::StrVal("undefined".to_string()),
+            Val::StrVal(x) => Val::StrVal(x.clone()),
+            _ => panic!("Unexpected value")
         }
     }
     pub fn execute(script: &Expr, env: &mut Environment) -> Val {
