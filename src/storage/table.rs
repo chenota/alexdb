@@ -17,11 +17,11 @@ pub mod table {
                 size: 0
             }
         }
-        pub fn add_column(&mut self, name: String, coltype: lexer::ColType) -> () {
+        pub fn add_column(&mut self, name: &String, coltype: lexer::ColType) -> () {
             // Check that column does not already exist
             if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
             // Add table name to headers
-            self.headers.push(name);
+            self.headers.push(name.clone());
             // Push uncompressed column to table
             match coltype {
                 lexer::ColType::Boolean => self.table.push(ColumnContainer::BooleanColumn(Box::new(column::generic::Uncompressed::new()))),
@@ -30,11 +30,11 @@ pub mod table {
                 lexer::ColType::String => self.table.push(ColumnContainer::StringColumn(Box::new(column::generic::Uncompressed::new())))
             }
         }
-        pub fn get_column(&self, name: String) -> &ColumnContainer {
+        pub fn get_column(&self, name: &String) -> &ColumnContainer {
             // Check that column exists
-            if !self.headers.contains(&name) { panic!("Invalid column name") }
+            if !self.headers.contains(name) { panic!("Invalid column name") }
             // Find column index
-            let idx = self.headers.iter().position(|r| *r == name).unwrap();
+            let idx = self.headers.iter().position(|r| *r == *name).unwrap();
             // Return column at index
             &self.table[idx]
         }
@@ -87,8 +87,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(col_name1, lexer::ColType::Boolean);
-        test_table.add_column(col_name2, lexer::ColType::Boolean);
+        test_table.add_column(&col_name1, lexer::ColType::Boolean);
+        test_table.add_column(&col_name2, lexer::ColType::Boolean);
         // Create row
         let row1 = vec![
             DataContainer::Boolean(Some(false)),
@@ -97,7 +97,7 @@ mod table_tests {
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
-        match test_table.get_column(col_name1) {
+        match test_table.get_column(&col_name1) {
             ColumnContainer::BooleanColumn(x) => {
                 match x.as_ref().extract()[0] {
                     Some(y) => assert!(!y),
