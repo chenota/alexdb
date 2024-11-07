@@ -55,7 +55,9 @@ pub mod parser {
             GteBop,
             LtBop,
             LteBop,
-            EqBop
+            EqBop,
+            LogOrBop,
+            LogAndBop
         }
         pub enum ColList {
             MultiList(String, ColType, Rc<ColList>),
@@ -108,6 +110,8 @@ pub mod parser {
                 TokenKind::Lt => Some(parsetree::BopType::LtBop),
                 TokenKind::Lte => Some(parsetree::BopType::LteBop),
                 TokenKind::Eq => Some(parsetree::BopType::EqBop),
+                TokenKind::LogAndKw => Some(parsetree::BopType::LogAndBop),
+                TokenKind::LogOrKw => Some(parsetree::BopType::LogOrBop),
                 _ => None
             }
         }

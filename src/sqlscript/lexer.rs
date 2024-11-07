@@ -14,6 +14,8 @@ pub mod lexer {
         Lt,
         Lte,
         Eq,
+        LogOrKw,
+        LogAndKw,
         // Functions
         Arrow,
         FunKw,
@@ -136,6 +138,9 @@ pub mod lexer {
         (Some(TokenKind::Lte), reg!(r"<="), none_value),
         (Some(TokenKind::Lt), reg!(r"<"), none_value),
         (Some(TokenKind::Eq), reg!(r"=="), none_value),
+        // Logical
+        (Some(TokenKind::LogOrKw), reg!(r"\|\|"), none_value),
+        (Some(TokenKind::LogAndKw), reg!(r"&&"), none_value),
         // Function stuff
         (Some(TokenKind::Arrow), reg!(r"->"), none_value),
         (Some(TokenKind::FunKw), reg!(r"fun"), none_value),
