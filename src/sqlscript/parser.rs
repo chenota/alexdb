@@ -163,7 +163,7 @@ pub mod parser {
                         _ => {
                             // Parse identlist
                             let ilist = match self.peek().kind {
-                                TokenKind::AllKw => {
+                                TokenKind::TimesKw => {
                                     // Pop *
                                     self.pop();
                                     // Return identlist all
