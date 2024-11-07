@@ -26,6 +26,7 @@ pub mod parser {
             ExprBlock(Rc<Expr>),
             StmtBlock(String, Rc<Expr>, Rc<Block>) // ident = expr; ...
         }
+        #[derive(Clone)]
         pub enum Val {
             IntVal(i64),
             BoolVal(bool),
