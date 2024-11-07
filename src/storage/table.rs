@@ -77,15 +77,35 @@ pub mod table {
 #[cfg(test)]
 mod table_tests {
     use super::*;
+    use super::super::column::generic::DataContainer;
     use crate::sqlscript::lexer::lexer;
+    use crate::storage::column::generic::ColumnContainer;
     #[test]
     fn test_bool_column() -> Result<(), String> {
         // Setup
         let mut test_table = table::Table::new();
-        let col_name = "Test1".to_string();
-        // Create new column
-        test_table.add_column(col_name, lexer::ColType::Boolean);
-        // Add some data
+        let col_name1 = "Test1".to_string();
+        let col_name2 = "Test2".to_string();
+        // Create new columns
+        test_table.add_column(col_name1, lexer::ColType::Boolean);
+        test_table.add_column(col_name2, lexer::ColType::Boolean);
+        // Create row
+        let row1 = vec![
+            DataContainer::Boolean(Some(false)),
+            DataContainer::Boolean(None)
+        ];
+        // Add row to table
+        test_table.add_row(row1);
+        // Assert correct values
+        match test_table.get_column(col_name1) {
+            ColumnContainer::BooleanColumn(x) => {
+                match x.as_ref().extract()[0] {
+                    Some(y) => assert!(!y),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
         Ok(())
     }
 }
