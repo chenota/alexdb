@@ -25,12 +25,12 @@ pub mod script {
             }
         }
     }
-    pub struct Env {
+    pub struct Environment {
         frames: Vec<Frame>
     }
-    impl Env {
-        pub fn new() -> Env {
-            Env {
+    impl Environment {
+        pub fn new() -> Environment {
+            Environment {
                 frames: Vec::new()
             }
         }
@@ -59,7 +59,7 @@ pub mod script {
             None
         }
     }
-    fn execute() {
+    pub fn execute(scr: Expr, env: Environment) {
 
     }
 }
