@@ -1,2 +1,2 @@
 pub mod table;
-mod column;
+pub mod column;
