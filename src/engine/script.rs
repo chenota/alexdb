@@ -200,6 +200,7 @@ pub mod script {
                     UopType::NotUop => Val::BoolVal(! extract_bool(&to_bool(&v1)))
                 }
             }
+            Expr::ValExpr(v1) => v1,
             _ => panic!("Unimplemented")
         }
     }
