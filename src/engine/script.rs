@@ -273,6 +273,15 @@ pub mod script {
                 env.pop_frame();
                 v1
             },
+            Expr::IdentExpr(id) => {
+                // Get id from environment
+                let val = env.get(id);
+                // Check value
+                match val {
+                    Some(v1) => v1,
+                    _ => panic!("Bad variable")
+                }
+            },
             _ => panic!("Unimplemented")
         }
     }
