@@ -711,7 +711,7 @@ mod test_script {
     #[test]
     fn negative_sub_2() -> Result<(), String> {
         // Setup
-        let test_input: String = "-5 - 1".to_string();
+        let test_input: String = "-5 - -1".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
         let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
@@ -719,7 +719,7 @@ mod test_script {
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(-5.0) => assert!(true),
+            parsetree::Val::NumVal(-4.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -768,6 +768,70 @@ mod test_script {
         // Check output value
         match test_val {
             parsetree::Val::NumVal(8.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn logor() -> Result<(), String> {
+        // Setup
+        let test_input: String = "3 + 5 || 10".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(8.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn logand() -> Result<(), String> {
+        // Setup
+        let test_input: String = "true && 5 + 10".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(15.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn logand_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "10 === 10 && 5 > -3".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::BoolVal(true) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn conditional_true() -> Result<(), String> {
+        // Setup
+        let test_input: String = "if true then 10 else 0".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(10.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())

@@ -89,23 +89,47 @@ pub mod parser {
             // Return
             next_token
         }
-        fn peek_bop(&self) -> Option<parsetree::BopType> {
+        fn peek_l1_bop(&self) -> Option<parsetree::BopType> {
             // Peek first token
             let token = self.peek();
             // Match type, return appropriate value
             match token.kind {
-                TokenKind::PlusKw => Some(parsetree::BopType::PlusBop),
-                TokenKind::MinusKw => Some(parsetree::BopType::MinusBop),
-                TokenKind::TimesKw => Some(parsetree::BopType::TimesBop),
-                TokenKind::DivKw => Some(parsetree::BopType::DivBop),
+                TokenKind::LogAndKw => Some(parsetree::BopType::LogAndBop),
+                TokenKind::LogOrKw => Some(parsetree::BopType::LogOrBop),
+                _ => None
+            }
+        }
+        fn peek_l2_bop(&self) -> Option<parsetree::BopType> {
+            // Peek first token
+            let token = self.peek();
+            // Match type, return appropriate value
+            match token.kind {
                 TokenKind::Gt => Some(parsetree::BopType::GtBop),
                 TokenKind::Gte => Some(parsetree::BopType::GteBop),
                 TokenKind::Lt => Some(parsetree::BopType::LtBop),
                 TokenKind::Lte => Some(parsetree::BopType::LteBop),
                 TokenKind::Eq => Some(parsetree::BopType::EqBop),
                 TokenKind::StrEq => Some(parsetree::BopType::StrEqBop),
-                TokenKind::LogAndKw => Some(parsetree::BopType::LogAndBop),
-                TokenKind::LogOrKw => Some(parsetree::BopType::LogOrBop),
+                _ => None
+            }
+        }
+        fn peek_l3_bop(&self) -> Option<parsetree::BopType> {
+            // Peek first token
+            let token = self.peek();
+            // Match type, return appropriate value
+            match token.kind {
+                TokenKind::PlusKw => Some(parsetree::BopType::PlusBop),
+                TokenKind::MinusKw => Some(parsetree::BopType::MinusBop),
+                _ => None
+            }
+        }
+        fn peek_l4_bop(&self) -> Option<parsetree::BopType> {
+            // Peek first token
+            let token = self.peek();
+            // Match type, return appropriate value
+            match token.kind {
+                TokenKind::TimesKw => Some(parsetree::BopType::TimesBop),
+                TokenKind::DivKw => Some(parsetree::BopType::DivBop),
                 _ => None
             }
         }
@@ -298,7 +322,6 @@ pub mod parser {
                     self.pop();
                     // Parse expr
                     let expr: parsetree::Expr = self.expr();
-                    println!("{:?}", self.peek().kind);
                     // Expect semicolon, pop it
                     self.pop_expect(TokenKind::SemiKw);
                     // Return constructed statement
@@ -311,42 +334,6 @@ pub mod parser {
         fn expr(&mut self) -> parsetree::Expr {
             // Check first value
             let first = match self.peek().kind {
-                TokenKind::LParen => {
-                    // Pop lparen
-                    self.pop();
-                    // Parse expr
-                    let expr = self.expr();
-                    // Expect rparen, pop it
-                    self.pop_expect(TokenKind::RParen);
-                    // Return parsed expression
-                    expr
-                },
-                TokenKind::LCBracket => {
-                    // Pop curly bracket
-                    self.pop();
-                    // Parse script
-                    let script = self.block();
-                    // Expect right curly bracket, pop it
-                    self.pop_expect(TokenKind::RCBracket);
-                    // Return parsed expression
-                    parsetree::Expr::BlockExpr(script)
-                },
-                TokenKind::MinusKw => {
-                    // Pop minus sign
-                    self.pop();
-                    // Parse expr
-                    let expr = self.expr();
-                    // Return negated expression
-                    parsetree::Expr::UopExpr(parsetree::UopType::NegUop, Rc::new(expr))
-                },
-                TokenKind::NotKw => {
-                    // Pop not sign
-                    self.pop();
-                    // Parse expr
-                    let expr = self.expr();
-                    // Return negated expression
-                    parsetree::Expr::UopExpr(parsetree::UopType::NotUop, Rc::new(expr))
-                },
                 TokenKind::FunKw => {
                     // Pop fun kw
                     self.pop();
@@ -378,14 +365,109 @@ pub mod parser {
                     // Put it all together
                     parsetree::Expr::CondExpr(Rc::new(if_expr), Rc::new(then_expr), Rc::new(else_expr))
                 },
+                _ => self.expr_level_2()
+            };
+            // Check if bop at front
+            match self.peek_l1_bop() {
+                Some(bop) => {
+                    // Pop bop
+                    self.pop();
+                    // Return parsed expr
+                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr()))
+                },
+                None => first
+            }
+        }
+        fn expr_level_2(&mut self) -> parsetree::Expr {
+            let first = self.expr_level_3();
+            // Check if bop at front
+            match self.peek_l2_bop() {
+                Some(bop) => {
+                    // Pop bop
+                    self.pop();
+                    // Return parsed expr
+                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_2()))
+                },
+                None => first
+            }
+        }
+        fn expr_level_3(&mut self) -> parsetree::Expr {
+            let first = self.expr_level_4();
+            // Check if bop at front
+            match self.peek_l3_bop() {
+                Some(bop) => {
+                    // Pop bop
+                    self.pop();
+                    // Return parsed expr
+                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_3()))
+                },
+                None => first
+            }
+        }
+        fn expr_level_4(&mut self) -> parsetree::Expr {
+            let first = self.expr_level_5();
+            // Check if bop at front
+            match self.peek_l4_bop() {
+                Some(bop) => {
+                    // Pop bop
+                    self.pop();
+                    // Return parsed expr
+                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_4()))
+                },
+                None => first
+            }
+        }
+        fn expr_level_5(&mut self) -> parsetree::Expr {
+            match self.peek().kind {
+                TokenKind::MinusKw => {
+                    // Pop minus sign
+                    self.pop();
+                    // Parse expr
+                    let expr = self.expr_level_5();
+                    // Return negated expression
+                    parsetree::Expr::UopExpr(parsetree::UopType::NegUop, Rc::new(expr))
+                },
+                TokenKind::NotKw => {
+                    // Pop not sign
+                    self.pop();
+                    // Parse expr
+                    let expr = self.expr_level_5();
+                    // Return negated expression
+                    parsetree::Expr::UopExpr(parsetree::UopType::NotUop, Rc::new(expr))
+                },
+                _ => self.expr_level_6()
+            }
+        }
+        fn expr_level_6(&mut self) -> parsetree::Expr {
+            let first = match self.peek().kind {
                 TokenKind::Identifier => parsetree::Expr::IdentExpr(match self.pop().value {
                     TokenValue::String(x) => x.clone(),
                     _ => panic!("Parsing error")
                 }),
+                TokenKind::LCBracket => {
+                    // Pop curly bracket
+                    self.pop();
+                    // Parse script
+                    let script = self.block();
+                    // Expect right curly bracket, pop it
+                    self.pop_expect(TokenKind::RCBracket);
+                    // Return parsed expression
+                    parsetree::Expr::BlockExpr(script)
+                },
+                TokenKind::LParen => {
+                    // Pop lparen
+                    self.pop();
+                    // Parse expr
+                    let expr = self.expr();
+                    // Expect rparen, pop it
+                    self.pop_expect(TokenKind::RParen);
+                    // Return parsed expression
+                    expr
+                },
                 _ => parsetree::Expr::ValExpr(self.value())
             };
             // Check if postfix (call only postfix) at front
-            let second = match self.peek().kind {
+            match self.peek().kind {
                 TokenKind::LParen => {
                     // Pop LParen
                     self.pop();
@@ -400,16 +482,6 @@ pub mod parser {
                     parsetree::Expr::CallExpr(Rc::new(first), elist)
                 },
                 _ => first
-            };
-            // Check if bop at front
-            match self.peek_bop() {
-                Some(bop) => {
-                    // Pop bop
-                    self.pop();
-                    // Return parsed expr
-                    parsetree::Expr::BopExpr(Rc::new(second), bop, Rc::new(self.expr()))
-                },
-                None => second
             }
         }
         fn value(&mut self) -> parsetree::Val {
