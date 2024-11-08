@@ -433,7 +433,7 @@ pub mod parser {
                         TokenKind::NullKw => parsetree::Val::NullVal,
                         _ => panic!("Parsing error")
                     }
-                }
+                },
                 _ => panic!("Parsing error")
             }
         }
