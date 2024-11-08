@@ -436,4 +436,20 @@ mod test_script {
         }
         Ok(())
     }
+    #[test]
+    fn undefined() -> Result<(), String> {
+        // Setup
+        let test_input: String = "undefined".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::UndefVal => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
