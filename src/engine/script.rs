@@ -836,4 +836,52 @@ mod test_script {
         }
         Ok(())
     }
+    #[test]
+    fn conditional_false() -> Result<(), String> {
+        // Setup
+        let test_input: String = "if false then 10 else 0".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(0.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn conditional_in_expr() -> Result<(), String> {
+        // Setup
+        let test_input: String = "5 + (if true then 10 else 0)".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(15.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn conditional_in_fun() -> Result<(), String> {
+        // Setup
+        let test_input: String = "isbig = fun x -> if x > 100 then true else false; isbig(43)".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::BoolVal(false) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
