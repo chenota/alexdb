@@ -159,6 +159,33 @@ pub mod script {
                     // Comparison
                     BopType::EqBop => Val::BoolVal(eq(&v1, &v2)),
                     BopType::StrEqBop => Val::BoolVal(stricteq(&v1, &v2)),
+                    BopType::GtBop => {
+                        match (&v1, &v2) {
+                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 > s2),
+                            _ => Val::BoolVal(extract_num(&to_num(&v1)) > extract_num(&to_num(&v2)))
+                        }
+                    },
+                    BopType::GteBop => {
+                        match (&v1, &v2) {
+                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 >= s2),
+                            _ => Val::BoolVal(extract_num(&to_num(&v1)) >= extract_num(&to_num(&v2)))
+                        }
+                    },
+                    BopType::LtBop => {
+                        match (&v1, &v2) {
+                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 < s2),
+                            _ => Val::BoolVal(extract_num(&to_num(&v1)) < extract_num(&to_num(&v2)))
+                        }
+                    },
+                    BopType::LteBop => {
+                        match (&v1, &v2) {
+                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 <= s2),
+                            _ => Val::BoolVal(extract_num(&to_num(&v1)) <= extract_num(&to_num(&v2)))
+                        }
+                    },
+                    // Logical
+                    BopType::LogAndBop => if extract_bool(&to_bool(&v1)) { v2 } else { v1 },
+                    BopType::LogOrBop => if extract_bool(&to_bool(&v1)) { v1 } else { v2 },
                     _ => panic!("Unimplemented")
                 }
                 
