@@ -188,8 +188,11 @@ pub mod script {
                     BopType::LogOrBop => if extract_bool(&to_bool(&v1)) { v1 } else { v2 },
                     _ => panic!("Unimplemented")
                 }
-                
-            }
+            },
+            Expr::CondExpr(e1, e2, e3) => {
+                let v1 = execute(e1.as_ref(), env);
+                if extract_bool(&to_bool(&v1)) { execute(e2.as_ref(), env) } else { execute(e3.as_ref(), env) }
+            },
             _ => panic!("Unimplemented")
         }
     }
