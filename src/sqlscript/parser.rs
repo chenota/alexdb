@@ -40,8 +40,7 @@ pub mod parser {
             SingleList(Rc<Expr>)
         }
         pub enum IdentList {
-            MultiList(String, Rc<IdentList>),
-            SingleList(String),
+            List(Vec<String>),
             All
         }
         #[derive(PartialEq, Debug)]
@@ -448,9 +447,17 @@ pub mod parser {
                     // Pop comma
                     self.pop();
                     // Parse next expr
-                    parsetree::IdentList::MultiList(val, Rc::new(self.identlist()))
+                    let mut next_vec = match self.identlist() {
+                        parsetree::IdentList::List(x) => x,
+                        _ => panic!("Parsing error")
+                    };
+                    next_vec.push(val);
+                    parsetree::IdentList::List(next_vec)
                 },
-                _ => parsetree::IdentList::SingleList(val)
+                _ => {
+                    let new_vec = vec![val];
+                    parsetree::IdentList::List(new_vec)
+                }
             }
         }
         fn ident(&mut self) -> String {
@@ -976,7 +983,7 @@ mod parser_tests {
                         match params {
                             Some(elist) => {
                                 match elist {
-                                    parsetree::IdentList::SingleList(_) => assert!(true),
+                                    parsetree::IdentList::List(l) => assert_eq!(l.len(), 1),
                                     _ => assert!(false)
                                 }
                             },
@@ -1010,7 +1017,7 @@ mod parser_tests {
                         match params {
                             Some(elist) => {
                                 match elist {
-                                    parsetree::IdentList::MultiList(_,_) => assert!(true),
+                                    parsetree::IdentList::List(l) => assert_eq!(l.len(), 3),
                                     _ => assert!(false)
                                 }
                             },
@@ -1044,7 +1051,7 @@ mod parser_tests {
                         match params {
                             Some(elist) => {
                                 match elist {
-                                    parsetree::IdentList::SingleList(_) => assert!(true),
+                                    parsetree::IdentList::List(_) => assert!(true),
                                     _ => assert!(false)
                                 }
                             },
