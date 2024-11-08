@@ -166,11 +166,22 @@ pub mod script {
             _ => false
         }
     }
-    pub fn execute(script: &Expr, env: &mut Environment) -> Val {
+    fn eval_block(block: &Block, env: &mut Environment) -> Val {
+        // Match type of block
+        match block {
+            Block::StmtBlock(id, e1, b2) => {
+                let v1 = eval(e1.as_ref(), env);
+                env.push(id, &v1);
+                eval_block(b2.as_ref(), env)
+            },
+            Block::ExprBlock(e1) => eval(e1.as_ref(), env)
+        }
+    }
+    pub fn eval(script: &Expr, env: &mut Environment) -> Val {
         match script {
             Expr::BopExpr(e1, bop, e2) => {
-                let v1 = execute(e1.as_ref(), env);
-                let v2 = execute(e2.as_ref(), env);
+                let v1 = eval(e1.as_ref(), env);
+                let v2 = eval(e2.as_ref(), env);
                 match bop {
                     // Arithmetic
                     BopType::PlusBop => {
@@ -216,11 +227,11 @@ pub mod script {
                 }
             },
             Expr::CondExpr(e1, e2, e3) => {
-                let v1 = execute(e1.as_ref(), env);
-                if extract_bool(&to_bool(&v1)) { execute(e2.as_ref(), env) } else { execute(e3.as_ref(), env) }
+                let v1 = eval(e1.as_ref(), env);
+                if extract_bool(&to_bool(&v1)) { eval(e2.as_ref(), env) } else { eval(e3.as_ref(), env) }
             },
             Expr::UopExpr(uop, e1) => {
-                let v1 = execute(e1.as_ref(), env);
+                let v1 = eval(e1.as_ref(), env);
                 match uop {
                     UopType::NegUop => Val::NumVal(- extract_num(&to_num(&v1))),
                     UopType::NotUop => Val::BoolVal(! extract_bool(&to_bool(&v1)))
@@ -229,7 +240,7 @@ pub mod script {
             Expr::ValExpr(v1) => v1.clone(),
             Expr::FunExpr(il, e1) => Val::ClosureVal(env.compress(), il.clone(), e1.clone()),
             Expr::CallExpr(e1, el) => {
-                let v1 = execute(e1.as_ref(), env);
+                let v1 = eval(e1.as_ref(), env);
                 match &v1 {
                     Val::ClosureVal(fr, il, body) => {
                         // Make sure args match parameters
@@ -237,13 +248,13 @@ pub mod script {
                         // New frame
                         let mut arg_frame = Frame::new();
                         // Add args to new frame
-                        for i in 0..el.len() { arg_frame.push(&il[i], &execute(&el[i], env)); }
+                        for i in 0..el.len() { arg_frame.push(&il[i], &eval(&el[i], env)); }
                         // Push closure frame to environment
                         env.push_frame(fr.clone());
                         // Push args frame to environment
                         env.push_frame(arg_frame);
                         // Evaluate function body
-                        let retval = execute(body.as_ref(), env);
+                        let retval = eval(body.as_ref(), env);
                         // Pop stack frames
                         env.pop_frame();
                         env.pop_frame();
@@ -252,7 +263,16 @@ pub mod script {
                     },
                     _ => panic!("Unexpected value")
                 }
-            }
+            },
+            Expr::BlockExpr(block) => {
+                // Push stack frame
+                env.new_frame();
+                // Evaluate block
+                let v1 = eval_block(block, env);
+                // Pop stack frame
+                env.pop_frame();
+                v1
+            },
             _ => panic!("Unimplemented")
         }
     }
