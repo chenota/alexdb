@@ -58,10 +58,7 @@ pub mod parser {
             LogOrBop,
             LogAndBop
         }
-        pub enum ColList {
-            MultiList(String, ColType, Rc<ColList>),
-            SingleList(String, ColType),
-        }
+        pub type ColList = Vec<(String, ColType)>;
         #[derive(PartialEq, Debug)]
         pub enum UopType {
             NegUop,
@@ -503,10 +500,13 @@ pub mod parser {
                 TokenKind::Comma => {
                     // Pop comma
                     self.pop();
-                    // Parse next pair
-                    parsetree::ColList::MultiList(colname, t, Rc::new(self.collist()))
+                    // Get rest of list
+                    let mut rest = self.collist();
+                    // Add next to rest
+                    rest.push((colname, t));
+                    rest
                 },
-                _ => parsetree::ColList::SingleList(colname, t)
+                _ => vec![(colname, t)]
             }
         }
         fn parsetype(&mut self) -> ColType {
