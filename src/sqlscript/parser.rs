@@ -18,6 +18,7 @@ pub mod parser {
             UopExpr(UopType, Rc<Expr>),
             BlockExpr(Block),
             ValExpr(Val),
+            IdentExpr(String),
             CallExpr(Rc<Expr>, Option<ExprList>),
             FunExpr(Option<IdentList>, Rc<Expr>),
             CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
@@ -30,7 +31,6 @@ pub mod parser {
         pub enum Val {
             NumVal(f64),
             StrVal(String),
-            IdentVal(String),
             BoolVal(bool),
             UndefVal,
             NullVal
@@ -366,6 +366,10 @@ pub mod parser {
                     // Put it all together
                     parsetree::Expr::CondExpr(Rc::new(if_expr), Rc::new(then_expr), Rc::new(else_expr))
                 },
+                TokenKind::Identifier => parsetree::Expr::IdentExpr(match self.pop().value {
+                    String(x) => x,
+                    _ => panic!("Parsing error")
+                }),
                 _ => parsetree::Expr::ValExpr(self.value())
             };
             // Check if postfix (call only postfix) at front
@@ -407,7 +411,6 @@ pub mod parser {
                 TokenValue::String(x) => {
                     match token.kind {
                         TokenKind::String => parsetree::Val::StrVal(x),
-                        TokenKind::Identifier => parsetree::Val::IdentVal(x),
                         _ => panic!("Parsing error")
                     }
                 },
@@ -451,11 +454,14 @@ pub mod parser {
             }
         }
         fn ident(&mut self) -> String {
-            // Parse value
-            let val = self.value();
             // Extract string from ident
-            match val {
-                parsetree::Val::IdentVal(x) => x,
+            match self.peek().kind {
+                TokenKind::Identifier => {
+                    match self.pop().value {
+                        String(x) => x,
+                        _ => panic!("Parsing error")
+                    }
+                },
                 _ => panic!("Parsing error")
             }
         }
