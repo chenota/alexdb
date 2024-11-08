@@ -56,6 +56,8 @@ pub mod lexer {
         CreateKw,
         TableKw,
         LimitKw,
+        SortKw,
+        ByKw,
         // Type keywords
         NumberKw,
         StrKw,
@@ -119,6 +121,8 @@ pub mod lexer {
         (Some(TokenKind::CreateKw), reg!(r"CREATE"), none_value),
         (Some(TokenKind::TableKw), reg!(r"TABLE"), none_value),
         (Some(TokenKind::LimitKw), reg!(r"LIMIT"), none_value),
+        (Some(TokenKind::SortKw), reg!(r"SORT"), none_value),
+        (Some(TokenKind::ByKw), reg!(r"BY"), none_value),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),

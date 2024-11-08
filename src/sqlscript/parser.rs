@@ -5,7 +5,7 @@ pub mod parser {
         use std::rc::Rc;
         use super::super::super::lexer::lexer::ColType;
         pub enum Query {
-            Select(IdentList, String, Option<Expr>, Option<Expr>), // SELECT _ FROM _ WHERE _ LIMIT _ (where and limit are optional)
+            Select(IdentList, String, Option<Expr>, Option<String>, Option<Expr>), // SELECT _ FROM _ WHERE _ SORT BY _ LIMIT _ (where, sort by, and limit are optional)
             Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
             SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
             Const(String, Expr), // CONST <name> = <value>
@@ -191,6 +191,17 @@ pub mod parser {
                                 },
                                 _ => None
                             };
+                            let sortscript = match self.peek().kind {
+                                TokenKind::SortKw => {
+                                    // Pop sort keyword
+                                    self.pop();
+                                    // Pop expect by keyword
+                                    self.pop_expect(TokenKind::ByKw);
+                                    // Parse ident
+                                    Some(self.ident())
+                                },
+                                _ => None
+                            };
                             let limitscript = match self.peek().kind {
                                 TokenKind::LimitKw => {
                                     // Pop limit keyword
@@ -201,7 +212,7 @@ pub mod parser {
                                 _ => None
                             };
                             // Put everything together
-                            parsetree::Query::Select(ilist, tableid, wherescript, limitscript)
+                            parsetree::Query::Select(ilist, tableid, wherescript, sortscript, limitscript)
                         }
                     }
                 },
@@ -1123,7 +1134,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_, _, _, _) => assert!(true),
+            parsetree::Query::Select(_, _, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1137,7 +1148,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_, _, _, _) => assert!(true),
+            parsetree::Query::Select(_, _, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1249,7 +1260,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(ids, _, _, _) => {
+            parsetree::Query::Select(ids, _, _, _, _) => {
                 match ids {
                     parsetree::IdentList::All => assert!(true),
                     _ => assert!(false)
@@ -1268,7 +1279,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_ , _, whr, lim) => {
+            parsetree::Query::Select(_ , _, whr, _, lim) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
@@ -1291,7 +1302,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_ , _, whr, lim) => {
+            parsetree::Query::Select(_ , _, whr, _, lim) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
