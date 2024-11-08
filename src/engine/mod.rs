@@ -1,2 +1,2 @@
 pub mod database;
-mod script;
+pub mod script;

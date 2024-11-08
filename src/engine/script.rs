@@ -1,32 +1,42 @@
 pub mod script {
     use core::f64;
-
+    use std::rc::Rc;
     use crate::sqlscript::parser::parser::parsetree::*;
+    #[derive(Clone)]
     pub struct Frame {
-        names: Vec<String>,
-        data: Vec<Val>
+        data: Vec<(String, Val)>,
     }
     impl Frame {
         pub fn push(&mut self, name: &String, data: &Val) {
-            self.names.push(name.clone());
-            self.data.push(data.clone())
+            self.data.push((name.clone(), data.clone()))
         }
         pub fn get(&self, name: &String) -> Option<Val> {
             let mut found = None;
-            for i in (self.names.len()-1)..0 {
-                if self.names[i] == *name {
-                    found = Some(self.data[i].clone());
+            for i in (self.data.len()-1)..0 {
+                if self.data[i].0 == *name {
+                    found = Some(self.data[i].1.clone());
                 }
             };
             found
         }
         pub fn new() -> Frame {
             Frame {
-                names: Vec::new(),
                 data: Vec::new()
             }
         }
+        pub fn contains(&self, name: &String) -> bool {
+            for i in 0..(self.data.len()-1) {
+                if self.data[i].0 == *name {
+                    return true;
+                }
+            };
+            false
+        }
+        pub fn data(&self) -> &Vec<(String, Val)> {
+            &self.data
+        }
     }
+    #[derive(Clone)]
     pub struct Environment {
         frames: Vec<Frame>
     }
@@ -36,15 +46,31 @@ pub mod script {
                 frames: Vec::new()
             }
         }
-        pub fn push_frame(&mut self) {
+        pub fn compress(&self) -> Frame {
+            let mut new_frame = Frame::new();
+            for i in 0..(self.frames.len()) {
+                let frame_data = self.frames[i].data();
+                for j in 0..(frame_data.len()) {
+                    let data = &frame_data[j];
+                    if !(new_frame.contains(&data.0)) {
+                        new_frame.push(&data.0, &data.1)
+                    }
+                }
+            };
+            new_frame
+        }
+        pub fn new_frame(&mut self) {
             self.frames.push(Frame::new())
         }
         pub fn pop_frame(&mut self) {
             self.frames.pop();
         }
+        pub fn push_frame(&mut self, frame: Frame) {
+            self.frames.push(frame)
+        }
         pub fn push(&mut self, name: &String, data: &Val) {
             if self.frames.len() <= 0 {
-                self.push_frame()
+                self.new_frame()
             };
             let frames_len = self.frames.len();
             self.frames[frames_len - 1].push(name, data)
@@ -200,7 +226,33 @@ pub mod script {
                     UopType::NotUop => Val::BoolVal(! extract_bool(&to_bool(&v1)))
                 }
             }
-            Expr::ValExpr(v1) => v1,
+            Expr::ValExpr(v1) => v1.clone(),
+            Expr::FunExpr(il, e1) => Val::ClosureVal(env.compress(), il.clone(), e1.clone()),
+            Expr::CallExpr(e1, el) => {
+                let v1 = execute(e1.as_ref(), env);
+                match &v1 {
+                    Val::ClosureVal(fr, il, body) => {
+                        // Make sure args match parameters
+                        if el.len() != il.len() { panic!("Call error") };
+                        // New frame
+                        let mut arg_frame = Frame::new();
+                        // Add args to new frame
+                        for i in 0..el.len() { arg_frame.push(&il[i], &execute(&el[i], env)); }
+                        // Push closure frame to environment
+                        env.push_frame(fr.clone());
+                        // Push args frame to environment
+                        env.push_frame(arg_frame);
+                        // Evaluate function body
+                        let retval = execute(body.as_ref(), env);
+                        // Pop stack frames
+                        env.pop_frame();
+                        env.pop_frame();
+                        // Return
+                        retval
+                    },
+                    _ => panic!("Unexpected value")
+                }
+            }
             _ => panic!("Unimplemented")
         }
     }

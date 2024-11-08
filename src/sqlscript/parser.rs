@@ -4,8 +4,9 @@ pub mod parser {
     pub mod parsetree {
         use std::rc::Rc;
         use super::super::super::lexer::lexer::ColType;
+        use crate::engine::script::script::Frame;
         pub enum Query {
-            Select(IdentList, String, Option<Expr>, Option<String>, Option<Expr>), // SELECT _ FROM _ WHERE _ SORT BY _ LIMIT _ (where, sort by, and limit are optional)
+            Select(Option<IdentList>, String, Option<Expr>, Option<String>, Option<Expr>), // SELECT _ FROM _ WHERE _ SORT BY _ LIMIT _ (where, sort by, and limit are optional)
             Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
             SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
             Const(String, Expr), // CONST <name> = <value>
@@ -19,8 +20,8 @@ pub mod parser {
             BlockExpr(Block),
             ValExpr(Val),
             IdentExpr(String),
-            CallExpr(Rc<Expr>, Option<ExprList>),
-            FunExpr(Option<IdentList>, Rc<Expr>),
+            CallExpr(Rc<Expr>, ExprList),
+            FunExpr(IdentList, Rc<Expr>),
             CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
         }
         pub enum Block {
@@ -33,15 +34,8 @@ pub mod parser {
             StrVal(String),
             BoolVal(bool),
             UndefVal,
-            NullVal
-        }
-        pub enum ExprList {
-            MultiList(Rc<Expr>, Rc<ExprList>),
-            SingleList(Rc<Expr>)
-        }
-        pub enum IdentList {
-            List(Vec<String>),
-            All
+            NullVal,
+            ClosureVal(Frame, IdentList, Rc<Expr>)
         }
         #[derive(PartialEq, Debug)]
         pub enum BopType {
@@ -59,6 +53,8 @@ pub mod parser {
             LogAndBop
         }
         pub type ColList = Vec<(String, ColType)>;
+        pub type ExprList = Vec<Rc<Expr>>;
+        pub type IdentList = Vec<String>;
         #[derive(PartialEq, Debug)]
         pub enum UopType {
             NegUop,
@@ -170,10 +166,10 @@ pub mod parser {
                                 TokenKind::TimesKw => {
                                     // Pop *
                                     self.pop();
-                                    // Return identlist all
-                                    parsetree::IdentList::All
+                                    // Return identlist none
+                                    None
                                 },
-                                _ => self.identlist()
+                                _ => Some(self.identlist())
                             };
                             // Expect and pop FROM keyword
                             self.pop_expect(TokenKind::FromKw);
@@ -356,8 +352,8 @@ pub mod parser {
                     self.pop();
                     // Get parameter list
                     let paramlist = match self.peek().kind {
-                        TokenKind::Arrow => None,
-                        _ => Some(self.identlist())
+                        TokenKind::Arrow => Vec::new(),
+                        _ => self.identlist()
                     };
                     // Expect arrow, pop it
                     self.pop_expect(TokenKind::Arrow);
@@ -395,8 +391,8 @@ pub mod parser {
                     self.pop();
                     // Check if next is rparen. If not, parse exprlist
                     let elist = match self.peek().kind {
-                        TokenKind::RParen => None,
-                        _ => Some(self.exprlist())
+                        TokenKind::RParen => Vec::new(),
+                        _ => self.exprlist()
                     };
                     // Expect RParen
                     self.pop_expect(TokenKind::RParen);
@@ -449,10 +445,16 @@ pub mod parser {
                 TokenKind::Comma => {
                     // Pop comma
                     self.pop();
+                    // Get rest of list
+                    let mut rest = self.exprlist();
                     // Parse next expr
-                    parsetree::ExprList::MultiList(Rc::new(expr), Rc::new(self.exprlist()))
+                    rest.push(Rc::new(expr));
+                    rest
                 },
-                _ => parsetree::ExprList::SingleList(Rc::new(expr))
+                _ => {
+                    let new_vec = vec![Rc::new(expr)];
+                    new_vec
+                }
             }
         }
         fn identlist(&mut self) -> parsetree::IdentList {
@@ -464,16 +466,13 @@ pub mod parser {
                     // Pop comma
                     self.pop();
                     // Parse next expr
-                    let mut next_vec = match self.identlist() {
-                        parsetree::IdentList::List(x) => x,
-                        _ => panic!("Parsing error")
-                    };
+                    let mut next_vec = self.identlist();
                     next_vec.push(val);
-                    parsetree::IdentList::List(next_vec)
+                    next_vec
                 },
                 _ => {
                     let new_vec = vec![val];
-                    parsetree::IdentList::List(new_vec)
+                    new_vec
                 }
             }
         }
@@ -838,10 +837,7 @@ mod parser_tests {
                 // Check type of proceeding script
                 match e1.as_ref() {
                     parsetree::Expr::CallExpr(e1, args) => {
-                        match args {
-                            None => assert!(true),
-                            _ => assert!(false)
-                        }
+                        assert_eq!(args.len(), 0);
                         match e1.as_ref() {
                             parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
@@ -869,10 +865,7 @@ mod parser_tests {
                     parsetree::Expr::BopExpr(e2, _, _) => {
                         match e2.as_ref() {
                             parsetree::Expr::CallExpr(e3, args) => {
-                                match args {
-                                    None => assert!(true),
-                                    _ => assert!(false)
-                                }
+                                assert_eq!(args.len(), 0);
                                 match e3.as_ref() {
                                     parsetree::Expr::IdentExpr(_) => assert!(true),
                                     _ => assert!(false)
@@ -920,12 +913,7 @@ mod parser_tests {
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::CallExpr(_, args) => {
-                        match args {
-                            Some(parsetree::ExprList::SingleList(_)) => assert!(true),
-                            _ => assert!(false)
-                        }
-                    },
+                    parsetree::Expr::CallExpr(_, args) => assert_eq!(args.len(), 1),
                     _ => assert!(false)
                 }
             }
@@ -945,12 +933,7 @@ mod parser_tests {
             parsetree::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::CallExpr(_, args) => {
-                        match args {
-                            Some(parsetree::ExprList::MultiList(_,_)) => assert!(true),
-                            _ => assert!(false)
-                        }
-                    },
+                    parsetree::Expr::CallExpr(_, args) => assert_eq!(args.len(), 3),
                     _ => assert!(false)
                 }
             }
@@ -971,10 +954,7 @@ mod parser_tests {
                 // Check type of expr
                 match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
-                        match params {
-                            None => assert!(true),
-                            _ => assert!(false)
-                        }
+                        assert_eq!(params.len(), 0);
                         match body.as_ref() {
                             parsetree::Expr::ValExpr(_) => assert!(true),
                             _ => assert!(false)
@@ -1000,15 +980,7 @@ mod parser_tests {
                 // Check type of expr
                 match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
-                        match params {
-                            Some(elist) => {
-                                match elist {
-                                    parsetree::IdentList::List(l) => assert_eq!(l.len(), 1),
-                                    _ => assert!(false)
-                                }
-                            },
-                            _ => assert!(false)
-                        }
+                        assert_eq!(params.len(), 1);
                         match body.as_ref() {
                             parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
@@ -1034,15 +1006,7 @@ mod parser_tests {
                 // Check type of expr
                 match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
-                        match params {
-                            Some(elist) => {
-                                match elist {
-                                    parsetree::IdentList::List(l) => assert_eq!(l.len(), 3),
-                                    _ => assert!(false)
-                                }
-                            },
-                            _ => assert!(false)
-                        }
+                        assert_eq!(params.len(), 3);
                         match body.as_ref() {
                             parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
@@ -1068,15 +1032,7 @@ mod parser_tests {
                 // Check type of expr
                 match e1.as_ref() {
                     parsetree::Expr::FunExpr(params, body) => {
-                        match params {
-                            Some(elist) => {
-                                match elist {
-                                    parsetree::IdentList::List(_) => assert!(true),
-                                    _ => assert!(false)
-                                }
-                            },
-                            _ => assert!(false)
-                        }
+                        assert_eq!(params.len(), 1);
                         match body.as_ref() {
                             parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
@@ -1271,7 +1227,7 @@ mod parser_tests {
             // Should be exprscript
             parsetree::Query::Select(ids, _, _, _, _) => {
                 match ids {
-                    parsetree::IdentList::All => assert!(true),
+                    None => assert!(true),
                     _ => assert!(false)
                 }
             },
