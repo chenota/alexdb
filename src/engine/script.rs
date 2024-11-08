@@ -71,6 +71,12 @@ pub mod script {
             _ => panic!("Unexpected value")
         }
     }
+    fn extract_bool(val: &Val) -> bool {
+        match val {
+            Val::BoolVal(x) => x,
+            _ => panic!("Unexpected value")
+        }
+    }
     fn to_num(val: &Val) -> Val {
         match val {
             Val::BoolVal(x) => Val::NumVal(if *x {1.0} else {0.0}),
@@ -86,6 +92,12 @@ pub mod script {
             _ => panic!("Unexpected value")
         }
     }
+    fn extract_num(val: &Val) -> f64 {
+        match val {
+            Val::NumVal(x) => x,
+            _ => panic!("Unexpected value")
+        }
+    }
     fn to_str(val: &Val) -> Val {
         match val {
             Val::BoolVal(x) => Val::StrVal(if *x {"true".to_string()} else {"false".to_string()}),
@@ -96,11 +108,49 @@ pub mod script {
             _ => panic!("Unexpected value")
         }
     }
-    pub fn execute(script: &Expr, env: &mut Environment) -> () {
+    fn extract_str(val: &Val) -> String {
+        match val {
+            Val::StrVal(x) => x.clone(),
+            _ => panic!("Unexpected value")
+        }
+    }
+    fn eq(a: &Val, b: &Val) -> bool {
+        match (a, b) {
+            (Val::BoolVal(av), Val::BoolVal(bv)) => av == bv,
+            (Val::NumVal(av), Val::NumVal(bv)) => av == bv,
+            (Val::StrVal(av), Val::StrVal(bv)) => av == bv,
+            (Val::NullVal, Val::NullVal) 
+            | (Val::UndefVal, Val::UndefVal)
+            | (Val::NullVal, Val::UndefVal)
+            | (Val::UndefVal, Val::NullVal) => true,
+            (Val::BoolVal(_), _) => eq(&to_num(a), b),
+            (_, Val::BoolVal(_)) => eq(a, &to_num(b)),
+            (Val::NumVal(_), Val::StrVal(_)) => eq(a, &to_num(b)),
+            (Val::StrVal(_), Val::NumVal(_)) => eq(&to_num(a), b),
+            _ => panic!("Unexpected value")
+        }
+    }
+    pub fn execute(script: &Expr, env: &mut Environment) -> Val {
         match script {
             Expr::BopExpr(e1, bop, e2) => {
                 let v1 = execute(e1.as_ref(), env);
                 let v2 = execute(e2.as_ref(), env);
+                match bop {
+                    // Arithmetic
+                    BopType::PlusBop => {
+                        match (v1, v2) {
+                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::StrVal(s1 + &s2),
+                            _ => Val::NumVal(extract_num(&to_num(&v1)) + extract_num(&to_num(&v2)))
+                        }
+                    },
+                    BopType::MinusBop => Val::NumVal(extract_num(&to_num(&v1)) - extract_num(&to_num(&v2))),
+                    BopType::TimesBop => Val::NumVal(extract_num(&to_num(&v1)) * extract_num(&to_num(&v2))),
+                    BopType::DivBop => Val::NumVal(extract_num(&to_num(&v1)) / extract_num(&to_num(&v2))),
+                    // Comparison
+                    BopType::EqBop => Val::BoolVal(eq(&v1, &v2)),
+                    _ => panic!("Unimplemented")
+                }
+                
             }
             _ => panic!("Unimplemented")
         }

@@ -55,6 +55,7 @@ pub mod parser {
             LtBop,
             LteBop,
             EqBop,
+            StrEqBop,
             LogOrBop,
             LogAndBop
         }
@@ -109,6 +110,7 @@ pub mod parser {
                 TokenKind::Lt => Some(parsetree::BopType::LtBop),
                 TokenKind::Lte => Some(parsetree::BopType::LteBop),
                 TokenKind::Eq => Some(parsetree::BopType::EqBop),
+                TokenKind::StrEq => Some(parsetree::BopTYpe::StrEqBop),
                 TokenKind::LogAndKw => Some(parsetree::BopType::LogAndBop),
                 TokenKind::LogOrKw => Some(parsetree::BopType::LogOrBop),
                 _ => None
