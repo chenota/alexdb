@@ -277,3 +277,25 @@ pub mod script {
         }
     }
 }
+
+#[cfg(test)]
+mod test_script {
+    use crate::sqlscript::parser::parser::{Parser, parsetree};
+    use super::script::*;
+    #[test]
+    fn basic_addition() -> Result<(), String> {
+        // Setup
+        let test_input: String = "432 + 5".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(437.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+}
