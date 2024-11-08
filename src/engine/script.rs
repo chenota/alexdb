@@ -127,7 +127,17 @@ pub mod script {
             (_, Val::BoolVal(_)) => eq(a, &to_num(b)),
             (Val::NumVal(_), Val::StrVal(_)) => eq(a, &to_num(b)),
             (Val::StrVal(_), Val::NumVal(_)) => eq(&to_num(a), b),
-            _ => panic!("Unexpected value")
+            _ => false
+        }
+    }
+    fn stricteq(a: &Val, b: &Val) -> bool {
+        match (a, b) {
+            (Val::BoolVal(av), Val::BoolVal(bv)) => av == bv,
+            (Val::NumVal(av), Val::NumVal(bv)) => av == bv,
+            (Val::StrVal(av), Val::StrVal(bv)) => av == bv,
+            (Val::NullVal, Val::NullVal) 
+            | (Val::UndefVal, Val::UndefVal) => true,
+            _ => false
         }
     }
     pub fn execute(script: &Expr, env: &mut Environment) -> Val {
@@ -148,6 +158,7 @@ pub mod script {
                     BopType::DivBop => Val::NumVal(extract_num(&to_num(&v1)) / extract_num(&to_num(&v2))),
                     // Comparison
                     BopType::EqBop => Val::BoolVal(eq(&v1, &v2)),
+                    BopType::StrEqBop => Val::BoolVal(stricteq(&v1, &v2)),
                     _ => panic!("Unimplemented")
                 }
                 
