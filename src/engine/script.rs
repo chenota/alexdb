@@ -12,11 +12,13 @@ pub mod script {
         }
         pub fn get(&self, name: &String) -> Option<Val> {
             let mut found = None;
-            for i in (self.data.len()-1)..0 {
-                if self.data[i].0 == *name {
-                    found = Some(self.data[i].1.clone());
-                }
-            };
+            if self.data.len() > 0 {
+                for i in (0..(self.data.len()-1)).rev() {
+                    if self.data[i].0 == *name {
+                        found = Some(self.data[i].1.clone());
+                    }
+                };
+            }
             found
         }
         pub fn new() -> Frame {
@@ -25,11 +27,13 @@ pub mod script {
             }
         }
         pub fn contains(&self, name: &String) -> bool {
-            for i in 0..(self.data.len()-1) {
-                if self.data[i].0 == *name {
-                    return true;
-                }
-            };
+            if self.data.len() > 0 {
+                for i in 0..(self.data.len()-1) {
+                    if self.data[i].0 == *name {
+                        return true;
+                    }
+                };
+            }
             false
         }
         pub fn data(&self) -> &Vec<(String, Val)> {
@@ -50,10 +54,12 @@ pub mod script {
             let mut new_frame = Frame::new();
             for i in 0..(self.frames.len()) {
                 let frame_data = self.frames[i].data();
-                for j in 0..(frame_data.len()) {
-                    let data = &frame_data[j];
-                    if !(new_frame.contains(&data.0)) {
-                        new_frame.push(&data.0, &data.1)
+                if frame_data.len() > 0 {
+                    for j in 0..(frame_data.len()-1) {
+                        let data = &frame_data[j];
+                        if !(new_frame.contains(&data.0)) {
+                            new_frame.push(&data.0, &data.1)
+                        }
                     }
                 }
             };
@@ -77,7 +83,7 @@ pub mod script {
         }
         pub fn get(&mut self, name: &String) -> Option<Val> {
             let frames_len = self.frames.len();
-            for i in frames_len..0 {
+            for i in (0..frames_len).rev() {
                 let retrived_value = self.frames[i].get(name);
                 match retrived_value {
                     Some(_) => return retrived_value,
@@ -303,6 +309,23 @@ mod test_script {
         // Check output value
         match test_val {
             parsetree::Val::NumVal(437.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn basic_ident() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        test_environment.push(&"x".to_string(), &parsetree::Val::NumVal(5.0));
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(5.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
