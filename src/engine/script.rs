@@ -724,4 +724,52 @@ mod test_script {
         }
         Ok(())
     }
+    #[test]
+    fn precedence_arithmetic_1() -> Result<(), String> {
+        // Setup
+        let test_input: String = "5 + 1 * 3".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(8.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn precedence_arithmetic_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "5 * 1 + 3".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(8.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn call_precedence() -> Result<(), String> {
+        // Setup
+        let test_input: String = "f = fun -> 5; 3 + f()".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(8.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
