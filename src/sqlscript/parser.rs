@@ -62,6 +62,7 @@ pub mod parser {
         #[derive(PartialEq, Debug)]
         pub enum UopType {
             NegUop,
+            NotUop
         }
     }
     pub struct Parser {
@@ -341,6 +342,14 @@ pub mod parser {
                     let expr = self.expr();
                     // Return negated expression
                     parsetree::Expr::UopExpr(parsetree::UopType::NegUop, Rc::new(expr))
+                },
+                TokenKind::NotKw => {
+                    // Pop not sign
+                    self.pop();
+                    // Parse expr
+                    let expr = self.expr();
+                    // Return negated expression
+                    parsetree::Expr::UopExpr(parsetree::UopType::NotUop, Rc::new(expr))
                 },
                 TokenKind::FunKw => {
                     // Pop fun kw

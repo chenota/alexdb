@@ -17,6 +17,7 @@ pub mod lexer {
         LogOrKw,
         LogAndKw,
         StrEq,
+        NotKw,
         // Functions
         Arrow,
         FunKw,
@@ -140,6 +141,7 @@ pub mod lexer {
         // Logical
         (Some(TokenKind::LogOrKw), reg!(r"\|\|"), none_value),
         (Some(TokenKind::LogAndKw), reg!(r"&&"), none_value),
+        (Some(TokenKind::NotKw), reg!(r"!"), none_value),
         // Function stuff
         (Some(TokenKind::Arrow), reg!(r"->"), none_value),
         (Some(TokenKind::FunKw), reg!(r"fun"), none_value),

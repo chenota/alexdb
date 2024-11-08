@@ -193,6 +193,13 @@ pub mod script {
                 let v1 = execute(e1.as_ref(), env);
                 if extract_bool(&to_bool(&v1)) { execute(e2.as_ref(), env) } else { execute(e3.as_ref(), env) }
             },
+            Expr::UopExpr(uop, e1) => {
+                let v1 = execute(e1.as_ref(), env);
+                match uop {
+                    UopType::NegUop => Val::NumVal(- extract_num(&to_num(&v1))),
+                    UopType::NotUop => Val::BoolVal(! extract_bool(&to_bool(&v1)))
+                }
+            }
             _ => panic!("Unimplemented")
         }
     }
