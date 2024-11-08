@@ -73,7 +73,7 @@ pub mod script {
     }
     fn extract_bool(val: &Val) -> bool {
         match val {
-            Val::BoolVal(x) => x,
+            Val::BoolVal(x) => *x,
             _ => panic!("Unexpected value")
         }
     }
@@ -94,7 +94,7 @@ pub mod script {
     }
     fn extract_num(val: &Val) -> f64 {
         match val {
-            Val::NumVal(x) => x,
+            Val::NumVal(x) => *x,
             _ => panic!("Unexpected value")
         }
     }
@@ -138,8 +138,8 @@ pub mod script {
                 match bop {
                     // Arithmetic
                     BopType::PlusBop => {
-                        match (v1, v2) {
-                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::StrVal(s1 + &s2),
+                        match (&v1, &v2) {
+                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::StrVal(format!("{}{}", s1, s2)),
                             _ => Val::NumVal(extract_num(&to_num(&v1)) + extract_num(&to_num(&v2)))
                         }
                     },

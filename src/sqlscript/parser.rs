@@ -110,7 +110,7 @@ pub mod parser {
                 TokenKind::Lt => Some(parsetree::BopType::LtBop),
                 TokenKind::Lte => Some(parsetree::BopType::LteBop),
                 TokenKind::Eq => Some(parsetree::BopType::EqBop),
-                TokenKind::StrEq => Some(parsetree::BopTYpe::StrEqBop),
+                TokenKind::StrEq => Some(parsetree::BopType::StrEqBop),
                 TokenKind::LogAndKw => Some(parsetree::BopType::LogAndBop),
                 TokenKind::LogOrKw => Some(parsetree::BopType::LogOrBop),
                 _ => None
@@ -367,7 +367,7 @@ pub mod parser {
                     parsetree::Expr::CondExpr(Rc::new(if_expr), Rc::new(then_expr), Rc::new(else_expr))
                 },
                 TokenKind::Identifier => parsetree::Expr::IdentExpr(match self.pop().value {
-                    String(x) => x,
+                    TokenValue::String(x) => x.clone(),
                     _ => panic!("Parsing error")
                 }),
                 _ => parsetree::Expr::ValExpr(self.value())
@@ -458,7 +458,7 @@ pub mod parser {
             match self.peek().kind {
                 TokenKind::Identifier => {
                     match self.pop().value {
-                        String(x) => x,
+                        TokenValue::String(x) => x.clone(),
                         _ => panic!("Parsing error")
                     }
                 },
@@ -816,7 +816,7 @@ mod parser_tests {
                             _ => assert!(false)
                         }
                         match e1.as_ref() {
-                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -847,7 +847,7 @@ mod parser_tests {
                                     _ => assert!(false)
                                 }
                                 match e3.as_ref() {
-                                    parsetree::Expr::ValExpr(_) => assert!(true),
+                                    parsetree::Expr::IdentExpr(_) => assert!(true),
                                     _ => assert!(false)
                                 }
                             }
@@ -983,7 +983,7 @@ mod parser_tests {
                             _ => assert!(false)
                         }
                         match body.as_ref() {
-                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -1017,7 +1017,7 @@ mod parser_tests {
                             _ => assert!(false)
                         }
                         match body.as_ref() {
-                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -1051,7 +1051,7 @@ mod parser_tests {
                             _ => assert!(false)
                         }
                         match body.as_ref() {
-                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            parsetree::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
