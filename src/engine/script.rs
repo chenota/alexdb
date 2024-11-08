@@ -452,4 +452,100 @@ mod test_script {
         }
         Ok(())
     }
+    #[test]
+    fn null() -> Result<(), String> {
+        // Setup
+        let test_input: String = "null".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NullVal => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn fn_multi_params() -> Result<(), String> {
+        // Setup
+        let test_input: String = "f = fun x, y, z -> x + y + z; f(3, 10, 7)".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(20.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn fn_higher_order() -> Result<(), String> {
+        // Setup
+        let test_input: String = "add = fun x -> fun y -> x + y; inc = add(1); inc(9)".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(10.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn fn_lexical_scope() -> Result<(), String> {
+        // Setup
+        let test_input: String = "add = fun x -> fun y -> x + y; inc = add(1); x = 1000; inc(9)".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(10.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn scope_1() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x = 30; y = {x = 50; x}; x".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(30.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn scope_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x = 30; y = {x = 50; x}; y".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            parsetree::Val::NumVal(50.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
