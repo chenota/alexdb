@@ -1316,4 +1316,69 @@ mod parser_tests {
         }
         Ok(())
     }
+    #[test]
+    fn parser_select_sort_1() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT * FROM table1 SORT BY test2 LIMIT 10".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(_ , _, whr, srt, lim) => {
+                match lim {
+                    Some(_) => assert!(true),
+                    _ => assert!(false)
+                };
+                match whr {
+                    None => assert!(true),
+                    _ => assert!(false)
+                };
+                match srt {
+                    Some(s) => assert_eq!(s, "test2"),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_select_sort_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT * FROM table1 SORT BY test1".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(_ , _, _, srt, _) => {
+                match srt {
+                    Some(s) => assert_eq!(s, "test1"),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn parser_select_sort_3() -> Result<(), String> {
+        // Setup
+        let test_input: String = "SELECT * FROM table1 WHERE x > 5 SORT BY x LIMIT 10".to_string();
+        let mut test_parser: Parser = Parser::new(test_input);
+        let ast = test_parser.parse();
+        // Assert correct AST
+        match ast {
+            // Should be exprscript
+            parsetree::Query::Select(_ , _, _, srt, _) => {
+                match srt {
+                    Some(s) => assert_eq!(s, "x"),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
