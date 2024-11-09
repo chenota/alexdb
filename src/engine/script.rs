@@ -283,7 +283,7 @@ pub mod engine {
                 // Check value
                 match val {
                     Some(v1) => v1,
-                    _ => panic!("Bad variable")
+                    _ => panic!("Bad Variable")
                 }
             },
             _ => panic!("Unimplemented")

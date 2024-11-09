@@ -149,8 +149,8 @@ mod test_database {
         db.execute("CREATE TABLE test_table (field1 num, field2 str)".to_string());
         // Insert values into table
         db.execute("INSERT INTO test_table (field1) VALUES (1)".to_string());
-        db.execute("INSERT INTO test_table VALUES (field2) ('hello, world')".to_string());
-        db.execute("INSERT INTO test_table VALUES (field2, field1) ('hello, world', 2)".to_string());
+        db.execute("INSERT INTO test_table (field2) VALUES ('hello, world')".to_string());
+        db.execute("INSERT INTO test_table (field2, field1) VALUES ('hello, world', 2)".to_string());
         Ok(())
     }
 }
