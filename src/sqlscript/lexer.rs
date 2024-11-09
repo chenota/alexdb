@@ -1,5 +1,6 @@
 pub mod lexer {
     use regex::Regex;
+    use super::super::types::types::ColType;
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub enum TokenKind {
         // End of file
@@ -78,12 +79,6 @@ pub mod lexer {
         pub value: TokenValue,
         pub start: usize,
         pub end: usize
-    }
-    #[derive(Clone)]
-    pub enum ColType {
-        Number,
-        String,
-        Boolean
     }
     // Add carrot to start
     macro_rules! reg{

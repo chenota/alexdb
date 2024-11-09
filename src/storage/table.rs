@@ -1,11 +1,10 @@
 pub mod table {
     use super::super::column;
-    use super::super::column::generic::ColumnContainer;
-    use super::super::column::generic::DataContainer;
-    use crate::sqlscript::lexer::lexer;
+    use super::super::column::generic::Column;
+    use crate::sqlscript::types::types::{ColType, Val};
 
     pub struct Table {
-        table: Vec<ColumnContainer>,
+        table: Vec<Column>,
         headers: Vec<String>,
         size: usize
     }
@@ -17,19 +16,19 @@ pub mod table {
                 size: 0
             }
         }
-        pub fn add_column(&mut self, name: &String, coltype: lexer::ColType) -> () {
+        pub fn add_column(&mut self, name: &String, coltype: ColType) -> () {
             // Check that column does not already exist
             if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
             // Add table name to headers
             self.headers.push(name.clone());
             // Push uncompressed column to table
             match coltype {
-                lexer::ColType::Boolean => self.table.push(ColumnContainer::BooleanColumn(Box::new(column::generic::Uncompressed::new()))),
-                lexer::ColType::Number => self.table.push(ColumnContainer::NumberColumn(Box::new(column::generic::Uncompressed::new()))),
-                lexer::ColType::String => self.table.push(ColumnContainer::StringColumn(Box::new(column::generic::Uncompressed::new())))
+                ColType::Boolean => self.table.push(Column::Boolean(Box::new(column::generic::Uncompressed::new()))),
+                ColType::Number => self.table.push(Column::Number(Box::new(column::generic::Uncompressed::new()))),
+                ColType::String => self.table.push(Column::String(Box::new(column::generic::Uncompressed::new())))
             }
         }
-        pub fn get_column(&self, name: &String) -> &ColumnContainer {
+        pub fn get_column(&self, name: &String) -> &Column {
             // Check that column exists
             if !self.headers.contains(name) { panic!("Invalid column name") }
             // Find column index
@@ -37,27 +36,30 @@ pub mod table {
             // Return column at index
             &self.table[idx]
         }
-        pub fn add_row(&mut self, data: Vec<column::generic::DataContainer>) {
+        pub fn add_row(&mut self, data: Vec<Val>) {
             // Check that vector has appropriate number of items
             if data.len() != self.table.len() { panic!("Incorrect number of items") }
             // Add item to each column
             for i in 0..data.len() {
                 match &mut self.table[i] {
-                    ColumnContainer::NumberColumn(vec) => {
+                    Column::Number(vec) => {
                         match data[i] {
-                            DataContainer::Number(x) => vec.as_mut().insert(x),
+                            Val::NumVal(x) => vec.as_mut().insert(Some(x)),
+                            Val::NullVal => vec.as_mut().insert(None),
                             _ => panic!("Bad data type")
                         }
                     },
-                    ColumnContainer::BooleanColumn(vec) => {
+                    Column::Boolean(vec) => {
                         match data[i] {
-                            DataContainer::Boolean(x) => vec.as_mut().insert(x),
+                            Val::BoolVal(x) => vec.as_mut().insert(Some(x)),
+                            Val::NullVal => vec.as_mut().insert(None),
                             _ => panic!("Bad data type")
                         }
                     },
-                    ColumnContainer::StringColumn(vec) => {
+                    Column::String(vec) => {
                         match data[i].clone() {
-                            DataContainer::String(x) => vec.as_mut().insert(x),
+                            Val::StrVal(x) => vec.as_mut().insert(Some(x)),
+                            Val::NullVal => vec.as_mut().insert(None),
                             _ => panic!("Bad data type")
                         }
                     }
@@ -70,8 +72,8 @@ pub mod table {
 #[cfg(test)]
 mod table_tests {
     use super::*;
-    use crate::sqlscript::lexer::lexer;
-    use super::super::column::generic::{DataContainer, ColumnContainer};
+    use crate::sqlscript::types::types::{Val, ColType};
+    use super::super::column::generic::Column;
     #[test]
     fn test_bool_column() -> Result<(), String> {
         // Setup
@@ -79,18 +81,18 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, lexer::ColType::Boolean);
-        test_table.add_column(&col_name2, lexer::ColType::Boolean);
+        test_table.add_column(&col_name1, ColType::Boolean);
+        test_table.add_column(&col_name2, ColType::Boolean);
         // Create row
         let row1 = vec![
-            DataContainer::Boolean(Some(false)),
-            DataContainer::Boolean(None)
+            Val::BoolVal(false),
+            Val::NullVal
         ];
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
         match test_table.get_column(&col_name1) {
-            ColumnContainer::BooleanColumn(x) => {
+            Column::Boolean(x) => {
                 match x.as_ref().extract()[0] {
                     Some(y) => assert!(!y),
                     _ => assert!(false)
@@ -99,7 +101,7 @@ mod table_tests {
             _ => assert!(false)
         }
         match test_table.get_column(&col_name2) {
-            ColumnContainer::BooleanColumn(x) => {
+            Column::Boolean(x) => {
                 match x.as_ref().extract()[0] {
                     None => assert!(true),
                     _ => assert!(false)
@@ -116,18 +118,18 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, lexer::ColType::Number);
-        test_table.add_column(&col_name2, lexer::ColType::Number);
+        test_table.add_column(&col_name1, ColType::Number);
+        test_table.add_column(&col_name2, ColType::Number);
         // Create row
         let row1 = vec![
-            DataContainer::Number(Some(12.5)),
-            DataContainer::Number(None)
+            Val::NumVal(12.5),
+            Val::NullVal
         ];
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
         match test_table.get_column(&col_name1) {
-            ColumnContainer::NumberColumn(x) => {
+            Column::Number(x) => {
                 match x.as_ref().extract()[0] {
                     Some(y) => assert_eq!(y, 12.5),
                     _ => assert!(false)
@@ -136,7 +138,7 @@ mod table_tests {
             _ => assert!(false)
         }
         match test_table.get_column(&col_name2) {
-            ColumnContainer::NumberColumn(x) => {
+            Column::Number(x) => {
                 match x.as_ref().extract()[0] {
                     None => assert!(true),
                     _ => assert!(false)
@@ -153,18 +155,18 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, lexer::ColType::String);
-        test_table.add_column(&col_name2, lexer::ColType::String);
+        test_table.add_column(&col_name1, ColType::String);
+        test_table.add_column(&col_name2, ColType::String);
         // Create row
         let row1 = vec![
-            DataContainer::String(Some("Hello".to_string())),
-            DataContainer::String(None)
+            Val::StrVal("Hello".to_string()),
+            Val::NullVal
         ];
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
         match test_table.get_column(&col_name1) {
-            ColumnContainer::StringColumn(x) => {
+            Column::String(x) => {
                 match &x.as_ref().extract()[0] {
                     Some(y) => assert_eq!(y, "Hello"),
                     _ => assert!(false)
@@ -173,7 +175,7 @@ mod table_tests {
             _ => assert!(false)
         }
         match test_table.get_column(&col_name2) {
-            ColumnContainer::StringColumn(x) => {
+            Column::String(x) => {
                 match x.as_ref().extract()[0] {
                     None => assert!(true),
                     _ => assert!(false)
@@ -190,18 +192,18 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, lexer::ColType::Number);
-        test_table.add_column(&col_name2, lexer::ColType::String);
+        test_table.add_column(&col_name1, ColType::Number);
+        test_table.add_column(&col_name2, ColType::String);
         // Create row
         let row1 = vec![
-            DataContainer::Number(Some(112.0)),
-            DataContainer::String(Some("Hello".to_string()))
+            Val::NumVal(112.0),
+            Val::StrVal("Hello".to_string())
         ];
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
         match test_table.get_column(&col_name1) {
-            ColumnContainer::NumberColumn(x) => {
+            Column::Number(x) => {
                 match &x.as_ref().extract()[0] {
                     Some(y) => assert_eq!(*y, 112.0),
                     _ => assert!(false)
@@ -210,7 +212,7 @@ mod table_tests {
             _ => assert!(false)
         }
         match test_table.get_column(&col_name2) {
-            ColumnContainer::StringColumn(x) => {
+            Column::String(x) => {
                 match &x.as_ref().extract()[0] {
                     Some(y) => assert_eq!(y, "Hello"),
                     _ => assert!(false)
@@ -227,24 +229,24 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, lexer::ColType::Number);
-        test_table.add_column(&col_name2, lexer::ColType::String);
+        test_table.add_column(&col_name1, ColType::Number);
+        test_table.add_column(&col_name2, ColType::String);
         // Create row
         let row1 = vec![
-            DataContainer::Number(Some(112.2)),
-            DataContainer::String(Some("Hello".to_string()))
+            Val::NumVal(112.2),
+            Val::StrVal("Hello".to_string())
         ];
         // Create row
-        let row2: Vec<DataContainer> = vec![
-            DataContainer::Number(Some(119.0)),
-            DataContainer::String(Some("Goodbye".to_string()))
+        let row2: Vec<Val> = vec![
+            Val::NumVal(119.0),
+            Val::StrVal("Goodbye".to_string())
         ];
         // Add rows to table
         test_table.add_row(row1);
         test_table.add_row(row2);
         // Assert correct values
         match test_table.get_column(&col_name1) {
-            ColumnContainer::NumberColumn(x) => {
+            Column::Number(x) => {
                 match &x.as_ref().extract()[0] {
                     Some(y) => assert_eq!(*y, 112.2),
                     _ => assert!(false)
@@ -253,7 +255,7 @@ mod table_tests {
             _ => assert!(false)
         }
         match test_table.get_column(&col_name2) {
-            ColumnContainer::StringColumn(x) => {
+            Column::String(x) => {
                 match &x.as_ref().extract()[1] {
                     Some(y) => assert_eq!(y, "Goodbye"),
                     _ => assert!(false)

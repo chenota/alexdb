@@ -1,66 +1,8 @@
 pub mod parser {
     use super::super::lexer::lexer::*;
     use std::rc::Rc;
-    pub mod parsetree {
-        use std::rc::Rc;
-        use super::super::super::lexer::lexer::ColType;
-        use crate::engine::script::script::Frame;
-        pub enum Query {
-            Select(Option<IdentList>, String, Option<Expr>, Option<String>, Option<Expr>), // SELECT _ FROM _ WHERE _ SORT BY _ LIMIT _ (where, sort by, and limit are optional)
-            Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
-            SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
-            Const(String, Expr), // CONST <name> = <value>
-            Aggregate(String, Expr, String), // AGGREGATE <name> = <value> INTO <table>
-            Column(String, Expr, String), // COLUMN <name> = <value> INTO <table>
-            CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1, col2type2, ...)
-        }
-        pub enum Expr {
-            BopExpr(Rc<Expr>, BopType, Rc<Expr>),
-            UopExpr(UopType, Rc<Expr>),
-            BlockExpr(Block),
-            ValExpr(Val),
-            IdentExpr(String),
-            CallExpr(Rc<Expr>, ExprList),
-            FunExpr(IdentList, Rc<Expr>),
-            CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
-        }
-        pub enum Block {
-            ExprBlock(Rc<Expr>),
-            StmtBlock(String, Rc<Expr>, Rc<Block>) // ident = expr; ...
-        }
-        #[derive(Clone)]
-        pub enum Val {
-            NumVal(f64),
-            StrVal(String),
-            BoolVal(bool),
-            UndefVal,
-            NullVal,
-            ClosureVal(Frame, IdentList, Rc<Expr>)
-        }
-        #[derive(PartialEq, Debug)]
-        pub enum BopType {
-            PlusBop,
-            MinusBop,
-            TimesBop,
-            DivBop,
-            GtBop,
-            GteBop,
-            LtBop,
-            LteBop,
-            EqBop,
-            StrEqBop,
-            LogOrBop,
-            LogAndBop
-        }
-        pub type ColList = Vec<(String, ColType)>;
-        pub type ExprList = Vec<Rc<Expr>>;
-        pub type IdentList = Vec<String>;
-        #[derive(PartialEq, Debug)]
-        pub enum UopType {
-            NegUop,
-            NotUop
-        }
-    }
+    use super::super::types::types;
+    use super::super::types::types::ColType;
     pub struct Parser {
         lexer: Lexer,
         token: Token
@@ -89,47 +31,47 @@ pub mod parser {
             // Return
             next_token
         }
-        fn peek_l1_bop(&self) -> Option<parsetree::BopType> {
+        fn peek_l1_bop(&self) -> Option<types::BopType> {
             // Peek first token
             let token = self.peek();
             // Match type, return appropriate value
             match token.kind {
-                TokenKind::LogAndKw => Some(parsetree::BopType::LogAndBop),
-                TokenKind::LogOrKw => Some(parsetree::BopType::LogOrBop),
+                TokenKind::LogAndKw => Some(types::BopType::LogAndBop),
+                TokenKind::LogOrKw => Some(types::BopType::LogOrBop),
                 _ => None
             }
         }
-        fn peek_l2_bop(&self) -> Option<parsetree::BopType> {
+        fn peek_l2_bop(&self) -> Option<types::BopType> {
             // Peek first token
             let token = self.peek();
             // Match type, return appropriate value
             match token.kind {
-                TokenKind::Gt => Some(parsetree::BopType::GtBop),
-                TokenKind::Gte => Some(parsetree::BopType::GteBop),
-                TokenKind::Lt => Some(parsetree::BopType::LtBop),
-                TokenKind::Lte => Some(parsetree::BopType::LteBop),
-                TokenKind::Eq => Some(parsetree::BopType::EqBop),
-                TokenKind::StrEq => Some(parsetree::BopType::StrEqBop),
+                TokenKind::Gt => Some(types::BopType::GtBop),
+                TokenKind::Gte => Some(types::BopType::GteBop),
+                TokenKind::Lt => Some(types::BopType::LtBop),
+                TokenKind::Lte => Some(types::BopType::LteBop),
+                TokenKind::Eq => Some(types::BopType::EqBop),
+                TokenKind::StrEq => Some(types::BopType::StrEqBop),
                 _ => None
             }
         }
-        fn peek_l3_bop(&self) -> Option<parsetree::BopType> {
+        fn peek_l3_bop(&self) -> Option<types::BopType> {
             // Peek first token
             let token = self.peek();
             // Match type, return appropriate value
             match token.kind {
-                TokenKind::PlusKw => Some(parsetree::BopType::PlusBop),
-                TokenKind::MinusKw => Some(parsetree::BopType::MinusBop),
+                TokenKind::PlusKw => Some(types::BopType::PlusBop),
+                TokenKind::MinusKw => Some(types::BopType::MinusBop),
                 _ => None
             }
         }
-        fn peek_l4_bop(&self) -> Option<parsetree::BopType> {
+        fn peek_l4_bop(&self) -> Option<types::BopType> {
             // Peek first token
             let token = self.peek();
             // Match type, return appropriate value
             match token.kind {
-                TokenKind::TimesKw => Some(parsetree::BopType::TimesBop),
-                TokenKind::DivKw => Some(parsetree::BopType::DivBop),
+                TokenKind::TimesKw => Some(types::BopType::TimesBop),
+                TokenKind::DivKw => Some(types::BopType::DivBop),
                 _ => None
             }
         }
@@ -149,7 +91,7 @@ pub mod parser {
             old_token
         }
         // Parsing entry point
-        pub fn parse_script(&mut self) -> parsetree::Block {
+        pub fn parse_script(&mut self) -> types::Block {
             // Reset lexer
             self.lexer.reset();
             // Produce first token
@@ -158,7 +100,7 @@ pub mod parser {
             self.block()
         }
         // Parsing entry point
-        pub fn parse(&mut self) -> parsetree::Query {
+        pub fn parse(&mut self) -> types::Query {
             // Reset lexer
             self.lexer.reset();
             // Produce first token
@@ -166,7 +108,7 @@ pub mod parser {
             // Call start symbol (script for now, will eventually be query)
             self.query()
         }
-        fn query(&mut self) -> parsetree::Query {
+        fn query(&mut self) -> types::Query {
             // Match on first item
             match self.pop().kind {
                 TokenKind::SelectKw => {
@@ -182,7 +124,7 @@ pub mod parser {
                             // Parse table id
                             let tabid = self.ident();
                             // Put it together
-                            parsetree::Query::SelectAggregate(agid, tabid)
+                            types::Query::SelectAggregate(agid, tabid)
                         },
                         _ => {
                             // Parse identlist
@@ -230,7 +172,7 @@ pub mod parser {
                                 _ => None
                             };
                             // Put everything together
-                            parsetree::Query::Select(ilist, tableid, wherescript, sortscript, limitscript)
+                            types::Query::Select(ilist, tableid, wherescript, sortscript, limitscript)
                         }
                     }
                 },
@@ -262,13 +204,13 @@ pub mod parser {
                     // Expect and pop RPAREN
                     self.pop_expect(TokenKind::RParen);
                     // Return
-                    parsetree::Query::Insert(tableid, colids, vlist)
+                    types::Query::Insert(tableid, colids, vlist)
                 },
                 TokenKind::ConstKw => {
                     // Parse single assignment
                     let assign = self.singleassign();
                     // Put together
-                    parsetree::Query::Const(assign.0, assign.1)
+                    types::Query::Const(assign.0, assign.1)
                 },
                 TokenKind::AggregateKw => {
                     // Parse single equals
@@ -278,7 +220,7 @@ pub mod parser {
                     // Parse table name
                     let tname = self.ident();
                     // Put together
-                    parsetree::Query::Aggregate(assign.0, assign.1, tname)
+                    types::Query::Aggregate(assign.0, assign.1, tname)
                 },
                 TokenKind::ColumnKw => {
                     // Parse single assign
@@ -288,7 +230,7 @@ pub mod parser {
                     // Parse table name
                     let tname = self.ident();
                     // Put together
-                    parsetree::Query::Column(assign.0, assign.1, tname)
+                    types::Query::Column(assign.0, assign.1, tname)
                 },
                 TokenKind::CreateKw => {
                     // Pop and expect table kw
@@ -302,13 +244,13 @@ pub mod parser {
                     // Expect and pop rparen
                     self.pop_expect(TokenKind::RParen);
                     // Return
-                    parsetree::Query::CreateTable(tname, clist)
+                    types::Query::CreateTable(tname, clist)
                 },
                 _ => panic!("Parsing error")
             }
         }
         // Parsing functions
-        fn block(&mut self) -> parsetree::Block {
+        fn block(&mut self) -> types::Block {
             match self.peek_ahead().kind {
                 // If 2nd token is an assignment, parse as statement
                 TokenKind::AssignKw => {
@@ -321,17 +263,17 @@ pub mod parser {
                     self.pop();
                     self.pop();
                     // Parse expr
-                    let expr: parsetree::Expr = self.expr();
+                    let expr: types::Expr = self.expr();
                     // Expect semicolon, pop it
                     self.pop_expect(TokenKind::SemiKw);
                     // Return constructed statement
-                    parsetree::Block::StmtBlock(ident_val, Rc::new(expr), Rc::new(self.block()))
+                    types::Block::StmtBlock(ident_val, Rc::new(expr), Rc::new(self.block()))
                 }
                 // Parse as expression
-                _ => parsetree::Block::ExprBlock(Rc::new(self.expr()))
+                _ => types::Block::ExprBlock(Rc::new(self.expr()))
             }
         }
-        fn expr(&mut self) -> parsetree::Expr {
+        fn expr(&mut self) -> types::Expr {
             // Check first value
             let first = match self.peek().kind {
                 TokenKind::FunKw => {
@@ -347,7 +289,7 @@ pub mod parser {
                     // Parse body
                     let body = self.expr();
                     // Put everything together
-                    parsetree::Expr::FunExpr(paramlist, Rc::new(body))
+                    types::Expr::FunExpr(paramlist, Rc::new(body))
                 },
                 TokenKind::IfKw => {
                     // Pop if kw
@@ -363,7 +305,7 @@ pub mod parser {
                     // Parse else expr
                     let else_expr = self.expr();
                     // Put it all together
-                    parsetree::Expr::CondExpr(Rc::new(if_expr), Rc::new(then_expr), Rc::new(else_expr))
+                    types::Expr::CondExpr(Rc::new(if_expr), Rc::new(then_expr), Rc::new(else_expr))
                 },
                 _ => self.expr_level_2()
             };
@@ -373,12 +315,12 @@ pub mod parser {
                     // Pop bop
                     self.pop();
                     // Return parsed expr
-                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr()))
+                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr()))
                 },
                 None => first
             }
         }
-        fn expr_level_2(&mut self) -> parsetree::Expr {
+        fn expr_level_2(&mut self) -> types::Expr {
             let first = self.expr_level_3();
             // Check if bop at front
             match self.peek_l2_bop() {
@@ -386,12 +328,12 @@ pub mod parser {
                     // Pop bop
                     self.pop();
                     // Return parsed expr
-                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_2()))
+                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_2()))
                 },
                 None => first
             }
         }
-        fn expr_level_3(&mut self) -> parsetree::Expr {
+        fn expr_level_3(&mut self) -> types::Expr {
             let first = self.expr_level_4();
             // Check if bop at front
             match self.peek_l3_bop() {
@@ -399,12 +341,12 @@ pub mod parser {
                     // Pop bop
                     self.pop();
                     // Return parsed expr
-                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_3()))
+                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_3()))
                 },
                 None => first
             }
         }
-        fn expr_level_4(&mut self) -> parsetree::Expr {
+        fn expr_level_4(&mut self) -> types::Expr {
             let first = self.expr_level_5();
             // Check if bop at front
             match self.peek_l4_bop() {
@@ -412,12 +354,12 @@ pub mod parser {
                     // Pop bop
                     self.pop();
                     // Return parsed expr
-                    parsetree::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_4()))
+                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_4()))
                 },
                 None => first
             }
         }
-        fn expr_level_5(&mut self) -> parsetree::Expr {
+        fn expr_level_5(&mut self) -> types::Expr {
             match self.peek().kind {
                 TokenKind::MinusKw => {
                     // Pop minus sign
@@ -425,7 +367,7 @@ pub mod parser {
                     // Parse expr
                     let expr = self.expr_level_5();
                     // Return negated expression
-                    parsetree::Expr::UopExpr(parsetree::UopType::NegUop, Rc::new(expr))
+                    types::Expr::UopExpr(types::UopType::NegUop, Rc::new(expr))
                 },
                 TokenKind::NotKw => {
                     // Pop not sign
@@ -433,14 +375,14 @@ pub mod parser {
                     // Parse expr
                     let expr = self.expr_level_5();
                     // Return negated expression
-                    parsetree::Expr::UopExpr(parsetree::UopType::NotUop, Rc::new(expr))
+                    types::Expr::UopExpr(types::UopType::NotUop, Rc::new(expr))
                 },
                 _ => self.expr_level_6()
             }
         }
-        fn expr_level_6(&mut self) -> parsetree::Expr {
+        fn expr_level_6(&mut self) -> types::Expr {
             let first = match self.peek().kind {
-                TokenKind::Identifier => parsetree::Expr::IdentExpr(match self.pop().value {
+                TokenKind::Identifier => types::Expr::IdentExpr(match self.pop().value {
                     TokenValue::String(x) => x.clone(),
                     _ => panic!("Parsing error")
                 }),
@@ -452,7 +394,7 @@ pub mod parser {
                     // Expect right curly bracket, pop it
                     self.pop_expect(TokenKind::RCBracket);
                     // Return parsed expression
-                    parsetree::Expr::BlockExpr(script)
+                    types::Expr::BlockExpr(script)
                 },
                 TokenKind::LParen => {
                     // Pop lparen
@@ -464,7 +406,7 @@ pub mod parser {
                     // Return parsed expression
                     expr
                 },
-                _ => parsetree::Expr::ValExpr(self.value())
+                _ => types::Expr::ValExpr(self.value())
             };
             // Check if postfix (call only postfix) at front
             match self.peek().kind {
@@ -479,37 +421,37 @@ pub mod parser {
                     // Expect RParen
                     self.pop_expect(TokenKind::RParen);
                     // Construct expression
-                    parsetree::Expr::CallExpr(Rc::new(first), elist)
+                    types::Expr::CallExpr(Rc::new(first), elist)
                 },
                 _ => first
             }
         }
-        fn value(&mut self) -> parsetree::Val {
+        fn value(&mut self) -> types::Val {
             // Pop first token
             let token = self.pop();
             // Match type, return appropriate value
             match token.value {
-                TokenValue::Number(x) => parsetree::Val::NumVal(x),
-                TokenValue::Boolean(x) => parsetree::Val::BoolVal(x),
+                TokenValue::Number(x) => types::Val::NumVal(x),
+                TokenValue::Boolean(x) => types::Val::BoolVal(x),
                 // String could be either ident or string value
                 TokenValue::String(x) => {
                     match token.kind {
-                        TokenKind::String => parsetree::Val::StrVal(x),
+                        TokenKind::String => types::Val::StrVal(x),
                         _ => panic!("Parsing error")
                     }
                 },
                 // None could either be undefined or null
                 TokenValue::None => {
                     match token.kind {
-                        TokenKind::UndefinedKw => parsetree::Val::UndefVal,
-                        TokenKind::NullKw => parsetree::Val::NullVal,
+                        TokenKind::UndefinedKw => types::Val::UndefVal,
+                        TokenKind::NullKw => types::Val::NullVal,
                         _ => panic!("Parsing error")
                     }
                 },
                 _ => panic!("Parsing error")
             }
         }
-        fn exprlist(&mut self) -> parsetree::ExprList {
+        fn exprlist(&mut self) -> types::ExprList {
             // Parse expr
             let expr = self.expr();
             // Check if comma
@@ -529,7 +471,7 @@ pub mod parser {
                 }
             }
         }
-        fn identlist(&mut self) -> parsetree::IdentList {
+        fn identlist(&mut self) -> types::IdentList {
             // Parse value
             let val = self.ident();
             // Check if comma
@@ -560,7 +502,7 @@ pub mod parser {
                 _ => panic!("Parsing error")
             }
         }
-        fn singleassign(&mut self) -> (String, parsetree::Expr) {
+        fn singleassign(&mut self) -> (String, types::Expr) {
             // Parse ident
             let id = self.ident();
             // Expect and pop = sign
@@ -570,7 +512,7 @@ pub mod parser {
             // Put together
             (id, expr)
         }
-        fn collist(&mut self) -> parsetree::ColList {
+        fn collist(&mut self) -> types::ColList {
             // Parse column name
             let colname = self.ident();
             // Parse type
@@ -602,6 +544,7 @@ pub mod parser {
 #[cfg(test)]
 mod parser_tests {
     use super::parser::*;
+    use super::super::types::types;
     #[test]
     fn parser_integer() -> Result<(), String> {
         // Setup
@@ -611,13 +554,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 match e1.as_ref() {
                     // Should be val expr
-                    parsetree::Expr::ValExpr(v) => {
+                    types::Expr::ValExpr(v) => {
                         // First value should be four
                         match v {
-                            parsetree::Val::NumVal(x) => assert_eq!(*x, 4.0),
+                            types::Val::NumVal(x) => assert_eq!(*x, 4.0),
                             _ => assert!(false)
                         }
                     },
@@ -637,17 +580,17 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 match e1.as_ref() {
                     // Should be bop expr
-                    parsetree::Expr::BopExpr(v, t, _) => {
+                    types::Expr::BopExpr(v, t, _) => {
                         // Bop type should be plus
-                        assert_eq!(*t, parsetree::BopType::PlusBop);
+                        assert_eq!(*t, types::BopType::PlusBop);
                         // First value should be four
                         match v.as_ref() {
-                            parsetree::Expr::ValExpr(y) => {
+                            types::Expr::ValExpr(y) => {
                                 match y {
-                                    parsetree::Val::NumVal(x) => assert_eq!(*x, 5.0),
+                                    types::Val::NumVal(x) => assert_eq!(*x, 5.0),
                                     _ => assert!(false)
                                 }
                             },
@@ -670,17 +613,17 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 match e1.as_ref() {
                     // Should be bop expr
-                    parsetree::Expr::BopExpr(_, t, v) => {
+                    types::Expr::BopExpr(_, t, v) => {
                         // Bop type should be plus
-                        assert_eq!(*t, parsetree::BopType::MinusBop);
+                        assert_eq!(*t, types::BopType::MinusBop);
                         // First value should be four
                         match v.as_ref() {
-                            parsetree::Expr::ValExpr(y) => {
+                            types::Expr::ValExpr(y) => {
                                 match y {
-                                    parsetree::Val::NumVal(x) => assert_eq!(*x, 3.0),
+                                    types::Val::NumVal(x) => assert_eq!(*x, 3.0),
                                     _ => assert!(false)
                                 }
                             },
@@ -703,13 +646,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be just expr
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 match e1.as_ref() {
                     // Should be val expr
-                    parsetree::Expr::ValExpr(v) => {
+                    types::Expr::ValExpr(v) => {
                         // First value should be four
                         match v {
-                            parsetree::Val::NumVal(x) => assert_eq!(*x, 4.0),
+                            types::Val::NumVal(x) => assert_eq!(*x, 4.0),
                             _ => assert!(false)
                         }
                     },
@@ -729,15 +672,15 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Block::StmtBlock(id, e1, sc) => {
+            types::Block::StmtBlock(id, e1, sc) => {
                 // Make sure ID is x
                 assert_eq!(id, "x");
                 // Check e1
                 match e1.as_ref() {
                     // Should be val expr w/ 5
-                    parsetree::Expr::ValExpr(v) => {
+                    types::Expr::ValExpr(v) => {
                         match v {
-                            parsetree::Val::NumVal(x) => assert_eq!(*x, 5.0),
+                            types::Val::NumVal(x) => assert_eq!(*x, 5.0),
                             _ => assert!(false)
                         }
                     },
@@ -745,7 +688,7 @@ mod parser_tests {
                 }
                 // Check type of proceeding script
                 match sc.as_ref() {
-                    parsetree::Block::ExprBlock(_) => assert!(true),
+                    types::Block::ExprBlock(_) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -762,12 +705,12 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Block::StmtBlock(id, _, sc) => {
+            types::Block::StmtBlock(id, _, sc) => {
                 // Make sure ID is x
                 assert_eq!(id, "x");
                 // Check type of proceeding script
                 match sc.as_ref() {
-                    parsetree::Block::ExprBlock(_) => assert!(true),
+                    types::Block::ExprBlock(_) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -784,12 +727,12 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Block::StmtBlock(_, _, sc1) => {
+            types::Block::StmtBlock(_, _, sc1) => {
                 // Check type of proceeding script
                 match sc1.as_ref() {
-                    parsetree::Block::StmtBlock(_, _, sc2) => {
+                    types::Block::StmtBlock(_, _, sc2) => {
                         match sc2.as_ref() {
-                            parsetree::Block::ExprBlock(_) => assert!(true),
+                            types::Block::ExprBlock(_) => assert!(true),
                             _ => assert!(false)
                         }
                     }
@@ -809,12 +752,12 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1.as_ref() {
-                    parsetree::Expr::BopExpr(e11, _, _) => {
+                    types::Expr::BopExpr(e11, _, _) => {
                         match e11.as_ref() {
-                            parsetree::Expr::BlockExpr(_) => assert!(true),
+                            types::Expr::BlockExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     }
@@ -834,10 +777,10 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be stmtscript
-            parsetree::Block::StmtBlock(_, e1, _) => {
+            types::Block::StmtBlock(_, e1, _) => {
                 // Check type of proceeding script
                 match e1.as_ref() {
-                    parsetree::Expr::BlockExpr(_) => assert!(true),
+                    types::Expr::BlockExpr(_) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -854,13 +797,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1.as_ref() {
-                    parsetree::Expr::UopExpr(t, e2) => {
-                        assert_eq!(*t, parsetree::UopType::NegUop);
+                    types::Expr::UopExpr(t, e2) => {
+                        assert_eq!(*t, types::UopType::NegUop);
                         match e2.as_ref() {
-                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            types::Expr::ValExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -880,12 +823,12 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1.as_ref() {
-                    parsetree::Expr::BopExpr(_, _, e2) => {
+                    types::Expr::BopExpr(_, _, e2) => {
                         match e2.as_ref() {
-                            parsetree::Expr::UopExpr(t, _) => assert_eq!(*t, parsetree::UopType::NegUop),
+                            types::Expr::UopExpr(t, _) => assert_eq!(*t, types::UopType::NegUop),
                             _ => assert!(false)
                         }
                     },
@@ -905,13 +848,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1.as_ref() {
-                    parsetree::Expr::CallExpr(e1, args) => {
+                    types::Expr::CallExpr(e1, args) => {
                         assert_eq!(args.len(), 0);
                         match e1.as_ref() {
-                            parsetree::Expr::IdentExpr(_) => assert!(true),
+                            types::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -931,15 +874,15 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of proceeding script
                 match e1.as_ref() {
-                    parsetree::Expr::BopExpr(e2, _, _) => {
+                    types::Expr::BopExpr(e2, _, _) => {
                         match e2.as_ref() {
-                            parsetree::Expr::CallExpr(e3, args) => {
+                            types::Expr::CallExpr(e3, args) => {
                                 assert_eq!(args.len(), 0);
                                 match e3.as_ref() {
-                                    parsetree::Expr::IdentExpr(_) => assert!(true),
+                                    types::Expr::IdentExpr(_) => assert!(true),
                                     _ => assert!(false)
                                 }
                             }
@@ -962,10 +905,10 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::BopExpr(_, _, _) => assert!(true),
+                    types::Expr::BopExpr(_, _, _) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -982,10 +925,10 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::CallExpr(_, args) => assert_eq!(args.len(), 1),
+                    types::Expr::CallExpr(_, args) => assert_eq!(args.len(), 1),
                     _ => assert!(false)
                 }
             }
@@ -1002,10 +945,10 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::CallExpr(_, args) => assert_eq!(args.len(), 3),
+                    types::Expr::CallExpr(_, args) => assert_eq!(args.len(), 3),
                     _ => assert!(false)
                 }
             }
@@ -1022,13 +965,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::FunExpr(params, body) => {
+                    types::Expr::FunExpr(params, body) => {
                         assert_eq!(params.len(), 0);
                         match body.as_ref() {
-                            parsetree::Expr::ValExpr(_) => assert!(true),
+                            types::Expr::ValExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -1048,13 +991,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::FunExpr(params, body) => {
+                    types::Expr::FunExpr(params, body) => {
                         assert_eq!(params.len(), 1);
                         match body.as_ref() {
-                            parsetree::Expr::IdentExpr(_) => assert!(true),
+                            types::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -1074,13 +1017,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::FunExpr(params, body) => {
+                    types::Expr::FunExpr(params, body) => {
                         assert_eq!(params.len(), 3);
                         match body.as_ref() {
-                            parsetree::Expr::IdentExpr(_) => assert!(true),
+                            types::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -1100,13 +1043,13 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::StmtBlock(_, e1, _) => {
+            types::Block::StmtBlock(_, e1, _) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::FunExpr(params, body) => {
+                    types::Expr::FunExpr(params, body) => {
                         assert_eq!(params.len(), 1);
                         match body.as_ref() {
-                            parsetree::Expr::IdentExpr(_) => assert!(true),
+                            types::Expr::IdentExpr(_) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -1126,10 +1069,10 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::ExprBlock(e1) => {
+            types::Block::ExprBlock(e1) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::CondExpr(_, _, _) => assert!(true),
+                    types::Expr::CondExpr(_, _, _) => assert!(true),
                     _ => assert!(false)
                 }
             }
@@ -1146,12 +1089,12 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Block::StmtBlock(_, e1, _) => {
+            types::Block::StmtBlock(_, e1, _) => {
                 // Check type of expr
                 match e1.as_ref() {
-                    parsetree::Expr::FunExpr(_, body) => {
+                    types::Expr::FunExpr(_, body) => {
                         match body.as_ref() {
-                            parsetree::Expr::CondExpr(_, _, _) => assert!(true),
+                            types::Expr::CondExpr(_, _, _) => assert!(true),
                             _ => assert!(false)
                         }
                     },
@@ -1171,7 +1114,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_, _, _, _, _) => assert!(true),
+            types::Query::Select(_, _, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1185,7 +1128,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_, _, _, _, _) => assert!(true),
+            types::Query::Select(_, _, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1199,7 +1142,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Insert(_, _, _) => assert!(true),
+            types::Query::Insert(_, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1213,7 +1156,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Insert(_, _, _) => assert!(true),
+            types::Query::Insert(_, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1227,7 +1170,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::SelectAggregate(_, _,) => assert!(true),
+            types::Query::SelectAggregate(_, _,) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1241,7 +1184,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Const(_, _,) => assert!(true),
+            types::Query::Const(_, _,) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1255,7 +1198,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Aggregate(_, _, _) => assert!(true),
+            types::Query::Aggregate(_, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1269,7 +1212,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Column(_, _, _) => assert!(true),
+            types::Query::Column(_, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -1283,7 +1226,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::CreateTable(name, _) => assert_eq!(name, "people"),
+            types::Query::CreateTable(name, _) => assert_eq!(name, "people"),
             _ => assert!(false)
         }
         Ok(())
@@ -1297,7 +1240,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(ids, _, _, _, _) => {
+            types::Query::Select(ids, _, _, _, _) => {
                 match ids {
                     None => assert!(true),
                     _ => assert!(false)
@@ -1316,7 +1259,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_ , _, whr, _, lim) => {
+            types::Query::Select(_ , _, whr, _, lim) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
@@ -1339,7 +1282,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_ , _, whr, _, lim) => {
+            types::Query::Select(_ , _, whr, _, lim) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
@@ -1362,7 +1305,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_ , _, whr, srt, lim) => {
+            types::Query::Select(_ , _, whr, srt, lim) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
@@ -1389,7 +1332,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_ , _, _, srt, _) => {
+            types::Query::Select(_ , _, _, srt, _) => {
                 match srt {
                     Some(s) => assert_eq!(s, "test1"),
                     _ => assert!(false)
@@ -1408,7 +1351,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            parsetree::Query::Select(_ , _, _, srt, _) => {
+            types::Query::Select(_ , _, _, srt, _) => {
                 match srt {
                     Some(s) => assert_eq!(s, "x"),
                     _ => assert!(false)

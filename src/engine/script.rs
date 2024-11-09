@@ -1,7 +1,5 @@
-pub mod script {
-    use core::f64;
-    use std::rc::Rc;
-    use crate::sqlscript::parser::parser::parsetree::*;
+pub mod env {
+    use crate::sqlscript::types::types::Val;
     #[derive(Clone)]
     pub struct Frame {
         data: Vec<(String, Val)>,
@@ -87,6 +85,12 @@ pub mod script {
             None
         }
     }
+}
+
+pub mod engine {
+    use core::f64;
+    use crate::sqlscript::types::types::*;
+    use super::env::{Frame, Environment};
     fn to_bool(val: &Val) -> Val {
         match val {
             Val::BoolVal(x) => Val::BoolVal(*x),
@@ -289,20 +293,22 @@ pub mod script {
 
 #[cfg(test)]
 mod test_script {
-    use crate::sqlscript::parser::parser::{Parser, parsetree};
-    use super::script::*;
+    use crate::sqlscript::parser::parser::Parser;
+    use super::engine::*;
+    use super::env::*;
+    use crate::sqlscript::types::types;
     #[test]
     fn basic_addition() -> Result<(), String> {
         // Setup
         let test_input: String = "432 + 5".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(437.0) => assert!(true),
+            types::Val::NumVal(437.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -313,13 +319,13 @@ mod test_script {
         let test_input: String = "x".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
-        test_environment.push(&"x".to_string(), &parsetree::Val::NumVal(5.0));
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        test_environment.push(&"x".to_string(), &types::Val::NumVal(5.0));
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(5.0) => assert!(true),
+            types::Val::NumVal(5.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -330,12 +336,12 @@ mod test_script {
         let test_input: String = "x = 1; x".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(1.0) => assert!(true),
+            types::Val::NumVal(1.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -346,12 +352,12 @@ mod test_script {
         let test_input: String = "x = 1; y = 2; x + y".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(3.0) => assert!(true),
+            types::Val::NumVal(3.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -362,12 +368,12 @@ mod test_script {
         let test_input: String = "x = 1; y = 2; z = 3; x + y + z".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(6.0) => assert!(true),
+            types::Val::NumVal(6.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -378,12 +384,12 @@ mod test_script {
         let test_input: String = "'Hello ' + 'World'".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::StrVal(s) => assert_eq!(s, "Hello World"),
+            types::Val::StrVal(s) => assert_eq!(s, "Hello World"),
             _ => assert!(false)
         }
         Ok(())
@@ -394,12 +400,12 @@ mod test_script {
         let test_input: String = "3 * (5 + 6)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(33.0) => assert!(true),
+            types::Val::NumVal(33.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -410,12 +416,12 @@ mod test_script {
         let test_input: String = "f = fun x -> x; f(5)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(5.0) => assert!(true),
+            types::Val::NumVal(5.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -426,12 +432,12 @@ mod test_script {
         let test_input: String = "f = fun -> undefined; f()".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::UndefVal => assert!(true),
+            types::Val::UndefVal => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -442,12 +448,12 @@ mod test_script {
         let test_input: String = "undefined".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::UndefVal => assert!(true),
+            types::Val::UndefVal => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -458,12 +464,12 @@ mod test_script {
         let test_input: String = "null".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NullVal => assert!(true),
+            types::Val::NullVal => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -474,12 +480,12 @@ mod test_script {
         let test_input: String = "f = fun x, y, z -> x + y + z; f(3, 10, 7)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(20.0) => assert!(true),
+            types::Val::NumVal(20.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -490,12 +496,12 @@ mod test_script {
         let test_input: String = "add = fun x -> fun y -> x + y; inc = add(1); inc(9)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(10.0) => assert!(true),
+            types::Val::NumVal(10.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -506,12 +512,12 @@ mod test_script {
         let test_input: String = "add = fun x -> fun y -> x + y; inc = add(1); x = 1000; inc(9)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(10.0) => assert!(true),
+            types::Val::NumVal(10.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -522,12 +528,12 @@ mod test_script {
         let test_input: String = "x = 30; y = {x = 50; x}; x".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(30.0) => assert!(true),
+            types::Val::NumVal(30.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -538,12 +544,12 @@ mod test_script {
         let test_input: String = "x = 30; y = {x = 50; x}; y".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(50.0) => assert!(true),
+            types::Val::NumVal(50.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -554,12 +560,12 @@ mod test_script {
         let test_input: String = "30 == '30'".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::BoolVal(true) => assert!(true),
+            types::Val::BoolVal(true) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -570,12 +576,12 @@ mod test_script {
         let test_input: String = "30 === '30'".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::BoolVal(false) => assert!(true),
+            types::Val::BoolVal(false) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -586,12 +592,12 @@ mod test_script {
         let test_input: String = "10 > 5".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::BoolVal(true) => assert!(true),
+            types::Val::BoolVal(true) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -602,12 +608,12 @@ mod test_script {
         let test_input: String = "10 < 5".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::BoolVal(false) => assert!(true),
+            types::Val::BoolVal(false) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -618,12 +624,12 @@ mod test_script {
         let test_input: String = "30 <= 30".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::BoolVal(true) => assert!(true),
+            types::Val::BoolVal(true) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -634,12 +640,12 @@ mod test_script {
         let test_input: String = "0 + null".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(0.0) => assert!(true),
+            types::Val::NumVal(0.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -650,12 +656,12 @@ mod test_script {
         let test_input: String = "0 + undefined".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(x) => assert!(x.is_nan()),
+            types::Val::NumVal(x) => assert!(x.is_nan()),
             _ => assert!(false)
         }
         Ok(())
@@ -666,12 +672,12 @@ mod test_script {
         let test_input: String = "-null".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(0.0) => assert!(true),
+            types::Val::NumVal(0.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -682,12 +688,12 @@ mod test_script {
         let test_input: String = "-5".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(-5.0) => assert!(true),
+            types::Val::NumVal(-5.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -698,12 +704,12 @@ mod test_script {
         let test_input: String = "0 - -5".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(5.0) => assert!(true),
+            types::Val::NumVal(5.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -714,12 +720,12 @@ mod test_script {
         let test_input: String = "-5 - -1".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(-4.0) => assert!(true),
+            types::Val::NumVal(-4.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -730,12 +736,12 @@ mod test_script {
         let test_input: String = "5 + 1 * 3".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(8.0) => assert!(true),
+            types::Val::NumVal(8.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -746,12 +752,12 @@ mod test_script {
         let test_input: String = "5 * 1 + 3".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(8.0) => assert!(true),
+            types::Val::NumVal(8.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -762,12 +768,12 @@ mod test_script {
         let test_input: String = "f = fun -> 5; 3 + f()".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(8.0) => assert!(true),
+            types::Val::NumVal(8.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -778,12 +784,12 @@ mod test_script {
         let test_input: String = "3 + 5 || 10".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(8.0) => assert!(true),
+            types::Val::NumVal(8.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -794,12 +800,12 @@ mod test_script {
         let test_input: String = "true && 5 + 10".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(15.0) => assert!(true),
+            types::Val::NumVal(15.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -810,12 +816,12 @@ mod test_script {
         let test_input: String = "10 === 10 && 5 > -3".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::BoolVal(true) => assert!(true),
+            types::Val::BoolVal(true) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -826,12 +832,12 @@ mod test_script {
         let test_input: String = "if true then 10 else 0".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(10.0) => assert!(true),
+            types::Val::NumVal(10.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -842,12 +848,12 @@ mod test_script {
         let test_input: String = "if false then 10 else 0".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(0.0) => assert!(true),
+            types::Val::NumVal(0.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -858,12 +864,12 @@ mod test_script {
         let test_input: String = "5 + (if true then 10 else 0)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(15.0) => assert!(true),
+            types::Val::NumVal(15.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -874,12 +880,12 @@ mod test_script {
         let test_input: String = "isbig = fun x -> if x > 100 then true else false; isbig(43)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::BoolVal(false) => assert!(true),
+            types::Val::BoolVal(false) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -890,12 +896,12 @@ mod test_script {
         let test_input: String = "add = fun x, y -> {z = x + y; z}; add(1 + 2, 4 - 1)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
-        let ast = parsetree::Expr::BlockExpr(test_parser.parse_script());
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
         // Evaluate input
         let test_val = eval(&ast, &mut test_environment);
         // Check output value
         match test_val {
-            parsetree::Val::NumVal(6.0) => assert!(true),
+            types::Val::NumVal(6.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
