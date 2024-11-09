@@ -54,12 +54,28 @@ pub mod engine {
             // Return
             ExecutionResult::None
         }
+        fn create_table(&mut self, table_name: &String, schema: &Vec<(String, ColType)>) -> ExecutionResult {
+            // Check that table doesn't already exist
+            if self.table_names.contains(table_name) { panic!("Table already exists") }
+            // Push table name
+            self.table_names.push(table_name.clone());
+            // Create new table
+            self.tables.push(Table::new());
+            // Get index of new table
+            let idx: usize = self.tables.len() - 1;
+            // Add schema to new table
+            for schema_item in schema {
+                self.tables[idx].add_column(&schema_item.0, schema_item.1);
+            }
+            ExecutionResult::None
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
             let parsed_query = query_parser.parse();
             // Execute query
             match &parsed_query {
+                Query::CreateTable(table_name, schema) => self.create_table(table_name, schema),
                 Query::Insert(table_name, fields, values) => self.insert(table_name, fields, values),
                 _ => panic!("Unimplemented")
             }

@@ -56,7 +56,7 @@ pub mod types {
         NegUop,
         NotUop
     }
-    #[derive(Clone)]
+    #[derive(Clone, Copy)]
     pub enum ColType {
         Number,
         String,
