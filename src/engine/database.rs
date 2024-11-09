@@ -86,5 +86,71 @@ pub mod engine {
                 table_names: Vec::new()
             }
         }
+        pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
+    }
+}
+
+#[cfg(test)]
+mod test_database {
+    use super::engine::*;
+    #[test]
+    fn create_table_single() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (col1 num)".to_string());
+        // Get table names
+        let table_names = db.get_table_names();
+        // Check values
+        assert_eq!(table_names[0], "test_table");
+        Ok(())
+    }
+    #[test]
+    fn create_table_multi() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (col1 num)".to_string());
+        db.execute("CREATE TABLE test_table2 (col1 num)".to_string());
+        // Get table names
+        let table_names = db.get_table_names();
+        // Check values
+        assert_eq!(table_names[0], "test_table");
+        assert_eq!(table_names[1], "test_table2");
+        Ok(())
+    }
+    #[test]
+    fn insert_single() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1)".to_string());
+        db.execute("INSERT INTO test_table VALUES (2)".to_string());
+        Ok(())
+    }
+    #[test]
+    fn insert_multi() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 str)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, 'testval')".to_string());
+        db.execute("INSERT INTO test_table VALUES (2, 'hello, world')".to_string());
+        Ok(())
+    }
+    #[test]
+    fn insert_specific() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 str)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table (field1) VALUES (1)".to_string());
+        db.execute("INSERT INTO test_table VALUES (field2) ('hello, world')".to_string());
+        db.execute("INSERT INTO test_table VALUES (field2, field1) ('hello, world', 2)".to_string());
+        Ok(())
     }
 }
