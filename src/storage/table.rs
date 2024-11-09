@@ -66,6 +66,7 @@ pub mod table {
                 }
             }
         }
+        pub fn get_headers(&self) -> &Vec<String> { &self.headers }
     }
 }
 
