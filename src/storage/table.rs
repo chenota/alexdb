@@ -34,13 +34,15 @@ pub mod table {
                 ColType::String => self.table.push(Column::String(Box::new(column::generic::Uncompressed::new())))
             }
         }
-        pub fn get_column(&self, name: &String) -> &Column {
+        pub fn header_idx(&self, name: &String) -> usize {
             // Check that column exists
             if !self.headers.contains(name) { panic!("Invalid column name") }
             // Find column index
-            let idx = self.headers.iter().position(|r| *r == *name).unwrap();
+            self.headers.iter().position(|r| *r == *name).unwrap()
+        }
+        pub fn get_column(&self, name: &String) -> &Column {
             // Return column at index
-            &self.table[idx]
+            &self.table[self.header_idx(name)]
         }
         pub fn add_row(&mut self, data: Vec<Val>) {
             // Check that vector has appropriate number of items
@@ -90,6 +92,9 @@ pub mod table {
                 table: self,
                 col_iters: citers
             }
+        }
+        pub fn len(&self) -> usize {
+            self.size
         }
     }
 

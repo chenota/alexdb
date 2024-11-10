@@ -5,6 +5,7 @@ pub mod engine {
     use super::super::script::env::*;
     use super::super::script::engine::*;
     use std::rc::Rc;
+    use crate::storage::column::generic::Column;
 
     pub enum ExecutionResult {
         TableResult(Table),
@@ -69,6 +70,57 @@ pub mod engine {
             }
             ExecutionResult::None
         }
+        fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<String>, limit: &Option<Expr>) -> ExecutionResult {
+            // Get referenced table
+            let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
+            let table = &mut self.tables[table_idx];
+            // Create empty projected table
+            let mut table_project = Table::new();
+            match fields {
+                Some(v) => {
+                    for field in v {
+                        match table.get_column(field) {
+                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
+                            Column::Number(_) => table_project.add_column(field, ColType::Number),
+                            Column::String(_) => table_project.add_column(field, ColType::String)
+                        }
+                    }
+                },
+                None => {
+                    for field in table.get_headers() {
+                        match table.get_column(field) {
+                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
+                            Column::Number(_) => table_project.add_column(field, ColType::Number),
+                            Column::String(_) => table_project.add_column(field, ColType::String)
+                        }
+                    }
+                }
+            };
+            // Iterate through each row in the table
+            for row in table.iter() {
+                // New row
+                let mut new_row: Vec<Val> = Vec::new();
+                // Add items to row
+                match fields {
+                    Some(v) => {
+                        for field in v {
+                            let idx = table.header_idx(field);
+                            new_row.push(row[idx].clone());
+                        }
+                    },
+                    None => {
+                        for field in table.get_headers() {
+                            let idx = table.header_idx(field);
+                            new_row.push(row[idx].clone());
+                        }
+                    }
+                }
+                // Push to new table
+                table_project.add_row(new_row);
+            };
+            // Return new table
+            ExecutionResult::TableResult(table_project)
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -77,6 +129,7 @@ pub mod engine {
             match &parsed_query {
                 Query::CreateTable(table_name, schema) => self.create_table(table_name, schema),
                 Query::Insert(table_name, fields, values) => self.insert(table_name, fields, values),
+                Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
                 _ => panic!("Unimplemented")
             }
         }
@@ -93,6 +146,7 @@ pub mod engine {
 #[cfg(test)]
 mod test_database {
     use super::engine::*;
+    use crate::sqlscript::types::types::Val;
     #[test]
     fn create_table_single() -> Result<(), String> {
         // Setup
@@ -151,6 +205,66 @@ mod test_database {
         db.execute("INSERT INTO test_table (field1) VALUES (1)".to_string());
         db.execute("INSERT INTO test_table (field2) VALUES ('hello, world')".to_string());
         db.execute("INSERT INTO test_table (field2, field1) VALUES ('hello, world', 2)".to_string());
+        Ok(())
+    }
+    #[test]
+    fn select_basic_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, 2)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, 4)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 3);
+                let mut i = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(1.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn select_mix() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, 2)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, 4)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT field2, field1 FROM test_table".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 3);
+                let mut i = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[1] {
+                            Val::NumVal(1.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
         Ok(())
     }
 }
