@@ -75,58 +75,52 @@ pub mod table {
             self.size += 1;
         }
         pub fn get_headers(&self) -> &Vec<String> { &self.headers }
-        pub fn select_project(&self, headers: &Vec<String>) -> Table {
-            // Return value
-            let mut new_table = Table::new();
-            // Add columns to new table
-            for header in headers {
-                // Push new column
-                match self.get_column(header) {
-                    Column::Boolean(_) => new_table.add_column(header, ColType::Boolean),
-                    Column::Number(_) => new_table.add_column(header, ColType::Number),
-                    Column::String(_) => new_table.add_column(header, ColType::String)
+        pub fn iter<'a>(&'a self) -> TableIterator<'a> {
+            // Column iterators
+            let mut citers = Vec::new();
+            for col in &self.table {
+                match col {
+                    Column::Boolean(cb) => citers.push(IterCont::Boolean(Box::new(cb.as_ref().iter()))),
+                    Column::Number(cb) => citers.push(IterCont::Number(Box::new(cb.as_ref().iter()))),
+                    Column::String(cb) => citers.push(IterCont::String(Box::new(cb.as_ref().iter()))),
                 }
             };
-            // Iterators for each column
-            let mut iters = Vec::new();
-            for column in &self.table {
-                match column {
-                    Column::Boolean(x) => iters.push(IterCont::Boolean(x.as_ref().iter())),
-                    Column::Number(x) => iters.push(IterCont::Number(x.as_ref().iter())),
-                    Column::String(x) => iters.push(IterCont::String(x.as_ref().iter()))
+            // Create iterator
+            TableIterator {
+                table: self,
+                col_iters: citers
+            }
+        }
+    }
+
+    pub struct TableIterator<'a> {
+        table: &'a Table,
+        col_iters: Vec<IterCont<'a>>
+    }
+    impl<'a> Iterator for TableIterator<'a> {
+        type Item = Vec<Val>;
+        fn next(&mut self) -> Option<Self::Item> {
+            let mut retvec = Vec::new();
+            for col_iter in self.col_iters.iter_mut() {
+                match col_iter {
+                    IterCont::Boolean(b) => match b.as_mut().next() {
+                        Some(Some(x)) => retvec.push(Val::BoolVal(x)),
+                        Some(None) => retvec.push(Val::NullVal),
+                        None => return None
+                    },
+                    IterCont::Number(b) => match b.as_mut().next() {
+                        Some(Some(x)) => retvec.push(Val::NumVal(x)),
+                        Some(None) => retvec.push(Val::NullVal),
+                        None => return None
+                    },
+                    IterCont::String(b) => match b.as_mut().next() {
+                        Some(Some(x)) => retvec.push(Val::StrVal(x.clone())),
+                        Some(None) => retvec.push(Val::NullVal),
+                        None => return None
+                    }
                 }
             };
-            // Iterate through each row
-            for _ in 0..self.size {
-                // Construct whole row
-                let mut whole_row: Vec<Val> = Vec::new();
-                for iter in &mut iters {
-                    whole_row.push(match iter {
-                        IterCont::Boolean(itbox) => match itbox.as_mut().next().unwrap() {
-                            Some(x) => Val::BoolVal(x),
-                            _ => Val::NullVal
-                        },
-                        IterCont::Number(itbox) => match itbox.as_mut().next().unwrap() {
-                            Some(x) => Val::NumVal(x),
-                            _ => Val::NullVal
-                        },
-                        IterCont::String(itbox) => match itbox.as_mut().next().unwrap() {
-                            Some(x) => Val::StrVal(x.clone()),
-                            _ => Val::NullVal
-                        },
-                    })
-                };
-                // Construct parial (projected) row
-                let mut partial_row: Vec<Val> = Vec::new();
-                for header in headers {
-                    let idx = self.headers.iter().position(|r| *r == *header).unwrap();
-                    partial_row.push(whole_row[idx].clone());
-                }
-                // TODO: Check that whole row passes test (selection)
-                // Add partial row to new table
-                new_table.add_row(partial_row);
-            };
-            new_table
+            Some(retvec)
         }
     }
 }
@@ -328,106 +322,44 @@ mod table_tests {
         Ok(())
     }
     #[test]
-    fn test_project_basic_1() -> Result<(), String> {
+    fn test_iter() -> Result<(), String> {
         // Setup
         let mut test_table = table::Table::new();
-        let col_name1 = "col_1".to_string();
-        let col_name2 = "col_2".to_string();
+        let col_name1 = "Test1".to_string();
+        let col_name2 = "Test2".to_string();
         // Create new columns
         test_table.add_column(&col_name1, ColType::Number);
-        test_table.add_column(&col_name2, ColType::Number);
+        test_table.add_column(&col_name2, ColType::String);
         // Create row
         let row1 = vec![
             Val::NumVal(112.2),
-            Val::NumVal(115.7),
+            Val::StrVal("Hello".to_string())
         ];
         // Create row
         let row2: Vec<Val> = vec![
             Val::NumVal(119.0),
-            Val::NumVal(110.0),
+            Val::StrVal("Goodbye".to_string())
         ];
         // Add rows to table
         test_table.add_row(row1);
         test_table.add_row(row2);
-        // Project table
-        let headers = vec!["col_1".to_string()];
-        let result = test_table.select_project(&headers);
-        // Check table
-        match result.get_column(&col_name1) {
-            Column::Number(x) => {
-                match &x.as_ref().extract()[0] {
-                    Some(y) => assert_eq!(*y, 112.2),
+        // Iterate
+        let mut i: usize = 0;
+        for row in test_table.iter() {
+            if i == 0 {
+                match &row[0] {
+                    Val::NumVal(112.2) => assert!(true),
                     _ => assert!(false)
                 }
-            },
-            _ => assert!(false)
-        }
-        Ok(())
-    }
-    #[test]
-    fn test_project_basic_2() -> Result<(), String> {
-        // Setup
-        let mut test_table = table::Table::new();
-        let col_name1 = "col_1".to_string();
-        let col_name2 = "col_2".to_string();
-        // Create new columns
-        test_table.add_column(&col_name1, ColType::Number);
-        test_table.add_column(&col_name2, ColType::Number);
-        // Create row
-        let row1 = vec![
-            Val::NumVal(112.2),
-            Val::NumVal(115.7),
-        ];
-        // Create row
-        let row2: Vec<Val> = vec![
-            Val::NumVal(119.0),
-            Val::NumVal(110.0),
-        ];
-        // Add rows to table
-        test_table.add_row(row1);
-        test_table.add_row(row2);
-        // Project table
-        let headers = vec!["col_2".to_string()];
-        let result = test_table.select_project(&headers);
-        // Check table
-        match result.get_column(&col_name2) {
-            Column::Number(x) => {
-                match &x.as_ref().extract()[1] {
-                    Some(y) => assert_eq!(*y, 110.0),
+            } else if i == 1 {
+                match &row[1] {
+                    Val::StrVal(x) => assert_eq!(*x, "Goodbye".to_string()),
                     _ => assert!(false)
                 }
-            },
-            _ => assert!(false)
-        }
-        Ok(())
-    }
-    #[test]
-    fn test_project_basic_3() -> Result<(), String> {
-        // Setup
-        let mut test_table = table::Table::new();
-        let col_name1 = "col_1".to_string();
-        let col_name2 = "col_2".to_string();
-        // Create new columns
-        test_table.add_column(&col_name1, ColType::Number);
-        test_table.add_column(&col_name2, ColType::Number);
-        // Create row
-        let row1 = vec![
-            Val::NumVal(112.2),
-            Val::NumVal(115.7),
-        ];
-        // Create row
-        let row2: Vec<Val> = vec![
-            Val::NumVal(119.0),
-            Val::NumVal(110.0),
-        ];
-        // Add rows to table
-        test_table.add_row(row1);
-        test_table.add_row(row2);
-        // Project table
-        let headers = vec!["col_2".to_string(), "col_1".to_string()];
-        let result = test_table.select_project(&headers);
-        // Check table
-        assert_eq!(result.get_headers()[0], col_name2);
+            }
+            i += 1;
+        };
+        assert_eq!(i, 2);
         Ok(())
     }
 }
