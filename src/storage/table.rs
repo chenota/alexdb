@@ -71,6 +71,8 @@ pub mod table {
                     }
                 }
             }
+            // Increment size
+            self.size += 1;
         }
         pub fn get_headers(&self) -> &Vec<String> { &self.headers }
         pub fn select_project(&self, headers: &Vec<String>) -> Table {
@@ -388,7 +390,7 @@ mod table_tests {
         let headers = vec!["col_2".to_string()];
         let result = test_table.select_project(&headers);
         // Check table
-        match result.get_column(&col_name1) {
+        match result.get_column(&col_name2) {
             Column::Number(x) => {
                 match &x.as_ref().extract()[1] {
                     Some(y) => assert_eq!(*y, 110.0),
