@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="media/logo_horizontal.svg">
-    <source media="(prefers-color-scheme: dark)" srcset="media/logo_horizontal_dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="media/logo_horizontal_dark.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="media/logo_horizontal.svg">
     <img alt="AlexDB logo" src="media/logo_horizontal.svg" height="125">
   </picture>
 </div>
