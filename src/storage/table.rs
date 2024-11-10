@@ -3,6 +3,12 @@ pub mod table {
     use super::super::column::generic::Column;
     use crate::sqlscript::types::types::{ColType, Val};
 
+    enum IterCont<'a> {
+        Number(Box<dyn Iterator<Item=Option<f64>> + 'a>),
+        Boolean(Box<dyn Iterator<Item=Option<bool>> + 'a>),
+        String(Box<dyn Iterator<Item=Option<String>> + 'a>),
+    }
+
     pub struct Table {
         table: Vec<Column>,
         headers: Vec<String>,
@@ -67,6 +73,59 @@ pub mod table {
             }
         }
         pub fn get_headers(&self) -> &Vec<String> { &self.headers }
+        pub fn select_project(&self, headers: &Vec<String>) -> Table {
+            // Return value
+            let mut new_table = Table::new();
+            // Add columns to new table
+            for header in headers {
+                // Push new column
+                match self.get_column(header) {
+                    Column::Boolean(_) => new_table.add_column(header, ColType::Boolean),
+                    Column::Number(_) => new_table.add_column(header, ColType::Number),
+                    Column::String(_) => new_table.add_column(header, ColType::String)
+                }
+            };
+            // Iterators for each column
+            let mut iters = Vec::new();
+            for column in &self.table {
+                match column {
+                    Column::Boolean(x) => iters.push(IterCont::Boolean(x.as_ref().iter())),
+                    Column::Number(x) => iters.push(IterCont::Number(x.as_ref().iter())),
+                    Column::String(x) => iters.push(IterCont::String(x.as_ref().iter()))
+                }
+            };
+            // Iterate through each row
+            for _ in 0..self.size {
+                // Construct whole row
+                let mut whole_row: Vec<Val> = Vec::new();
+                for iter in &mut iters {
+                    whole_row.push(match iter {
+                        IterCont::Boolean(itbox) => match itbox.as_mut().next().unwrap() {
+                            Some(x) => Val::BoolVal(x),
+                            _ => Val::NullVal
+                        },
+                        IterCont::Number(itbox) => match itbox.as_mut().next().unwrap() {
+                            Some(x) => Val::NumVal(x),
+                            _ => Val::NullVal
+                        },
+                        IterCont::String(itbox) => match itbox.as_mut().next().unwrap() {
+                            Some(x) => Val::StrVal(x.clone()),
+                            _ => Val::NullVal
+                        },
+                    })
+                };
+                // Construct parial (projected) row
+                let mut partial_row: Vec<Val> = Vec::new();
+                for header in headers {
+                    let idx = self.headers.iter().position(|r| *r == *header).unwrap();
+                    partial_row.push(whole_row[idx].clone());
+                }
+                // TODO: Check that whole row passes test (selection)
+                // Add partial row to new table
+                new_table.add_row(partial_row);
+            };
+            new_table
+        }
     }
 }
 
