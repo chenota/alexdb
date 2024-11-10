@@ -325,4 +325,107 @@ mod table_tests {
         }
         Ok(())
     }
+    #[test]
+    fn test_project_basic_1() -> Result<(), String> {
+        // Setup
+        let mut test_table = table::Table::new();
+        let col_name1 = "col_1".to_string();
+        let col_name2 = "col_2".to_string();
+        // Create new columns
+        test_table.add_column(&col_name1, ColType::Number);
+        test_table.add_column(&col_name2, ColType::Number);
+        // Create row
+        let row1 = vec![
+            Val::NumVal(112.2),
+            Val::NumVal(115.7),
+        ];
+        // Create row
+        let row2: Vec<Val> = vec![
+            Val::NumVal(119.0),
+            Val::NumVal(110.0),
+        ];
+        // Add rows to table
+        test_table.add_row(row1);
+        test_table.add_row(row2);
+        // Project table
+        let headers = vec!["col_1".to_string()];
+        let result = test_table.select_project(&headers);
+        // Check table
+        match result.get_column(&col_name1) {
+            Column::Number(x) => {
+                match &x.as_ref().extract()[0] {
+                    Some(y) => assert_eq!(*y, 112.2),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn test_project_basic_2() -> Result<(), String> {
+        // Setup
+        let mut test_table = table::Table::new();
+        let col_name1 = "col_1".to_string();
+        let col_name2 = "col_2".to_string();
+        // Create new columns
+        test_table.add_column(&col_name1, ColType::Number);
+        test_table.add_column(&col_name2, ColType::Number);
+        // Create row
+        let row1 = vec![
+            Val::NumVal(112.2),
+            Val::NumVal(115.7),
+        ];
+        // Create row
+        let row2: Vec<Val> = vec![
+            Val::NumVal(119.0),
+            Val::NumVal(110.0),
+        ];
+        // Add rows to table
+        test_table.add_row(row1);
+        test_table.add_row(row2);
+        // Project table
+        let headers = vec!["col_2".to_string()];
+        let result = test_table.select_project(&headers);
+        // Check table
+        match result.get_column(&col_name1) {
+            Column::Number(x) => {
+                match &x.as_ref().extract()[1] {
+                    Some(y) => assert_eq!(*y, 110.0),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn test_project_basic_3() -> Result<(), String> {
+        // Setup
+        let mut test_table = table::Table::new();
+        let col_name1 = "col_1".to_string();
+        let col_name2 = "col_2".to_string();
+        // Create new columns
+        test_table.add_column(&col_name1, ColType::Number);
+        test_table.add_column(&col_name2, ColType::Number);
+        // Create row
+        let row1 = vec![
+            Val::NumVal(112.2),
+            Val::NumVal(115.7),
+        ];
+        // Create row
+        let row2: Vec<Val> = vec![
+            Val::NumVal(119.0),
+            Val::NumVal(110.0),
+        ];
+        // Add rows to table
+        test_table.add_row(row1);
+        test_table.add_row(row2);
+        // Project table
+        let headers = vec!["col_2".to_string(), "col_1".to_string()];
+        let result = test_table.select_project(&headers);
+        // Check table
+        assert_eq!(result.get_headers()[0], col_name2);
+        Ok(())
+    }
 }
