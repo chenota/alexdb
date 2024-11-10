@@ -460,7 +460,28 @@ pub mod parser {
                     // Pop comma
                     self.pop();
                     // Get rest of list
-                    let mut rest = self.exprlist();
+                    let mut rest = self.exprlist_rest();
+                    // Parse next expr
+                    rest.push(Rc::new(expr));
+                    rest.reverse();
+                    rest
+                },
+                _ => {
+                    let new_vec = vec![Rc::new(expr)];
+                    new_vec
+                }
+            }
+        }
+        fn exprlist_rest(&mut self) -> types::ExprList {
+            // Parse expr
+            let expr = self.expr();
+            // Check if comma
+            match self.peek().kind {
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Get rest of list
+                    let mut rest = self.exprlist_rest();
                     // Parse next expr
                     rest.push(Rc::new(expr));
                     rest
@@ -480,7 +501,27 @@ pub mod parser {
                     // Pop comma
                     self.pop();
                     // Parse next expr
-                    let mut next_vec = self.identlist();
+                    let mut next_vec = self.identlist_rest();
+                    next_vec.push(val);
+                    next_vec.reverse();
+                    next_vec
+                },
+                _ => {
+                    let new_vec = vec![val];
+                    new_vec
+                }
+            }
+        }
+        fn identlist_rest(&mut self) -> types::IdentList {
+            // Parse value
+            let val = self.ident();
+            // Check if comma
+            match self.peek().kind {
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Parse next expr
+                    let mut next_vec = self.identlist_rest();
                     next_vec.push(val);
                     next_vec
                 },
@@ -523,7 +564,27 @@ pub mod parser {
                     // Pop comma
                     self.pop();
                     // Get rest of list
-                    let mut rest = self.collist();
+                    let mut rest = self.collist_rest();
+                    // Add next to rest
+                    rest.push((colname, t));
+                    rest.reverse();
+                    rest
+                },
+                _ => vec![(colname, t)]
+            }
+        }
+        fn collist_rest(&mut self) -> types::ColList {
+            // Parse column name
+            let colname = self.ident();
+            // Parse type
+            let t = self.parsetype();
+            // Check if comma or not
+            match self.peek().kind {
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Get rest of list
+                    let mut rest = self.collist_rest();
                     // Add next to rest
                     rest.push((colname, t));
                     rest
