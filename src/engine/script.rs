@@ -292,6 +292,9 @@ pub mod engine {
     pub fn eval_bool(script: &Expr, env: &mut Environment) -> bool {
         extract_bool(&to_bool(&eval(script, env)))
     }
+    pub fn eval_num(script: &Expr, env: &mut Environment) -> f64 {
+        extract_num(&to_num(&eval(script, env)))
+    }
 }
 
 #[cfg(test)]

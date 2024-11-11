@@ -74,28 +74,8 @@ pub mod engine {
             // Get referenced table
             let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
             let table = &self.tables[table_idx];
-            // Create empty projected table
-            let mut table_project = Table::new();
-            match fields {
-                Some(v) => {
-                    for field in v {
-                        match table.get_column(field) {
-                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
-                            Column::Number(_) => table_project.add_column(field, ColType::Number),
-                            Column::String(_) => table_project.add_column(field, ColType::String)
-                        }
-                    }
-                },
-                None => {
-                    for field in table.get_headers() {
-                        match table.get_column(field) {
-                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
-                            Column::Number(_) => table_project.add_column(field, ColType::Number),
-                            Column::String(_) => table_project.add_column(field, ColType::String)
-                        }
-                    }
-                }
-            };
+            // Vector of added rows
+            let mut added_rows: Vec<Vec<Val>> = Vec::new();
             // Iterate through each row in the table
             for row in table.iter() {
                 // New row
@@ -131,8 +111,52 @@ pub mod engine {
                 };
                 // Push to new table if should add
                 if should_add {
-                    table_project.add_row(new_row);
+                    added_rows.push(new_row);
                 }
+            };
+            // Create empty projected table
+            let mut table_project = Table::new();
+            // Setup table
+            match fields {
+                Some(v) => {
+                    for field in v {
+                        match table.get_column(field) {
+                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
+                            Column::Number(_) => table_project.add_column(field, ColType::Number),
+                            Column::String(_) => table_project.add_column(field, ColType::String)
+                        }
+                    }
+                },
+                None => {
+                    for field in table.get_headers() {
+                        match table.get_column(field) {
+                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
+                            Column::Number(_) => table_project.add_column(field, ColType::Number),
+                            Column::String(_) => table_project.add_column(field, ColType::String)
+                        }
+                    }
+                }
+            };
+            // Reverse added rows (need to do this since popping)
+            added_rows.reverse();
+            // Get limit of rows to add to table
+            let lim_usize = match limit {
+                Some(expr) => {
+                    // Evaluate expression
+                    let mut env = self.default_environment();
+                    Some(eval_num(expr, &mut env) as usize)
+                },
+                None => None
+            };
+            // Add rows to new table
+            for i in 0..added_rows.len() {
+                // Stop adding if reached limit
+                match lim_usize {
+                    Some(x) => if i >= x {break},
+                    None => ()
+                };
+                // Add row to table
+                table_project.add_row(added_rows.pop().unwrap())
             };
             // Return new table
             ExecutionResult::TableResult(table_project)
