@@ -44,6 +44,13 @@ pub mod env {
                 frames: Vec::new()
             }
         }
+        pub fn from_vec(vec: &Vec<(String, Val)>) -> Environment {
+            let mut f = Frame::new();
+            for val in vec { f.push(&val.0, &val.1); }
+            let mut e = Environment::new();
+            e.push_frame(f);
+            e
+        }
         pub fn compress(&self) -> Frame {
             let mut new_frame = Frame::new();
             for i in 0..(self.frames.len()) {
