@@ -2,6 +2,7 @@ pub mod table {
     use super::super::column;
     use super::super::column::generic::Column;
     use crate::sqlscript::types::types::{ColType, Val};
+    use crate::engine::script::env::Environment;
 
     enum IterCont<'a> {
         Number(Box<dyn Iterator<Item=Option<f64>> + 'a>),
@@ -95,6 +96,10 @@ pub mod table {
         }
         pub fn len(&self) -> usize {
             self.size
+        }
+        pub fn push_aggregates(&self, env: &mut Environment) -> () {
+            // Placeholder
+            ()
         }
     }
 

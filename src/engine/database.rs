@@ -73,7 +73,7 @@ pub mod engine {
         fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<String>, limit: &Option<Expr>) -> ExecutionResult {
             // Get referenced table
             let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
-            let table = &mut self.tables[table_idx];
+            let table = &self.tables[table_idx];
             // Create empty projected table
             let mut table_project = Table::new();
             match fields {
@@ -100,7 +100,16 @@ pub mod engine {
             for row in table.iter() {
                 // New row
                 let mut new_row: Vec<Val> = Vec::new();
-                // Add items to row
+                // Environment in which to evaluate row
+                let mut env = self.default_environment();
+                // Augment environment with table-specific stuff
+                table.push_aggregates(&mut env);
+                // Add all fields to environment
+                for field in table.get_headers() {
+                    let idx = table.header_idx(field);
+                    env.push(field, &row[idx]);
+                }
+                // Add items to new row
                 match fields {
                     Some(v) => {
                         for field in v {
@@ -115,8 +124,15 @@ pub mod engine {
                         }
                     }
                 }
-                // Push to new table
-                table_project.add_row(new_row);
+                // Evaluate where clause, convert to bool
+                let should_add = match where_ {
+                    Some(expr) => eval_bool(expr, &mut env),
+                    None => true
+                };
+                // Push to new table if should add
+                if should_add {
+                    table_project.add_row(new_row);
+                }
             };
             // Return new table
             ExecutionResult::TableResult(table_project)
@@ -140,6 +156,10 @@ pub mod engine {
             }
         }
         pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
+        pub fn default_environment(&self) -> Environment {  
+            // Placeholder
+            Environment::new()
+        }
     }
 }
 
