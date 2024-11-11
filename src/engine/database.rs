@@ -457,4 +457,174 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn select_limit_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(1.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn select_limit_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 2 - 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(1.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn select_limit_3() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT '1'".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(1.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn select_limit_4() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT (fun -> 1)()".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(1.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn select_limit_5() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 0".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 0);
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn select_limit_where_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table WHERE field1 > 2 LIMIT (fun -> 1)()".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(3.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
