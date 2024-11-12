@@ -3,6 +3,7 @@ pub mod generic {
         fn insert(&mut self, data: Option<T>) -> ();
         fn extract(&self) -> &Vec<Option<T>>;
         fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<T>> + 'a>;
+        fn len(&self) -> usize;
     }
     pub struct Uncompressed<T: Clone> {
         data: Vec<Option<T>>
@@ -24,6 +25,9 @@ pub mod generic {
                 column: self,
                 index: 0
             })
+        }
+        fn len(&self) -> usize {
+            self.data.len()
         }
     }
     struct UncompressedIterator<'a, T: Clone> {
