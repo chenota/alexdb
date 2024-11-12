@@ -297,6 +297,15 @@ pub mod engine {
             std::cmp::Ordering::Equal
         }
     }
+    pub fn eval_ordering_desc(v1: &Val, v2: &Val) -> std::cmp::Ordering {
+        if lt(v1, v2) {
+            std::cmp::Ordering::Greater
+        } else if gt(v1, v2) {
+            std::cmp::Ordering::Less
+        } else {
+            std::cmp::Ordering::Equal
+        }
+    }
 }
 
 #[cfg(test)]

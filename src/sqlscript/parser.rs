@@ -2,7 +2,7 @@ pub mod parser {
     use super::super::lexer::lexer::*;
     use std::rc::Rc;
     use super::super::types::types;
-    use super::super::types::types::ColType;
+    use super::super::types::types::{ ColType, SortType };
     pub struct Parser {
         lexer: Lexer,
         token: Token
@@ -158,7 +158,15 @@ pub mod parser {
                                     // Pop expect by keyword
                                     self.pop_expect(TokenKind::ByKw);
                                     // Parse ident
-                                    Some(self.ident())
+                                    let ident = self.ident();
+                                    // Check if sort type
+                                    match self.peek().kind {
+                                        TokenKind::SortType => match self.pop().value {
+                                            TokenValue::SortType(t) => Some((ident, t)),
+                                            _ => panic!("Parsing error")
+                                        },
+                                        _ => Some((ident, SortType::Ascending))
+                                    }
                                 },
                                 _ => None
                             };
@@ -1360,7 +1368,7 @@ mod parser_tests {
     #[test]
     fn parser_select_sort_1() -> Result<(), String> {
         // Setup
-        let test_input: String = "SELECT * FROM table1 SORT BY test2 LIMIT 10".to_string();
+        let test_input: String = "SELECT * FROM table1 ORDER BY test2 LIMIT 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
@@ -1376,7 +1384,7 @@ mod parser_tests {
                     _ => assert!(false)
                 };
                 match srt {
-                    Some(s) => assert_eq!(s, "test2"),
+                    Some(s) => assert_eq!(s.0, "test2"),
                     _ => assert!(false)
                 }
             },
@@ -1387,7 +1395,7 @@ mod parser_tests {
     #[test]
     fn parser_select_sort_2() -> Result<(), String> {
         // Setup
-        let test_input: String = "SELECT * FROM table1 SORT BY test1".to_string();
+        let test_input: String = "SELECT * FROM table1 ORDER BY test1".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
@@ -1395,7 +1403,7 @@ mod parser_tests {
             // Should be exprscript
             types::Query::Select(_ , _, _, srt, _) => {
                 match srt {
-                    Some(s) => assert_eq!(s, "test1"),
+                    Some(s) => assert_eq!(s.0, "test1"),
                     _ => assert!(false)
                 }
             },
@@ -1406,7 +1414,7 @@ mod parser_tests {
     #[test]
     fn parser_select_sort_3() -> Result<(), String> {
         // Setup
-        let test_input: String = "SELECT * FROM table1 WHERE x > 5 SORT BY x LIMIT 10".to_string();
+        let test_input: String = "SELECT * FROM table1 WHERE x > 5 ORDER BY x LIMIT 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
@@ -1414,7 +1422,7 @@ mod parser_tests {
             // Should be exprscript
             types::Query::Select(_ , _, _, srt, _) => {
                 match srt {
-                    Some(s) => assert_eq!(s, "x"),
+                    Some(s) => assert_eq!(s.0, "x"),
                     _ => assert!(false)
                 }
             },

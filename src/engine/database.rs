@@ -70,7 +70,7 @@ pub mod engine {
             }
             ExecutionResult::None
         }
-        fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<String>, limit: &Option<Expr>) -> ExecutionResult {
+        fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<(String, SortType)>, limit: &Option<Expr>) -> ExecutionResult {
             // Get referenced table
             let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -126,8 +126,11 @@ pub mod engine {
             // If sorting, sort full rows by sort_by header
             match sort_by {
                 Some(s) => {
-                    let col_idx = table.header_idx(s);
-                    full_rows.sort_by(|a, b| eval_ordering(&(a.0)[col_idx], &(b.0)[col_idx]))
+                    let col_idx = table.header_idx(&s.0);
+                    match &s.1 {
+                        SortType::Ascending => full_rows.sort_by(|a, b| eval_ordering(&(a.0)[col_idx], &(b.0)[col_idx])),
+                        SortType::Descending => full_rows.sort_by(|a, b| eval_ordering_desc(&(a.0)[col_idx], &(b.0)[col_idx]))
+                    }
                 },
                 None => ()
             };

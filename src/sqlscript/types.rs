@@ -2,7 +2,7 @@ pub mod types {
     use std::rc::Rc;
     use crate::engine::script::env::Frame;
     pub enum Query {
-        Select(Option<IdentList>, String, Option<Expr>, Option<String>, Option<Expr>), // SELECT _ FROM _ WHERE _ SORT BY _ LIMIT _ (where, sort by, and limit are optional)
+        Select(Option<IdentList>, String, Option<Expr>, Option<(String, SortType)>, Option<Expr>), // SELECT _ FROM _ WHERE _ SORT BY _ LIMIT _ (where, sort by, and limit are optional)
         Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
         SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
         Const(String, Expr), // CONST <name> = <value>
@@ -61,6 +61,11 @@ pub mod types {
         Number,
         String,
         Boolean
+    }
+    #[derive(Clone, Copy)]
+    pub enum SortType {
+        Ascending,
+        Descending
     }
 }
 

@@ -1,6 +1,7 @@
 pub mod lexer {
     use regex::Regex;
     use super::super::types::types::ColType;
+    use super::super::types::types::SortType;
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub enum TokenKind {
         // End of file
@@ -60,6 +61,7 @@ pub mod lexer {
         LimitKw,
         SortKw,
         ByKw,
+        SortType,
         // Type keywords
         NumberKw,
         StrKw,
@@ -71,7 +73,8 @@ pub mod lexer {
         Number(f64),
         String(String),
         Boolean(bool),
-        Type(ColType)
+        Type(ColType),
+        SortType(SortType)
     }
     #[derive(Clone)]
     pub struct Token {
@@ -95,6 +98,7 @@ pub mod lexer {
     fn num_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Number) }
     fn str_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::String) }
     fn bool_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Boolean) }
+    fn sort_value(s: &str) -> TokenValue { if s == "ASC" { TokenValue::SortType(SortType::Ascending) } else { TokenValue::SortType(SortType::Descending) } }
     // Associates a kind of token with a regular expression that matches it, a function to derive a value.
     // If token kind is none, won't generate a token
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
@@ -118,6 +122,8 @@ pub mod lexer {
         (Some(TokenKind::TableKw), reg!(r"TABLE"), none_value),
         (Some(TokenKind::LimitKw), reg!(r"LIMIT"), none_value),
         (Some(TokenKind::SortKw), reg!(r"ORDER"), none_value),
+        (Some(TokenKind::SortType), reg!(r"ASC"), sort_value),
+        (Some(TokenKind::SortType), reg!(r"DESC"), sort_value),
         (Some(TokenKind::ByKw), reg!(r"BY"), none_value),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
@@ -437,6 +443,16 @@ mod lexer_tests {
         let next_token = test_lexer.produce();
         // Assert token
         assert_eq!(next_token.kind, lexer::TokenKind::Number);
+        Ok(())
+    }
+    #[test]
+    fn lexer_sort_type() -> Result<(), String> {
+        // Setup
+        let test_input: String = "ASC".to_string();
+        let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
+        let next_token = test_lexer.produce();
+        // Assert token
+        assert_eq!(next_token.kind, lexer::TokenKind::SortType);
         Ok(())
     }
 }
