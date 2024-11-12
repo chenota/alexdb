@@ -1046,4 +1046,238 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn calculated_column_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        // Add calculated columns
+        db.execute("COLUMN (bool) calc_1 = false INTO test_table".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[3] {
+                            Val::BoolVal(false) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn calculated_column_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        // Add calculated columns
+        db.execute("COLUMN (bool) calc_1 = field2 INTO test_table".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[3] {
+                            Val::BoolVal(true) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn calculated_column_3() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        // Add calculated columns
+        db.execute("COLUMN (bool) calc_1 = field1 > 10 INTO test_table".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[3] {
+                            Val::BoolVal(false) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn calculated_column_before_insert() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Add calculated columns
+        db.execute("COLUMN (bool) calc_1 = field1 > 10 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[3] {
+                            Val::BoolVal(false) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn calculated_column_insert_before_after() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        // Add calculated columns
+        db.execute("COLUMN (bool) calc_1 = field1 === 7 INTO test_table".to_string());
+        // Insert more data
+        db.execute("INSERT INTO test_table VALUES (7, false, false)".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table ORDER BY field1 DESC LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[3] {
+                            Val::BoolVal(true) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn calculated_column_multi_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        // Add calculated columns
+        db.execute("COLUMN (bool) calc_1 = field1 == 5 INTO test_table".to_string());
+        db.execute("COLUMN (bool) calc_2 = !calc_1 INTO test_table".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[4] {
+                            Val::BoolVal(false) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn calculated_column_multi_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        // Add calculated columns
+        db.execute("COLUMN (num) calc_1 = if field2 then field1 * 2 else field1 * 3 INTO test_table".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[3] {
+                            Val::NumVal(10.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
