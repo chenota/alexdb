@@ -143,6 +143,12 @@ pub mod table {
         pub fn get_aggregates(&self) -> &Vec<(String, Val, Expr)> {
             &self.aggregates
         }
+        pub fn get_aggregate(&self, name: &String) -> Val {
+            // Find index of aggregate
+            let ag_idx = self.aggregates.iter().position(|r| r.0 == *name).unwrap();
+            // Return
+            self.aggregates[ag_idx].1.clone()
+        }
     }
 
     pub struct TableIterator<'a> {

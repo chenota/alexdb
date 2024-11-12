@@ -9,6 +9,7 @@ pub mod engine {
 
     pub enum ExecutionResult {
         TableResult(Table),
+        ValueResult(Val),
         None
     }
 
@@ -356,6 +357,13 @@ pub mod engine {
             // Finished
             ExecutionResult::None
         }
+        fn select_aggregate(&mut self, ag_name: &String, table_name: &String) -> ExecutionResult {
+            // Get index of table
+            let table_idx = self.get_table_index(table_name).unwrap();
+            let table = &self.tables[table_idx];
+            // Return aggregate
+            ExecutionResult::ValueResult(table.get_aggregate(ag_name))
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -368,6 +376,7 @@ pub mod engine {
                 Query::Const(name, expr) => self.create_const(name, expr),
                 Query::Column(t, col_name, expr, table_name) => self.create_column(t, col_name, expr, table_name),
                 Query::Aggregate(ag_name, expr, table_name) => self.create_aggregate(ag_name, expr, table_name),
+                Query::SelectAggregate(ag_name, table_name) => self.select_aggregate(ag_name, table_name),
                 _ => panic!("Unimplemented")
             }
         }
