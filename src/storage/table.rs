@@ -12,7 +12,7 @@ pub mod table {
         table: Vec<Column>,
         headers: Vec<String>,
         size: usize,
-        aggregates: Vec<(String, Val, Expr)>
+        aggregates: Vec<(String, Val, Expr, Option<Expr>)>
     }
     impl Table {
         pub fn new() -> Table {
@@ -127,8 +127,8 @@ pub mod table {
         pub fn len(&self) -> usize {
             self.size
         }
-        pub fn add_aggregate(&mut self, name: &String, val: &Val, expr: &Expr) {
-            self.aggregates.push((name.clone(), val.clone(), expr.clone()))
+        pub fn add_aggregate(&mut self, name: &String, val: &Val, expr: &Expr, init: &Option<Expr>) {
+            self.aggregates.push((name.clone(), val.clone(), expr.clone(), init.clone()))
         }
         pub fn update_aggregates(&mut self, vals: &Vec<Val>) {
             // Check length of values vector
@@ -140,7 +140,7 @@ pub mod table {
                 i += 1;
             }
         }
-        pub fn get_aggregates(&self) -> &Vec<(String, Val, Expr)> {
+        pub fn get_aggregates(&self) -> &Vec<(String, Val, Expr, Option<Expr>)> {
             &self.aggregates
         }
         pub fn get_aggregate(&self, name: &String) -> Val {

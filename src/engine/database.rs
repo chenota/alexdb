@@ -70,19 +70,34 @@ pub mod engine {
                 // Increment i
                 i += 1;
             }
+            // Is this the first row?
+            let first_row = table.len() == 0;
             // Calculate aggregates
             let mut ag_vals = Vec::new();
             for ag in table.get_aggregates() {
+                // Are you given an initial aggregate?
+                let has_init = match &ag.3 {
+                    Some(_) => true,
+                    _ => false,
+                };
                 // Environment
                 let mut env = self.default_environment();
                 // Add new row to environment
                 for i in 0..values_insert.len() {
                     env.push(&table.get_headers()[i], &values_insert[i]);
                 }
-                // Add current value to environment
-                env.push(&"current".to_string(), &ag.1);
+                // Add current value to environment, unless is first row and has init
+                if !(first_row && has_init) {
+                    env.push(&"current".to_string(), &ag.1);
+                }
                 // Evaluate
-                let val = eval(&ag.2, &mut env);
+                let val = match first_row {
+                    true => match &ag.3 {
+                        Some(e1) => eval(e1, &mut env),
+                        None => eval(&ag.2, &mut env)
+                    },
+                    false => eval(&ag.2, &mut env)
+                };
                 // Push
                 ag_vals.push(val);
             }
@@ -332,28 +347,44 @@ pub mod engine {
             // Return nothing
             ExecutionResult::None
         }
-        fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
+        fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, table_name: &String, init: &Option<Expr>) -> ExecutionResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
             // Value of aggregate
             let mut ag_val = Val::NullVal;
+            // Does this have an init?
+            let has_init = match init {
+                Some(_) => true,
+                None => false
+            };
             // Calculate aggregate for existing rows
+            let mut i: usize = 0;
             for row in table.iter() {
+                // Is this the first row?
+                let first_row = i == 0;
                 // Environment
                 let mut env = self.default_environment();
                 // Add row to environment
                 for i in 0..row.len() {
                     env.push(&table.get_headers()[i], &row[i]);
                 }
-                // Add current value to environment
-                env.push(&"current".to_string(), &ag_val);
+                // Add current value to environment, unless has init and is first row
+                if !(has_init && first_row) {
+                    env.push(&"current".to_string(), &ag_val);
+                }
                 // Evaluate
-                ag_val = eval(expr, &mut env);
+                ag_val = match first_row {
+                    true => match init {
+                        Some(e1) => eval(e1, &mut env),
+                        None => eval(expr, &mut env)
+                    },
+                    false => eval(expr, &mut env)
+                }
             };
             // Register aggregate into table
             let table = &mut self.tables[table_idx];
-            table.add_aggregate(ag_name, &ag_val, expr);
+            table.add_aggregate(ag_name, &ag_val, expr, init);
             // Finished
             ExecutionResult::None
         }
@@ -375,7 +406,7 @@ pub mod engine {
                 Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
                 Query::Const(name, expr) => self.create_const(name, expr),
                 Query::Column(t, col_name, expr, table_name) => self.create_column(t, col_name, expr, table_name),
-                Query::Aggregate(ag_name, expr, table_name) => self.create_aggregate(ag_name, expr, table_name),
+                Query::Aggregate(ag_name, expr, table_name) => self.create_aggregate(ag_name, expr, table_name, &None),
                 Query::SelectAggregate(ag_name, table_name) => self.select_aggregate(ag_name, table_name),
                 _ => panic!("Unimplemented")
             }
