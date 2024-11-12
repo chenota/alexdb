@@ -1364,4 +1364,29 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn aggregate_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add aggregate
+        db.execute("AGGREGATE max_field1 = current INIT field1 INTO test_table".to_string());
+        // Perform select aggregate query
+        let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(5.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
