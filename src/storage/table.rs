@@ -13,7 +13,8 @@ pub mod table {
         table: Vec<Column>,
         headers: Vec<String>,
         size: usize,
-        aggregates: Vec<(String, Val, Expr, Option<Expr>)>
+        aggregates: Vec<(String, Val, Expr, Option<Expr>)>,
+        computations: Vec<(String, Val, Expr)>
     }
     impl Table {
         pub fn new() -> Table {
@@ -21,7 +22,8 @@ pub mod table {
                 table: Vec::new(),
                 headers: Vec::new(),
                 size: 0,
-                aggregates: Vec::new()
+                aggregates: Vec::new(),
+                computations: Vec::new()
             }
         }
         pub fn add_column(&mut self, name: &String, coltype: ColType) -> () {
@@ -154,6 +156,36 @@ pub mod table {
             for ag in &self.aggregates {
                 env.push(&ag.0, &ag.1);
             }
+        }
+        pub fn push_all(&self, env: &mut Environment) {
+            for ag in &self.aggregates {
+                env.push(&ag.0, &ag.1);
+            }
+            for cmp in &self.computations {
+                env.push(&cmp.0, &cmp.1)
+            }
+        }
+        pub fn add_computation(&mut self, name: &String, val: &Val, expr: &Expr) {
+            self.computations.push((name.clone(), val.clone(), expr.clone()))
+        }
+        pub fn update_computations(&mut self, vals: &Vec<Val>) {
+            // Check length of values vector
+            if vals.len() != self.computations.len() { panic!("Unequal lengths") }
+            // Update all aggregate values
+            let mut i: usize = 0;
+            for val in vals {
+                self.computations[i].1 = val.clone();
+                i += 1;
+            }
+        }
+        pub fn get_computations(&self) -> &Vec<(String, Val, Expr)> {
+            &self.computations
+        }
+        pub fn get_computation(&self, name: &String) -> Val {
+            // Find index of computation
+            let cmp_idx = self.computations.iter().position(|r| r.0 == *name).unwrap();
+            // Return
+            self.computations[cmp_idx].1.clone()
         }
     }
 

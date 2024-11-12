@@ -101,12 +101,27 @@ pub mod engine {
                 // Push
                 ag_vals.push(val);
             }
+            // Calculate computations
+            let mut cmp_vals = Vec::new();
+            for cmp in table.get_computations() {
+                // Environment
+                let mut env = self.default_environment();
+                let mut i = 0;
+                for ag in table.get_aggregates() {
+                    env.push(&ag.0, &ag_vals[i]);
+                    i += 1;
+                }
+                // Evaluate
+                cmp_vals.push(eval(&cmp.2, &mut env));
+            }
             // Borrow table as mutable
             let table = &mut self.tables[table_idx];
             // Add row to table
             table.add_row(values_insert);
             // Add aggregates
             table.update_aggregates(&ag_vals);
+            // Add computations
+            table.update_computations(&cmp_vals);
             // Return
             ExecutionResult::None
         }
@@ -401,6 +416,27 @@ pub mod engine {
             // Return aggregate
             ExecutionResult::ValueResult(table.get_aggregate(ag_name))
         }
+        fn create_computation(&mut self, cmp_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
+            // Get index of table
+            let table_idx = self.get_table_index(table_name).unwrap();
+            let table = &self.tables[table_idx]; 
+            // Get value of computation (null if table is empty)
+            let comp_val = match table.len() == 0 {
+                true => Val::NullVal,
+                false => {
+                    // Environment
+                    let mut env = self.default_environment();
+                    table.push_aggregates(&mut env);
+                    // Evaluate
+                    eval(expr, &mut env)
+                }
+            };
+            // Register computation into table
+            let table = &mut self.tables[table_idx];
+            table.add_computation(cmp_name, &comp_val, expr);
+            // Return nothing
+            ExecutionResult::None
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -414,6 +450,7 @@ pub mod engine {
                 Query::Column(t, col_name, expr, table_name) => self.create_column(t, col_name, expr, table_name),
                 Query::Aggregate(ag_name, expr, init, table_name) => self.create_aggregate(ag_name, expr, init, table_name),
                 Query::SelectAggregate(ag_name, table_name) => self.select_aggregate(ag_name, table_name),
+                Query::Comp(cmp_name, expr, table_name) => self.create_computation(cmp_name, expr, table_name),
                 _ => panic!("Unimplemented")
             }
         }
