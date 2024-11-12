@@ -1,7 +1,6 @@
 pub mod table {
-    use super::super::column;
-    use super::super::column::generic::Column;
-    use crate::sqlscript::types::types::{ColType, Val};
+    use super::super::column::generic::{ Column, Uncompressed, ColumnInterace };
+    use crate::sqlscript::types::types::{ ColType, Val };
     use crate::engine::script::env::Environment;
 
     enum IterCont<'a> {
@@ -26,14 +25,28 @@ pub mod table {
         pub fn add_column(&mut self, name: &String, coltype: ColType) -> () {
             // Check that column does not already exist
             if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
-            // Add table name to headers
+            // Add column name to headers
             self.headers.push(name.clone());
             // Push uncompressed column to table
-            match coltype {
-                ColType::Boolean => self.table.push(Column::Boolean(Box::new(column::generic::Uncompressed::new()))),
-                ColType::Number => self.table.push(Column::Number(Box::new(column::generic::Uncompressed::new()))),
-                ColType::String => self.table.push(Column::String(Box::new(column::generic::Uncompressed::new())))
-            }
+            let col = match coltype {
+                ColType::Boolean => {
+                    let mut col_data: Uncompressed<bool> = Uncompressed::new();
+                    for _ in 0..self.size { col_data.insert(None) }
+                    Column::Boolean(Box::new(col_data))
+                },
+                ColType::Number => {
+                    let mut col_data: Uncompressed<f64> = Uncompressed::new();
+                    for _ in 0..self.size { col_data.insert(None) }
+                    Column::Number(Box::new(col_data))
+                },
+                ColType::String => {
+                    let mut col_data: Uncompressed<String> = Uncompressed::new();
+                    for _ in 0..self.size { col_data.insert(None) }
+                    Column::String(Box::new(col_data))
+                }
+            };
+            // Push column
+            self.table.push(col);
         }
         pub fn header_idx(&self, name: &String) -> usize {
             // Check that column exists
