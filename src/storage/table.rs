@@ -48,6 +48,22 @@ pub mod table {
             // Push column
             self.table.push(col);
         }
+        pub fn add_populated_column(&mut self, name: &String, col: Column) -> () {
+            // Check that column does not already exist
+            if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
+            // Check length of column
+            let len = match &col {
+                Column::Boolean(cbox) => cbox.as_ref().len(),
+                Column::Number(cbox) => cbox.as_ref().len(),
+                Column::String(cbox) => cbox.as_ref().len(),
+            };
+            // Check that length of column matches current length
+            if len != self.size { panic!("Inconsistent column length") }
+            // Insert header
+            self.headers.push(name.clone());
+            // Insert column
+            self.table.push(col);
+        }
         pub fn header_idx(&self, name: &String) -> usize {
             // Check that column exists
             if !self.headers.contains(name) { panic!("Invalid column name") }
