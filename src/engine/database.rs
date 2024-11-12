@@ -1520,4 +1520,26 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn select_with_aggregate() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Aggregate
+        db.execute("AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table WHERE field1 < max_field1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 2);
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
