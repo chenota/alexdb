@@ -126,10 +126,6 @@ pub mod table {
         pub fn len(&self) -> usize {
             self.size
         }
-        pub fn push_aggregates(&self, env: &mut Environment) -> () {
-            // Placeholder
-            ()
-        }
     }
 
     pub struct TableIterator<'a> {

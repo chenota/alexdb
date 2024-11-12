@@ -1,11 +1,11 @@
 pub mod engine {
+    use crate::storage::column::generic::{Uncompressed, ColumnInterace, Column};
     use crate::storage::table::table::*;
     use crate::sqlscript::parser::parser::*;
     use crate::sqlscript::types::types::*;
     use super::super::script::env::*;
     use super::super::script::engine::*;
     use std::rc::Rc;
-    use crate::storage::column::generic::Column;
 
     pub enum ExecutionResult {
         TableResult(Table),
@@ -22,36 +22,55 @@ pub mod engine {
         fn insert(&mut self, table_name: &String, fields: &Option<Vec<String>>, values: &Vec<Rc<Expr>>) -> ExecutionResult {
             // Get referenced table
             let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
-            let table = &mut self.tables[table_idx];
+            let table = &self.tables[table_idx];
             // Create environment
             let mut default_env = Environment::new();
             // Evaluate given values
             let mut values_insert: Vec<Val> = Vec::new();
             let mut i: usize = 0;
             for field_name in table.get_headers() {
-                match fields {
-                    Some(inserted_fields) => {
-                        // Get index of field name in inserted fields
-                        match inserted_fields.iter().position(|r| { r == field_name }) {
-                            Some(idx) => {
-                                // Evaluate next value
-                                let val = eval(values[idx].as_ref(), &mut default_env);
-                                // Push onto values_insert
-                                values_insert.push(val);
-                            },
-                            None => values_insert.push(Val::NullVal)
+                // Check if is calculated
+                match &self.calculated[table_idx][i] {
+                    Some(expr) => {
+                        // Environment
+                        let mut env = self.default_environment();
+                        // Push already-added values onto environment
+                        for j in 0..i {
+                            env.push(&table.get_headers()[j], &values_insert[j]);
                         }
+                        // Evaluate
+                        let val = eval(expr, &mut env);
+                        // Insert val
+                        values_insert.push(val);
                     },
                     None => {
-                        // Evaluate next value
-                        let val = eval(values[i].as_ref(), &mut default_env);
-                        // Push onto values_insert
-                        values_insert.push(val);
-                        // Increment i
-                        i += 1;
+                        match fields {
+                            Some(inserted_fields) => {
+                                // Get index of field name in inserted fields
+                                match inserted_fields.iter().position(|r| { r == field_name }) {
+                                    Some(idx) => {
+                                        // Evaluate next value
+                                        let val = eval(values[idx].as_ref(), &mut default_env);
+                                        // Push onto values_insert
+                                        values_insert.push(val);
+                                    },
+                                    None => values_insert.push(Val::NullVal)
+                                }
+                            },
+                            None => {
+                                // Evaluate next value
+                                let val = eval(values[i].as_ref(), &mut default_env);
+                                // Push onto values_insert
+                                values_insert.push(val);
+                            }
+                        }
                     }
                 }
+                // Increment i
+                i += 1;
             }
+            // Borrow table as mutable
+            let table = &mut self.tables[table_idx];
             // Add row to table
             table.add_row(values_insert);
             // Return
@@ -89,8 +108,6 @@ pub mod engine {
                 let mut new_row: Vec<Val> = Vec::new();
                 // Environment in which to evaluate row
                 let mut env = self.default_environment();
-                // Augment environment with table-specific stuff
-                table.push_aggregates(&mut env);
                 // Add all fields to environment
                 for field in table.get_headers() {
                     let idx = table.header_idx(field);
@@ -223,9 +240,76 @@ pub mod engine {
         fn create_column(&mut self, t: &ColType, col_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
-            let table = &mut self.tables[table_idx];
+            let table = &self.tables[table_idx];
             // Calculate values for existing rows
-
+            let col = match t {
+                ColType::Boolean => {
+                    // Data object
+                    let mut col_data: Uncompressed<bool> = Uncompressed::new();
+                    // Iterate through table rows
+                    for row in table.iter() {
+                        // Environment
+                        let mut env = self.default_environment();
+                        // Push row to environment
+                        for field in table.get_headers() {
+                            let idx = table.header_idx(field);
+                            env.push(field, &row[idx]);
+                        }
+                        // Get column value
+                        let val = eval_bool_option(expr, &mut env);
+                        // Push value to data container
+                        col_data.insert(val);
+                    }
+                    // Return column
+                    Column::Boolean(Box::new(col_data))
+                },
+                ColType::Number => {
+                    // Data object
+                    let mut col_data: Uncompressed<f64> = Uncompressed::new();
+                    // Iterate through table rows
+                    for row in table.iter() {
+                        // Environment
+                        let mut env = self.default_environment();
+                        // Push row to environment
+                        for field in table.get_headers() {
+                            let idx = table.header_idx(field);
+                            env.push(field, &row[idx]);
+                        }
+                        // Get column value
+                        let val = eval_num_option(expr, &mut env);
+                        // Push value to data container
+                        col_data.insert(val);
+                    }
+                    // Return column
+                    Column::Number(Box::new(col_data))
+                },
+                ColType::String => {
+                    // Data object
+                    let mut col_data: Uncompressed<String> = Uncompressed::new();
+                    // Iterate through table rows
+                    for row in table.iter() {
+                        // Environment
+                        let mut env = self.default_environment();
+                        // Push row to environment
+                        for field in table.get_headers() {
+                            let idx = table.header_idx(field);
+                            env.push(field, &row[idx]);
+                        }
+                        // Get column value
+                        let val = eval_str_option(expr, &mut env);
+                        // Push value to data container
+                        col_data.insert(val);
+                    }
+                    // Return column
+                    Column::String(Box::new(col_data))
+                }
+            };
+            // Borrow table as mutable
+            let table = &mut self.tables[table_idx];
+            // Insert column into table
+            table.add_populated_column(col_name, col);
+            // Mark column as calculated
+            self.calculated[table_idx].push(Some(expr.clone()));
             // Return nothing
             ExecutionResult::None
         }

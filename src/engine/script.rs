@@ -89,7 +89,6 @@ pub mod env {
 
 pub mod engine {
     use core::f64;
-    use std::rc::Rc;
     use crate::sqlscript::types::types::*;
     use super::env::{Frame, Environment};
     fn to_bool(val: &Val) -> Val {
@@ -287,6 +286,27 @@ pub mod engine {
     }
     pub fn eval_num(script: &Expr, env: &mut Environment) -> f64 {
         extract_num(&to_num(&eval(script, env)))
+    }
+    pub fn eval_bool_option(script: &Expr, env: &mut Environment) -> Option<bool> {
+        let val = eval(script, env);
+        match val {
+            Val::NullVal | Val::UndefVal => None,
+            _ => Some(extract_bool(&to_bool(&val)))
+        }
+    }
+    pub fn eval_num_option(script: &Expr, env: &mut Environment) -> Option<f64> {
+        let val = eval(script, env);
+        match val {
+            Val::NullVal | Val::UndefVal => None,
+            _ => Some(extract_num(&to_num(&val)))
+        }
+    }
+    pub fn eval_str_option(script: &Expr, env: &mut Environment) -> Option<String> {
+        let val = eval(script, env);
+        match val {
+            Val::NullVal | Val::UndefVal => None,
+            _ => Some(extract_str(&to_str(&val)))
+        }
     }
     pub fn eval_ordering(v1: &Val, v2: &Val) -> std::cmp::Ordering {
         if lt(v1, v2) {

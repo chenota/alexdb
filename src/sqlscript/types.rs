@@ -10,6 +10,7 @@ pub mod types {
         Column(ColType, String, Expr, String), // COLUMN (type) <name> = <value> INTO <table>
         CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1, col2type2, ...)
     }
+    #[derive(Clone)]
     pub enum Expr {
         BopExpr(Rc<Expr>, BopType, Rc<Expr>),
         UopExpr(UopType, Rc<Expr>),
@@ -20,6 +21,7 @@ pub mod types {
         FunExpr(IdentList, Rc<Expr>),
         CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
     }
+    #[derive(Clone)]
     pub enum Block {
         ExprBlock(Rc<Expr>),
         StmtBlock(String, Rc<Expr>, Rc<Block>) // ident = expr; ...
@@ -33,7 +35,7 @@ pub mod types {
         NullVal,
         ClosureVal(Frame, IdentList, Rc<Expr>)
     }
-    #[derive(PartialEq, Debug)]
+    #[derive(PartialEq, Debug, Clone, Copy)]
     pub enum BopType {
         PlusBop,
         MinusBop,
@@ -51,7 +53,7 @@ pub mod types {
     pub type ColList = Vec<(String, ColType)>;
     pub type ExprList = Vec<Rc<Expr>>;
     pub type IdentList = Vec<String>;
-    #[derive(PartialEq, Debug)]
+    #[derive(PartialEq, Debug, Clone, Copy)]
     pub enum UopType {
         NegUop,
         NotUop
