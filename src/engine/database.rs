@@ -15,7 +15,8 @@ pub mod engine {
     pub struct Database {
         tables: Vec<Table>,
         table_names: Vec<String>,
-        constants: Vec<(String, Val)>
+        constants: Vec<(String, Val)>,
+        calculated: Vec<Vec<Option<Expr>>>
     }
     impl Database {
         fn insert(&mut self, table_name: &String, fields: &Option<Vec<String>>, values: &Vec<Rc<Expr>>) -> ExecutionResult {
@@ -65,9 +66,12 @@ pub mod engine {
             self.tables.push(Table::new());
             // Get index of new table
             let idx: usize = self.tables.len() - 1;
-            // Add schema to new table
+            // Create new calculated vector
+            self.calculated.push(Vec::new());
+            // Add schema to new table, mark all columns as not calculated
             for schema_item in schema {
                 self.tables[idx].add_column(&schema_item.0, schema_item.1);
+                self.calculated[idx].push(None)
             }
             ExecutionResult::None
         }
@@ -216,6 +220,15 @@ pub mod engine {
             // Return nothing
             ExecutionResult::None
         }
+        fn create_column(&mut self, col_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
+            // Get index of table
+            let table_idx = self.get_table_index(table_name).unwrap();
+            let table = &mut self.tables[table_idx];
+            // Calculate values for existing rows
+            
+            // Return nothing
+            ExecutionResult::None
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -226,6 +239,7 @@ pub mod engine {
                 Query::Insert(table_name, fields, values) => self.insert(table_name, fields, values),
                 Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
                 Query::Const(name, expr) => self.create_const(name, expr),
+                Query::Column(col_name, expr, table_name) => self.create_column(col_name, expr, table_name),
                 _ => panic!("Unimplemented")
             }
         }
@@ -233,10 +247,12 @@ pub mod engine {
             Database {
                 tables: Vec::new(),
                 table_names: Vec::new(),
-                constants: Vec::new()
+                constants: Vec::new(),
+                calculated: Vec::new()
             }
         }
         pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
+        pub fn get_table_index(&self, name: &String) -> Option<usize> { self.table_names.iter().position(|r| *r == *name) }
         pub fn default_environment(&self) -> Environment {  
             // New environment
             let mut def_env = Environment::new();
