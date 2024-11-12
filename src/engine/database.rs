@@ -1391,4 +1391,129 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn aggregate_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add aggregate
+        db.execute("AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
+        // Perform select aggregate query
+        let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(5.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn aggregate_multi_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, 11)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, 3)".to_string());
+        // Add aggregate
+        db.execute("AGGREGATE max_sum = {sum = field1 + field2; if sum > current then sum else current} INIT field1 + field2 INTO test_table".to_string());
+        // Perform select aggregate query
+        let result = db.execute("SELECT AGGREGATE max_sum FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(12.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn aggregate_backwards_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Add aggregate
+        db.execute("AGGREGATE max_sum = {sum = field1 + field2; if sum > current then sum else current} INIT field1 + field2 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, 11)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, 3)".to_string());
+        // Perform select aggregate query
+        let result = db.execute("SELECT AGGREGATE max_sum FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(12.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn aggregate_backwards_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Add aggregate
+        db.execute("AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Perform select aggregate query
+        let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(5.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn aggregate_no_init() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Add aggregate
+        db.execute("AGGREGATE sum_field1 = if current === null then field1 else current + field1 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Perform select aggregate query
+        let result = db.execute("SELECT AGGREGATE sum_field1 FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(9.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
