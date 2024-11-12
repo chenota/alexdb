@@ -126,6 +126,18 @@ pub mod parser {
                             // Put it together
                             types::Query::SelectAggregate(agid, tabid)
                         },
+                        TokenKind::CompKw => {
+                            // Pop aggregate keyword
+                            self.pop();
+                            // Parse single ident
+                            let cmpid = self.ident();
+                            // Expect and pop FROM keyword
+                            self.pop_expect(TokenKind::FromKw);
+                            // Parse table id
+                            let tabid = self.ident();
+                            // Put it together
+                            types::Query::SelectComp(cmpid, tabid)
+                        },
                         _ => {
                             // Parse identlist
                             let ilist = match self.peek().kind {

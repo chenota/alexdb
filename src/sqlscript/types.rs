@@ -9,7 +9,8 @@ pub mod types {
         Aggregate(String, Expr, Option<Expr>, String), // AGGREGATE <name> = <value> INIT _ INTO <table>
         Column(ColType, String, Expr, String), // COLUMN (type) <name> = <value> INTO <table>
         CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1, col2type2, ...)
-        Comp(String, Expr, String) // CREATE COMP <name> = <value> INTO <table>
+        Comp(String, Expr, String), // CREATE COMP <name> = <value> INTO <table>
+        SelectComp(String, String) // SELECT COMP <name> FROM <table>
     }
     #[derive(Clone)]
     pub enum Expr {

@@ -437,6 +437,13 @@ pub mod engine {
             // Return nothing
             ExecutionResult::None
         }
+        fn select_computation(&mut self, cmp_name: &String, table_name: &String) -> ExecutionResult {
+            // Get index of table
+            let table_idx = self.get_table_index(table_name).unwrap();
+            let table = &self.tables[table_idx];
+            // Return aggregate
+            ExecutionResult::ValueResult(table.get_computation(cmp_name))
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -451,6 +458,7 @@ pub mod engine {
                 Query::Aggregate(ag_name, expr, init, table_name) => self.create_aggregate(ag_name, expr, init, table_name),
                 Query::SelectAggregate(ag_name, table_name) => self.select_aggregate(ag_name, table_name),
                 Query::Comp(cmp_name, expr, table_name) => self.create_computation(cmp_name, expr, table_name),
+                Query::SelectComp(cmp_name, table_name) => self.select_computation(cmp_name, table_name),
                 _ => panic!("Unimplemented")
             }
         }
