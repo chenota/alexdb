@@ -76,7 +76,9 @@ pub mod engine {
             let table = &self.tables[table_idx];
             // Vector of added rows
             let mut added_rows: Vec<Vec<Val>> = Vec::new();
+            let mut full_rows: Vec<(Vec<Val>, usize)> = Vec::new();
             // Iterate through each row in the table
+            let mut i: usize = 0;
             for row in table.iter() {
                 // New row
                 let mut new_row: Vec<Val> = Vec::new();
@@ -112,7 +114,20 @@ pub mod engine {
                 // Push to new table if should add
                 if should_add {
                     added_rows.push(new_row);
+                    // Only add to full rows if sorting
+                    match sort_by {
+                        Some(_) => full_rows.push((row.clone(), i)),
+                        None => ()
+                    };
                 }
+            };
+            // If sorting, sort full rows by sort_by header
+            match sort_by {
+                Some(s) => {
+                    let col_idx = table.header_idx(s);
+                    full_rows.sort_by(|a, b| eval_ordering(&(a.0)[col_idx], &(b.0)[col_idx]))
+                },
+                None => ()
             };
             // Create empty projected table
             let mut table_project = Table::new();
@@ -137,8 +152,6 @@ pub mod engine {
                     }
                 }
             };
-            // Reverse added rows (need to do this since popping)
-            added_rows.reverse();
             // Get limit of rows to add to table
             let lim_usize = match limit {
                 Some(expr) => {
@@ -148,16 +161,36 @@ pub mod engine {
                 },
                 None => None
             };
-            // Add rows to new table
-            for i in 0..added_rows.len() {
-                // Stop adding if reached limit
-                match lim_usize {
-                    Some(x) => if i >= x {break},
-                    None => ()
-                };
-                // Add row to table
-                table_project.add_row(added_rows.pop().unwrap())
-            };
+            match sort_by {
+                Some(_) => {
+                    // Add rows to new table
+                    for i in 0..full_rows.len() {
+                        // Stop adding if reached limit
+                        match lim_usize {
+                            Some(x) => if i >= x {break},
+                            None => ()
+                        };
+                        // Matching index of added row
+                        let matching_index = full_rows[i].1;
+                        // Add row to table
+                        table_project.add_row(added_rows[matching_index].clone())
+                    };
+                },
+                None => {
+                    // Reverse added rows (need to do this since popping)
+                    added_rows.reverse();
+                    // Add rows to new table
+                    for i in 0..added_rows.len() {
+                        // Stop adding if reached limit
+                        match lim_usize {
+                            Some(x) => if i >= x {break},
+                            None => ()
+                        };
+                        // Add row to table
+                        table_project.add_row(added_rows.pop().unwrap())
+                    };
+                }
+            }
             // Return new table
             ExecutionResult::TableResult(table_project)
         }

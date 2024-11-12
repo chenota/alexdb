@@ -89,6 +89,7 @@ pub mod env {
 
 pub mod engine {
     use core::f64;
+    use std::rc::Rc;
     use crate::sqlscript::types::types::*;
     use super::env::{Frame, Environment};
     fn to_bool(val: &Val) -> Val {
@@ -170,6 +171,18 @@ pub mod engine {
             _ => false
         }
     }
+    fn lt(a: &Val, b: &Val) -> bool {
+        match (a, b) {
+            (Val::StrVal(s1), Val::StrVal(s2)) => s1 < s2,
+            _ => extract_num(&to_num(a)) < extract_num(&to_num(b))
+        }
+    }
+    fn gt(a: &Val, b: &Val) -> bool {
+        match (a, b) {
+            (Val::StrVal(s1), Val::StrVal(s2)) => s1 > s2,
+            _ => extract_num(&to_num(a)) > extract_num(&to_num(b))
+        }
+    }
     fn eval_block(block: &Block, env: &mut Environment) -> Val {
         // Match type of block
         match block {
@@ -200,30 +213,10 @@ pub mod engine {
                     // Comparison
                     BopType::EqBop => Val::BoolVal(eq(&v1, &v2)),
                     BopType::StrEqBop => Val::BoolVal(stricteq(&v1, &v2)),
-                    BopType::GtBop => {
-                        match (&v1, &v2) {
-                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 > s2),
-                            _ => Val::BoolVal(extract_num(&to_num(&v1)) > extract_num(&to_num(&v2)))
-                        }
-                    },
-                    BopType::GteBop => {
-                        match (&v1, &v2) {
-                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 >= s2),
-                            _ => Val::BoolVal(extract_num(&to_num(&v1)) >= extract_num(&to_num(&v2)))
-                        }
-                    },
-                    BopType::LtBop => {
-                        match (&v1, &v2) {
-                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 < s2),
-                            _ => Val::BoolVal(extract_num(&to_num(&v1)) < extract_num(&to_num(&v2)))
-                        }
-                    },
-                    BopType::LteBop => {
-                        match (&v1, &v2) {
-                            (Val::StrVal(s1), Val::StrVal(s2)) => Val::BoolVal(s1 <= s2),
-                            _ => Val::BoolVal(extract_num(&to_num(&v1)) <= extract_num(&to_num(&v2)))
-                        }
-                    },
+                    BopType::GtBop => Val::BoolVal(gt(&v1, &v2)),
+                    BopType::GteBop => Val::BoolVal(gt(&v1, &v2) || eq(&v1, &v2)),
+                    BopType::LtBop => Val::BoolVal(lt(&v1, &v2)),
+                    BopType::LteBop => Val::BoolVal(lt(&v1, &v2) || eq(&v1, &v2)),
                     // Logical
                     BopType::LogAndBop => if extract_bool(&to_bool(&v1)) { v2 } else { v1 },
                     BopType::LogOrBop => if extract_bool(&to_bool(&v1)) { v1 } else { v2 },
@@ -294,6 +287,15 @@ pub mod engine {
     }
     pub fn eval_num(script: &Expr, env: &mut Environment) -> f64 {
         extract_num(&to_num(&eval(script, env)))
+    }
+    pub fn eval_ordering(v1: &Val, v2: &Val) -> std::cmp::Ordering {
+        if lt(v1, v2) {
+            std::cmp::Ordering::Less
+        } else if gt(v1, v2) {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Equal
+        }
     }
 }
 
