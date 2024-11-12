@@ -142,6 +142,8 @@ pub mod engine {
                 let mut new_row: Vec<Val> = Vec::new();
                 // Environment in which to evaluate row
                 let mut env = self.default_environment();
+                // Add aggregates into environment
+                table.push_aggregates(&mut env);
                 // Add all fields to environment
                 for field in table.get_headers() {
                     let idx = table.header_idx(field);
@@ -221,6 +223,8 @@ pub mod engine {
                 Some(expr) => {
                     // Evaluate expression
                     let mut env = self.default_environment();
+                    // Add aggregates into environment
+                    table.push_aggregates(&mut env);
                     Some(eval_num(expr, &mut env) as usize)
                 },
                 None => None

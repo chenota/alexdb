@@ -1,6 +1,7 @@
 pub mod table {
     use super::super::column::generic::{ Column, Uncompressed, ColumnInterace };
     use crate::sqlscript::types::types::{ ColType, Val, Expr };
+    use crate::engine::script::env::Environment;
 
     enum IterCont<'a> {
         Number(Box<dyn Iterator<Item=Option<f64>> + 'a>),
@@ -148,6 +149,11 @@ pub mod table {
             let ag_idx = self.aggregates.iter().position(|r| r.0 == *name).unwrap();
             // Return
             self.aggregates[ag_idx].1.clone()
+        }
+        pub fn push_aggregates(&self, env: &mut Environment) {
+            for ag in &self.aggregates {
+                env.push(&ag.0, &ag.1);
+            }
         }
     }
 
