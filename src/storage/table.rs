@@ -1,7 +1,6 @@
 pub mod table {
     use super::super::column::generic::{ Column, Uncompressed, ColumnInterace };
-    use crate::sqlscript::types::types::{ ColType, Val };
-    use crate::engine::script::env::Environment;
+    use crate::sqlscript::types::types::{ ColType, Val, Expr };
 
     enum IterCont<'a> {
         Number(Box<dyn Iterator<Item=Option<f64>> + 'a>),
@@ -12,14 +11,16 @@ pub mod table {
     pub struct Table {
         table: Vec<Column>,
         headers: Vec<String>,
-        size: usize
+        size: usize,
+        aggregates: Vec<(String, Val, Expr)>
     }
     impl Table {
         pub fn new() -> Table {
             Table {
                 table: Vec::new(),
                 headers: Vec::new(),
-                size: 0
+                size: 0,
+                aggregates: Vec::new()
             }
         }
         pub fn add_column(&mut self, name: &String, coltype: ColType) -> () {
@@ -125,6 +126,22 @@ pub mod table {
         }
         pub fn len(&self) -> usize {
             self.size
+        }
+        pub fn add_aggregate(&mut self, name: &String, val: &Val, expr: &Expr) {
+            self.aggregates.push((name.clone(), val.clone(), expr.clone()))
+        }
+        pub fn update_aggregates(&mut self, vals: &Vec<Val>) {
+            // Check length of values vector
+            if vals.len() != self.aggregates.len() { panic!("Unequal lengths") }
+            // Update all aggregate values
+            let mut i: usize = 0;
+            for val in vals {
+                self.aggregates[i].1 = val.clone();
+                i += 1;
+            }
+        }
+        pub fn get_aggregates(&self) -> &Vec<(String, Val, Expr)> {
+            &self.aggregates
         }
     }
 

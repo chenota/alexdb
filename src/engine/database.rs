@@ -69,10 +69,28 @@ pub mod engine {
                 // Increment i
                 i += 1;
             }
+            // Calculate aggregates
+            let mut ag_vals = Vec::new();
+            for ag in table.get_aggregates() {
+                // Environment
+                let mut env = self.default_environment();
+                // Add new row to environment
+                for i in 0..values_insert.len() {
+                    env.push(&table.get_headers()[i], &values_insert[i]);
+                }
+                // Add current value to environment
+                env.push(&"current".to_string(), &ag.1);
+                // Evaluate
+                let val = eval(&ag.2, &mut env);
+                // Push
+                ag_vals.push(val);
+            }
             // Borrow table as mutable
             let table = &mut self.tables[table_idx];
             // Add row to table
             table.add_row(values_insert);
+            // Add aggregates
+            table.update_aggregates(&ag_vals);
             // Return
             ExecutionResult::None
         }
@@ -313,6 +331,31 @@ pub mod engine {
             // Return nothing
             ExecutionResult::None
         }
+        fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
+            // Get index of table
+            let table_idx = self.get_table_index(table_name).unwrap();
+            let table = &self.tables[table_idx];
+            // Value of aggregate
+            let mut ag_val = Val::NullVal;
+            // Calculate aggregate for existing rows
+            for row in table.iter() {
+                // Environment
+                let mut env = self.default_environment();
+                // Add row to environment
+                for i in 0..row.len() {
+                    env.push(&table.get_headers()[i], &row[i]);
+                }
+                // Add current value to environment
+                env.push(&"current".to_string(), &ag_val);
+                // Evaluate
+                ag_val = eval(expr, &mut env);
+            };
+            // Register aggregate into table
+            let table = &mut self.tables[table_idx];
+            table.add_aggregate(ag_name, &ag_val, expr);
+            // Finished
+            ExecutionResult::None
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -324,6 +367,7 @@ pub mod engine {
                 Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
                 Query::Const(name, expr) => self.create_const(name, expr),
                 Query::Column(t, col_name, expr, table_name) => self.create_column(t, col_name, expr, table_name),
+                Query::Aggregate(ag_name, expr, table_name) => self.create_aggregate(ag_name, expr, table_name),
                 _ => panic!("Unimplemented")
             }
         }
