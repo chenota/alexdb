@@ -1277,7 +1277,7 @@ mod parser_tests {
     #[test]
     fn parser_query_const() -> Result<(), String> {
         // Setup
-        let test_input: String = "CONST max = fun x, y -> if x > y then x else y".to_string();
+        let test_input: String = "CREATE CONST max = fun x, y -> if x > y then x else y".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
@@ -1291,7 +1291,7 @@ mod parser_tests {
     #[test]
     fn parser_query_aggregate() -> Result<(), String> {
         // Setup
-        let test_input: String = "AGGREGATE maxval = max(field1, current) INTO table".to_string();
+        let test_input: String = "CREATE AGGREGATE maxval = max(field1, current) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
@@ -1305,7 +1305,7 @@ mod parser_tests {
     #[test]
     fn parser_query_col() -> Result<(), String> {
         // Setup
-        let test_input: String = "COLUMN (num) awesome = max(field1, field2) INTO table".to_string();
+        let test_input: String = "CREATE COLUMN (num) awesome = max(field1, field2) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST

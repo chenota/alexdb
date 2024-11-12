@@ -1083,7 +1083,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
-        db.execute("CONST test_val = 5".to_string());
+        db.execute("CREATE CONST test_val = 5".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == test_val".to_string());
         match result {
@@ -1115,7 +1115,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
-        db.execute("CONST max = fun x, y -> if x > y then x else y".to_string());
+        db.execute("CREATE CONST max = fun x, y -> if x > y then x else y".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == max(1, 5)".to_string());
         match result {
@@ -1148,7 +1148,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
         // Add calculated columns
-        db.execute("COLUMN (bool) calc_1 = false INTO test_table".to_string());
+        db.execute("CREATE COLUMN (bool) calc_1 = false INTO test_table".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
@@ -1181,7 +1181,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
         // Add calculated columns
-        db.execute("COLUMN (bool) calc_1 = field2 INTO test_table".to_string());
+        db.execute("CREATE COLUMN (bool) calc_1 = field2 INTO test_table".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
@@ -1214,7 +1214,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
         // Add calculated columns
-        db.execute("COLUMN (bool) calc_1 = field1 > 10 INTO test_table".to_string());
+        db.execute("CREATE COLUMN (bool) calc_1 = field1 > 10 INTO test_table".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
@@ -1242,7 +1242,7 @@ mod test_database {
         // Create table
         db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
         // Add calculated columns
-        db.execute("COLUMN (bool) calc_1 = field1 > 10 INTO test_table".to_string());
+        db.execute(" CREATE COLUMN (bool) calc_1 = field1 > 10 INTO test_table".to_string());
         // Insert values into table
         db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
@@ -1280,7 +1280,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
         // Add calculated columns
-        db.execute("COLUMN (bool) calc_1 = field1 === 7 INTO test_table".to_string());
+        db.execute("CREATE COLUMN (bool) calc_1 = field1 === 7 INTO test_table".to_string());
         // Insert more data
         db.execute("INSERT INTO test_table VALUES (7, false, false)".to_string());
         // Perform select query
@@ -1315,8 +1315,8 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
         // Add calculated columns
-        db.execute("COLUMN (bool) calc_1 = field1 == 5 INTO test_table".to_string());
-        db.execute("COLUMN (bool) calc_2 = !calc_1 INTO test_table".to_string());
+        db.execute("CREATE COLUMN (bool) calc_1 = field1 == 5 INTO test_table".to_string());
+        db.execute("CREATE COLUMN (bool) calc_2 = !calc_1 INTO test_table".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
@@ -1349,7 +1349,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add constants
         // Add calculated columns
-        db.execute("COLUMN (num) calc_1 = if field2 then field1 * 2 else field1 * 3 INTO test_table".to_string());
+        db.execute("CREATE COLUMN (num) calc_1 = if field2 then field1 * 2 else field1 * 3 INTO test_table".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
@@ -1381,7 +1381,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add aggregate
-        db.execute("AGGREGATE max_field1 = current INIT field1 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE max_field1 = current INIT field1 INTO test_table".to_string());
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
         match result {
@@ -1406,7 +1406,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Add aggregate
-        db.execute("AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
         match result {
@@ -1431,7 +1431,7 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (1, 11)".to_string());
         db.execute("INSERT INTO test_table VALUES (3, 3)".to_string());
         // Add aggregate
-        db.execute("AGGREGATE max_sum = {sum = field1 + field2; if sum > current then sum else current} INIT field1 + field2 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE max_sum = {sum = field1 + field2; if sum > current then sum else current} INIT field1 + field2 INTO test_table".to_string());
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_sum FROM test_table".to_string());
         match result {
@@ -1452,7 +1452,7 @@ mod test_database {
         // Create table
         db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
         // Add aggregate
-        db.execute("AGGREGATE max_sum = {sum = field1 + field2; if sum > current then sum else current} INIT field1 + field2 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE max_sum = {sum = field1 + field2; if sum > current then sum else current} INIT field1 + field2 INTO test_table".to_string());
         // Insert values into table
         db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
         db.execute("INSERT INTO test_table VALUES (1, 11)".to_string());
@@ -1477,7 +1477,7 @@ mod test_database {
         // Create table
         db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
         // Add aggregate
-        db.execute("AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
         // Insert values into table
         db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
@@ -1502,7 +1502,7 @@ mod test_database {
         // Create table
         db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
         // Add aggregate
-        db.execute("AGGREGATE sum_field1 = if current === null then field1 else current + field1 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE sum_field1 = if current === null then field1 else current + field1 INTO test_table".to_string());
         // Insert values into table
         db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
@@ -1527,7 +1527,7 @@ mod test_database {
         // Create table
         db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
         // Aggregate
-        db.execute("AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
         // Insert values into table
         db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
         db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
