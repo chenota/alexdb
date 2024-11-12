@@ -62,6 +62,7 @@ pub mod lexer {
         SortKw,
         ByKw,
         SortType,
+        InitKw,
         // Type keywords
         NumberKw,
         StrKw,
@@ -125,6 +126,7 @@ pub mod lexer {
         (Some(TokenKind::SortType), reg!(r"ASC"), sort_value),
         (Some(TokenKind::SortType), reg!(r"DESC"), sort_value),
         (Some(TokenKind::ByKw), reg!(r"BY"), none_value),
+        (Some(TokenKind::InitKw), reg!(r"INIT"), none_value),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),

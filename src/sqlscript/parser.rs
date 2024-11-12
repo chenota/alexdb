@@ -223,12 +223,22 @@ pub mod parser {
                 TokenKind::AggregateKw => {
                     // Parse single equals
                     let assign = self.singleassign();
+                    // Parse INIT
+                    let init = match self.peek().kind {
+                        TokenKind::InitKw => {
+                            // Pop INIT
+                            self.pop();
+                            // Parse expr
+                            Some(self.expr())
+                        },
+                        _ => None
+                    };
                     // Expect and pop INTO
                     self.pop_expect(TokenKind::IntoKw);
                     // Parse table name
                     let tname = self.ident();
                     // Put together
-                    types::Query::Aggregate(assign.0, assign.1, tname)
+                    types::Query::Aggregate(assign.0, assign.1, init, tname)
                 },
                 TokenKind::ColumnKw => {
                     // Expect LPAREN
@@ -1273,7 +1283,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Aggregate(_, _, _) => assert!(true),
+            types::Query::Aggregate(_, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())

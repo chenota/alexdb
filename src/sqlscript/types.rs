@@ -6,7 +6,7 @@ pub mod types {
         Insert(String, Option<IdentList>, ExprList), // INSERT INTO _ (_, _, _)? VALUES (_, _, _)
         SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
         Const(String, Expr), // CONST <name> = <value>
-        Aggregate(String, Expr, String), // AGGREGATE <name> = <value> INTO <table>
+        Aggregate(String, Expr, Option<Expr>, String), // AGGREGATE <name> = <value> INIT _ INTO <table>
         Column(ColType, String, Expr, String), // COLUMN (type) <name> = <value> INTO <table>
         CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1, col2type2, ...)
     }

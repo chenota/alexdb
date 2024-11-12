@@ -347,7 +347,7 @@ pub mod engine {
             // Return nothing
             ExecutionResult::None
         }
-        fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, table_name: &String, init: &Option<Expr>) -> ExecutionResult {
+        fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, init: &Option<Expr>, table_name: &String) -> ExecutionResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -406,7 +406,7 @@ pub mod engine {
                 Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
                 Query::Const(name, expr) => self.create_const(name, expr),
                 Query::Column(t, col_name, expr, table_name) => self.create_column(t, col_name, expr, table_name),
-                Query::Aggregate(ag_name, expr, table_name) => self.create_aggregate(ag_name, expr, table_name, &None),
+                Query::Aggregate(ag_name, expr, init, table_name) => self.create_aggregate(ag_name, expr, init, table_name),
                 Query::SelectAggregate(ag_name, table_name) => self.select_aggregate(ag_name, table_name),
                 _ => panic!("Unimplemented")
             }
