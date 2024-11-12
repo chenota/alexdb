@@ -214,61 +214,75 @@ pub mod parser {
                     // Return
                     types::Query::Insert(tableid, colids, vlist)
                 },
-                TokenKind::ConstKw => {
-                    // Parse single assignment
-                    let assign = self.singleassign();
-                    // Put together
-                    types::Query::Const(assign.0, assign.1)
-                },
-                TokenKind::AggregateKw => {
-                    // Parse single equals
-                    let assign = self.singleassign();
-                    // Parse INIT
-                    let init = match self.peek().kind {
-                        TokenKind::InitKw => {
-                            // Pop INIT
-                            self.pop();
-                            // Parse expr
-                            Some(self.expr())
-                        },
-                        _ => None
-                    };
-                    // Expect and pop INTO
-                    self.pop_expect(TokenKind::IntoKw);
-                    // Parse table name
-                    let tname = self.ident();
-                    // Put together
-                    types::Query::Aggregate(assign.0, assign.1, init, tname)
-                },
-                TokenKind::ColumnKw => {
-                    // Expect LPAREN
-                    self.pop_expect(TokenKind::LParen);
-                    // Parse column type
-                    let t = self.parsetype();
-                    // Expect RPAREN
-                    self.pop_expect(TokenKind::RParen);
-                    // Parse single assign
-                    let assign = self.singleassign();
-                    // Expect and pop INTO
-                    self.pop_expect(TokenKind::IntoKw);
-                    // Parse table name
-                    let tname = self.ident();
-                    // Put together
-                    types::Query::Column(t, assign.0, assign.1, tname)
-                },
                 TokenKind::CreateKw => {
-                    // Pop and expect table kw
-                    self.pop_expect(TokenKind::TableKw);
-                    // Read table name
-                    let tname = self.ident();
-                    // Expect and pop paren
-                    self.pop_expect(TokenKind::LParen);
-                    // Parse column list
-                    let clist = self.collist();
-                    // Expect and pop rparen
-                    self.pop_expect(TokenKind::RParen);
-                    // Return
-                    types::Query::CreateTable(tname, clist)
+                    match self.pop().kind {
+                        TokenKind::TableKw => {
+                            // Read table name
+                            let tname = self.ident();
+                            // Expect and pop paren
+                            self.pop_expect(TokenKind::LParen);
+                            // Parse column list
+                            let clist = self.collist();
+                            // Expect and pop rparen
+                            self.pop_expect(TokenKind::RParen);
+                            // Return
+                            types::Query::CreateTable(tname, clist)
+                        },
+                        TokenKind::CompKw => {
+                            // Parse single assignment
+                            let assign = self.singleassign();
+                            // Parse INTO
+                            self.pop_expect(TokenKind::IntoKw);
+                            // Parse name
+                            let table_name = self.ident();
+                            // Put together
+                            types::Query::Comp(assign.0, assign.1, table_name)
+                        },
+                        TokenKind::ColumnKw => {
+                            // Expect LPAREN
+                            self.pop_expect(TokenKind::LParen);
+                            // Parse column type
+                            let t = self.parsetype();
+                            // Expect RPAREN
+                            self.pop_expect(TokenKind::RParen);
+                            // Parse single assign
+                            let assign = self.singleassign();
+                            // Expect and pop INTO
+                            self.pop_expect(TokenKind::IntoKw);
+                            // Parse table name
+                            let tname = self.ident();
+                            // Put together
+                            types::Query::Column(t, assign.0, assign.1, tname)
+                        },
+                        TokenKind::AggregateKw => {
+                            // Parse single equals
+                            let assign = self.singleassign();
+                            // Parse INIT
+                            let init = match self.peek().kind {
+                                TokenKind::InitKw => {
+                                    // Pop INIT
+                                    self.pop();
+                                    // Parse expr
+                                    Some(self.expr())
+                                },
+                                _ => None
+                            };
+                            // Expect and pop INTO
+                            self.pop_expect(TokenKind::IntoKw);
+                            // Parse table name
+                            let tname = self.ident();
+                            // Put together
+                            types::Query::Aggregate(assign.0, assign.1, init, tname)
+                        },
+                        TokenKind::ConstKw => {
+                            // Parse single assignment
+                            let assign = self.singleassign();
+                            // Put together
+                            types::Query::Const(assign.0, assign.1)
+                        },
+                        _ => panic!("Parsing error")
+                    }
+                    
                 },
                 _ => panic!("Parsing error")
             }
