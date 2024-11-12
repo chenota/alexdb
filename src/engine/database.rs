@@ -14,7 +14,8 @@ pub mod engine {
 
     pub struct Database {
         tables: Vec<Table>,
-        table_names: Vec<String>
+        table_names: Vec<String>,
+        constants: Vec<(String, Val)>
     }
     impl Database {
         fn insert(&mut self, table_name: &String, fields: &Option<Vec<String>>, values: &Vec<Rc<Expr>>) -> ExecutionResult {
@@ -202,6 +203,19 @@ pub mod engine {
             // Return new table
             ExecutionResult::TableResult(table_project)
         }
+        fn create_const(&mut self, name: &String, expr: &Expr) -> ExecutionResult {
+            // Evaluate expr
+            let mut env = self.default_environment();
+            let val = eval(expr, &mut env);
+            // Check if name already in constants
+            let pos = self.constants.iter().position(|r| r.0 == *name);
+            match pos {
+                Some(idx) => self.constants[idx] = (name.clone(), val),
+                None => self.constants.push((name.clone(), val))
+            };
+            // Return nothing
+            ExecutionResult::None
+        }
         pub fn execute(&mut self, q: String) -> ExecutionResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -211,19 +225,27 @@ pub mod engine {
                 Query::CreateTable(table_name, schema) => self.create_table(table_name, schema),
                 Query::Insert(table_name, fields, values) => self.insert(table_name, fields, values),
                 Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
+                Query::Const(name, expr) => self.create_const(name, expr),
                 _ => panic!("Unimplemented")
             }
         }
         pub fn new() -> Database {
             Database {
                 tables: Vec::new(),
-                table_names: Vec::new()
+                table_names: Vec::new(),
+                constants: Vec::new()
             }
         }
         pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
         pub fn default_environment(&self) -> Environment {  
-            // Placeholder
-            Environment::new()
+            // New environment
+            let mut def_env = Environment::new();
+            // Add constants
+            for c in self.constants.iter() {
+                def_env.push(&c.0, &c.1)
+            };
+            // Return
+            def_env
         }
     }
 }
@@ -842,6 +864,70 @@ mod test_database {
         db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == 3 || field1 == 5 ORDER BY field1 DESC LIMIT 1".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(5.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn const_val() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        db.execute("CONST test_val = 5".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table WHERE field1 == test_val".to_string());
+        match result {
+            ExecutionResult::TableResult(t) => {
+                assert_eq!(t.len(), 1);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(5.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn const_fun() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Add constants
+        db.execute("CONST max = fun x, y -> if x > y then x else y".to_string());
+        // Perform select query
+        let result = db.execute("SELECT * FROM test_table WHERE field1 == max(1, 5)".to_string());
         match result {
             ExecutionResult::TableResult(t) => {
                 assert_eq!(t.len(), 1);
