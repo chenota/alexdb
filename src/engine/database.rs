@@ -380,7 +380,9 @@ pub mod engine {
                         None => eval(expr, &mut env)
                     },
                     false => eval(expr, &mut env)
-                }
+                };
+                // Increment i
+                i += 1;
             };
             // Register aggregate into table
             let table = &mut self.tables[table_idx];
