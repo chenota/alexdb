@@ -220,12 +220,12 @@ pub mod engine {
             // Return nothing
             ExecutionResult::None
         }
-        fn create_column(&mut self, col_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
+        fn create_column(&mut self, t: &ColType, col_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &mut self.tables[table_idx];
             // Calculate values for existing rows
-            
+
             // Return nothing
             ExecutionResult::None
         }
@@ -239,7 +239,7 @@ pub mod engine {
                 Query::Insert(table_name, fields, values) => self.insert(table_name, fields, values),
                 Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
                 Query::Const(name, expr) => self.create_const(name, expr),
-                Query::Column(col_name, expr, table_name) => self.create_column(col_name, expr, table_name),
+                Query::Column(t, col_name, expr, table_name) => self.create_column(t, col_name, expr, table_name),
                 _ => panic!("Unimplemented")
             }
         }

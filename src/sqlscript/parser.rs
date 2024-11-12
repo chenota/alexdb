@@ -231,6 +231,12 @@ pub mod parser {
                     types::Query::Aggregate(assign.0, assign.1, tname)
                 },
                 TokenKind::ColumnKw => {
+                    // Expect LPAREN
+                    self.pop_expect(TokenKind::LParen);
+                    // Parse column type
+                    let t = self.parsetype();
+                    // Expect RPAREN
+                    self.pop_expect(TokenKind::RParen);
                     // Parse single assign
                     let assign = self.singleassign();
                     // Expect and pop INTO
@@ -238,7 +244,7 @@ pub mod parser {
                     // Parse table name
                     let tname = self.ident();
                     // Put together
-                    types::Query::Column(assign.0, assign.1, tname)
+                    types::Query::Column(t, assign.0, assign.1, tname)
                 },
                 TokenKind::CreateKw => {
                     // Pop and expect table kw
@@ -1275,13 +1281,13 @@ mod parser_tests {
     #[test]
     fn parser_query_col() -> Result<(), String> {
         // Setup
-        let test_input: String = "COLUMN awesome = max(field1, field2) INTO table".to_string();
+        let test_input: String = "COLUMN (num) awesome = max(field1, field2) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
         let ast = test_parser.parse();
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Column(_, _, _) => assert!(true),
+            types::Query::Column(_, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())

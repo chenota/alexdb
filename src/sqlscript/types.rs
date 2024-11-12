@@ -7,7 +7,7 @@ pub mod types {
         SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
         Const(String, Expr), // CONST <name> = <value>
         Aggregate(String, Expr, String), // AGGREGATE <name> = <value> INTO <table>
-        Column(String, Expr, String), // COLUMN <name> = <value> INTO <table>
+        Column(ColType, String, Expr, String), // COLUMN (type) <name> = <value> INTO <table>
         CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1, col2type2, ...)
     }
     pub enum Expr {
