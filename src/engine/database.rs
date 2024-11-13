@@ -1,5 +1,5 @@
 pub mod engine {
-    use crate::storage::column::generic::{Uncompressed, ColumnInterace, Column};
+    use crate::storage::column::generic::{Uncompressed, ColumnInterface, Column};
     use crate::storage::table::table::*;
     use crate::sqlscript::parser::parser::*;
     use crate::sqlscript::types::types::*;

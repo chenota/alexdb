@@ -1,5 +1,5 @@
 pub mod table {
-    use super::super::column::generic::{ Column, Uncompressed, ColumnInterace };
+    use super::super::column::generic::{ Column, Uncompressed, ColumnInterface };
     use crate::sqlscript::types::types::{ ColType, Val, Expr };
     use crate::engine::script::env::Environment;
 
