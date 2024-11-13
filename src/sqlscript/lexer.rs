@@ -128,7 +128,7 @@ pub mod lexer {
         (Some(TokenKind::SortType), reg!(r"DESC"), sort_value),
         (Some(TokenKind::ByKw), reg!(r"BY"), none_value),
         (Some(TokenKind::InitKw), reg!(r"INIT"), none_value),
-        (Some(TokenKind::InitKw), reg!(r"COMP"), none_value),
+        (Some(TokenKind::CompKw), reg!(r"COMP"), none_value),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),
