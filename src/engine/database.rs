@@ -1587,4 +1587,31 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn comp_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 bool, field3 bool)".to_string());
+        // Aggregate
+        db.execute("CREATE AGGREGATE max_field1 = if field1 > current then field1 else current INIT field1 INTO test_table".to_string());
+        // Computation
+        db.execute("CREATE COMP test_comp = 0 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, true, true)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, true, false)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, false, false)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT COMP test_comp FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(0.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
