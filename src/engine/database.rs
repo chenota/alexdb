@@ -7,9 +7,9 @@ pub mod engine {
     use super::super::script::engine::*;
     use std::rc::Rc;
 
-    pub enum ExecutionResult {
-        TableResult(Table),
-        ValueResult(Val),
+    pub enum QueryResult {
+        Table(Table),
+        Value(Val),
         None
     }
 
@@ -20,7 +20,7 @@ pub mod engine {
         calculated: Vec<Vec<Option<Expr>>>
     }
     impl Database {
-        fn insert(&mut self, table_name: &String, fields: &Option<Vec<String>>, values: &Vec<Rc<Expr>>) -> ExecutionResult {
+        fn insert(&mut self, table_name: &String, fields: &Option<Vec<String>>, values: &Vec<Rc<Expr>>) -> QueryResult {
             // Get referenced table
             let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -123,9 +123,9 @@ pub mod engine {
             // Add computations
             table.update_computations(&cmp_vals);
             // Return
-            ExecutionResult::None
+            QueryResult::None
         }
-        fn create_table(&mut self, table_name: &String, schema: &Vec<(String, ColType)>) -> ExecutionResult {
+        fn create_table(&mut self, table_name: &String, schema: &Vec<(String, ColType)>) -> QueryResult {
             // Check that table doesn't already exist
             if self.table_names.contains(table_name) { panic!("Table already exists") }
             // Push table name
@@ -141,9 +141,9 @@ pub mod engine {
                 self.tables[idx].add_column(&schema_item.0, schema_item.1);
                 self.calculated[idx].push(None)
             }
-            ExecutionResult::None
+            QueryResult::None
         }
-        fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<(String, SortType)>, limit: &Option<Expr>) -> ExecutionResult {
+        fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<(String, SortType)>, limit: &Option<Expr>) -> QueryResult {
             // Get referenced table
             let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -275,9 +275,9 @@ pub mod engine {
                 }
             }
             // Return new table
-            ExecutionResult::TableResult(table_project)
+            QueryResult::Table(table_project)
         }
-        fn create_const(&mut self, name: &String, expr: &Expr) -> ExecutionResult {
+        fn create_const(&mut self, name: &String, expr: &Expr) -> QueryResult {
             // Evaluate expr
             let mut env = self.default_environment();
             let val = eval(expr, &mut env);
@@ -288,9 +288,9 @@ pub mod engine {
                 None => self.constants.push((name.clone(), val))
             };
             // Return nothing
-            ExecutionResult::None
+            QueryResult::None
         }
-        fn create_column(&mut self, t: &ColType, col_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
+        fn create_column(&mut self, t: &ColType, col_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -364,9 +364,9 @@ pub mod engine {
             // Mark column as calculated
             self.calculated[table_idx].push(Some(expr.clone()));
             // Return nothing
-            ExecutionResult::None
+            QueryResult::None
         }
-        fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, init: &Option<Expr>, table_name: &String) -> ExecutionResult {
+        fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, init: &Option<Expr>, table_name: &String) -> QueryResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -407,16 +407,16 @@ pub mod engine {
             let table = &mut self.tables[table_idx];
             table.add_aggregate(ag_name, &ag_val, expr, init);
             // Finished
-            ExecutionResult::None
+            QueryResult::None
         }
-        fn select_aggregate(&mut self, ag_name: &String, table_name: &String) -> ExecutionResult {
+        fn select_aggregate(&mut self, ag_name: &String, table_name: &String) -> QueryResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
             // Return aggregate
-            ExecutionResult::ValueResult(table.get_aggregate(ag_name))
+            QueryResult::Value(table.get_aggregate(ag_name))
         }
-        fn create_computation(&mut self, cmp_name: &String, expr: &Expr, table_name: &String) -> ExecutionResult {
+        fn create_computation(&mut self, cmp_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx]; 
@@ -435,16 +435,16 @@ pub mod engine {
             let table = &mut self.tables[table_idx];
             table.add_computation(cmp_name, &comp_val, expr);
             // Return nothing
-            ExecutionResult::None
+            QueryResult::None
         }
-        fn select_computation(&mut self, cmp_name: &String, table_name: &String) -> ExecutionResult {
+        fn select_computation(&mut self, cmp_name: &String, table_name: &String) -> QueryResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
             // Return aggregate
-            ExecutionResult::ValueResult(table.get_computation(cmp_name))
+            QueryResult::Value(table.get_computation(cmp_name))
         }
-        pub fn execute(&mut self, q: String) -> ExecutionResult {
+        pub fn execute(&mut self, q: String) -> QueryResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
             let parsed_query = query_parser.parse();
@@ -562,7 +562,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 3);
                 let mut i = 0;
                 for row in t.iter() {
@@ -592,7 +592,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT field2, field1 FROM test_table".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 3);
                 let mut i = 0;
                 for row in t.iter() {
@@ -622,7 +622,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 3);
                 let mut i = 0;
                 for row in t.iter() {
@@ -652,7 +652,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field2 == true".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 2);
                 let mut i = 0;
                 for row in t.iter() {
@@ -688,7 +688,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 > 4".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
             },
             _ => assert!(false)
@@ -708,7 +708,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 > 1000".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 0);
             },
             _ => assert!(false)
@@ -728,7 +728,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == 3 && field2 == false && field3 == false".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
             },
             _ => assert!(false)
@@ -748,7 +748,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE {isbig = fun x -> x >= 5; isbig(field1)}".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
             },
             _ => assert!(false)
@@ -768,7 +768,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -798,7 +798,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 2 - 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -828,7 +828,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT '1'".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -858,7 +858,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT (fun -> 1)()".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -888,7 +888,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 0".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 0);
             },
             _ => assert!(false)
@@ -908,7 +908,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 > 2 LIMIT (fun -> 1)()".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -938,7 +938,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table ORDER BY field1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 3);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -980,7 +980,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table ORDER BY field1 ASC".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 3);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1022,7 +1022,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table ORDER BY field1 DESC".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 3);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1064,7 +1064,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == 3 || field1 == 5 ORDER BY field1 DESC".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 2);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1100,7 +1100,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == 3 || field1 == 5 ORDER BY field1 DESC LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1132,7 +1132,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == test_val".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1164,7 +1164,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table WHERE field1 == max(1, 5)".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1197,7 +1197,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1230,7 +1230,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1263,7 +1263,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1296,7 +1296,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1331,7 +1331,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table ORDER BY field1 DESC LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1365,7 +1365,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1398,7 +1398,7 @@ mod test_database {
         // Perform select query
         let result = db.execute("SELECT * FROM test_table LIMIT 1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 1);
                 let mut i: usize = 0;
                 for row in t.iter() {
@@ -1430,7 +1430,7 @@ mod test_database {
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(5.0) => assert!(true),
                     _ => assert!(false)
@@ -1455,7 +1455,7 @@ mod test_database {
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(5.0) => assert!(true),
                     _ => assert!(false)
@@ -1480,7 +1480,7 @@ mod test_database {
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_sum FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(12.0) => assert!(true),
                     _ => assert!(false)
@@ -1505,7 +1505,7 @@ mod test_database {
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_sum FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(12.0) => assert!(true),
                     _ => assert!(false)
@@ -1530,7 +1530,7 @@ mod test_database {
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE max_field1 FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(5.0) => assert!(true),
                     _ => assert!(false)
@@ -1555,7 +1555,7 @@ mod test_database {
         // Perform select aggregate query
         let result = db.execute("SELECT AGGREGATE sum_field1 FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(9.0) => assert!(true),
                     _ => assert!(false)
@@ -1580,7 +1580,7 @@ mod test_database {
         // Perform select query using aggregate
         let result = db.execute("SELECT * FROM test_table WHERE field1 < max_field1".to_string());
         match result {
-            ExecutionResult::TableResult(t) => {
+            QueryResult::Table(t) => {
                 assert_eq!(t.len(), 2);
             },
             _ => assert!(false)
@@ -1604,7 +1604,7 @@ mod test_database {
         // Perform select query using aggregate
         let result = db.execute("SELECT COMP test_comp FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(0.0) => assert!(true),
                     _ => assert!(false)
@@ -1634,7 +1634,7 @@ mod test_database {
         // Perform select query using aggregate
         let result = db.execute("SELECT COMP sum_max FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(16.0) => assert!(true),
                     _ => assert!(false)
@@ -1662,7 +1662,7 @@ mod test_database {
         // Perform select query using aggregate
         let result = db.execute("SELECT COMP avg_field1 FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(x) => assert_eq!(x as i32, 6),
                     _ => assert!(false)
@@ -1689,7 +1689,7 @@ mod test_database {
         // Perform select query using aggregate
         let result = db.execute("SELECT COMP avg_field1 FROM test_table".to_string());
         match result {
-            ExecutionResult::ValueResult(v) => {
+            QueryResult::Value(v) => {
                 match v {
                     Val::NumVal(x) => assert_eq!(x as i32, 6),
                     _ => assert!(false)
