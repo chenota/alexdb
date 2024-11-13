@@ -1614,4 +1614,89 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn comp_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Add const
+        db.execute("CREATE CONST max = fun a, b -> if a > b then a else b".to_string());
+        // Add aggregate
+        db.execute("CREATE AGGREGATE max_field1 = max(field1, current) INIT field1 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE max_field2 = max(field2, current) INIT field2 INTO test_table".to_string());
+        // Add computation
+        db.execute("CREATE COMP sum_max = max_field1 + max_field2 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (1, 11)".to_string());
+        db.execute("INSERT INTO test_table VALUES (3, 3)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT COMP sum_max FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(16.0) => assert!(true),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn comp_avg_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Add aggregate
+        db.execute("CREATE AGGREGATE sum_field1 = current + field1 INIT field1 INTO test_table".to_string());
+        db.execute("CREATE AGGREGATE count = current + 1 INIT 1 INTO test_table".to_string());
+        // Add computation
+        db.execute("CREATE COMP avg_field1 = sum_field1 / count INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (6, 11)".to_string());
+        db.execute("INSERT INTO test_table VALUES (8, 3)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT COMP avg_field1 FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(x) => assert_eq!(x as i32, 6),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn comp_avg_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Add aggregate
+        db.execute("CREATE AGGREGATE avg_field1_closure = {avg = ((current(0) * current(1)) + field1) / (current(1) + 1); counter = current(1) + 1; fun i -> if i then counter else avg} INIT {avg = field1; counter = 1; fun i -> if i then counter else avg} INTO test_table".to_string());
+        // Add computation
+        db.execute("CREATE COMP avg_field1 = avg_field1_closure(0) INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (6, 11)".to_string());
+        db.execute("INSERT INTO test_table VALUES (8, 3)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT COMP avg_field1 FROM test_table".to_string());
+        match result {
+            ExecutionResult::ValueResult(v) => {
+                match v {
+                    Val::NumVal(x) => assert_eq!(x as i32, 6),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
