@@ -1,4 +1,5 @@
 pub mod generic {
+    use bitvec::prelude::*;
     pub trait ColumnInterface<T: Clone> {
         fn insert(&mut self, data: Option<T>) -> ();
         fn extract(&self) -> Vec<Option<T>>;
@@ -122,36 +123,8 @@ pub mod generic {
             }
         }
     }
-    struct BoolVec {
-        data: Vec<u8>,
-        len: usize
-    }
-    impl BoolVec {
-        fn new() -> BoolVec {
-            BoolVec {
-                data: Vec::new(),
-                len: 0
-            }
-        }
-        fn push(&mut self, val: bool) {
-            if self.len % 8 == 0 {
-                self.data.push(0)
-            }
-            let size = self.data.len();
-            self.data[size-1] = (self.data[size-1] << 1) & (val as u8);
-            self.len += 1;
-        }
-        fn get(&self, idx: usize) -> bool {
-            let data_idx = idx / 8;
-            let data_offset = idx & 8;
-            (self.data[data_idx] & (1 << data_offset)) != 0
-        }
-        fn len(&self) -> usize {
-            self.len
-        }
-    }
     pub struct BitMap<T: Clone + PartialEq> {
-        data: Vec<(T, BoolVec)>,
+        data: Vec<(T, BitVec)>,
         len: usize,
         size: usize
     }
@@ -161,7 +134,7 @@ pub mod generic {
             if self.len == 0 {
                 match data {
                     Some(x) => {
-                        let mut new_vec = BoolVec::new();
+                        let mut new_vec = BitVec::new();
                         new_vec.push(true);
                         self.data.push((x, new_vec));
                         self.size += 1;
@@ -193,7 +166,7 @@ pub mod generic {
                             },
                             None => {
                                 // Add new value
-                                self.data.push((x, BoolVec::new()));
+                                self.data.push((x, BitVec::new()));
                                 // Push false to every other value, n falses to new data
                                 for j in 0..self.size { 
                                     self.data[j].1.push(false);
@@ -216,7 +189,7 @@ pub mod generic {
             for i in 0..self.len {
                 let mut found_data = None;
                 for j in 0..self.size {
-                    if self.data[j].1.get(i) == true {
+                    if self.data[j].1[i] == true {
                         found_data = Some(self.data[j].0.clone());
                         break;
                     }
@@ -249,7 +222,7 @@ pub mod generic {
                 let mut data = None;
                 // Check if any bitmaps are true
                 for j in 0..self.column.data.len() {
-                    if self.column.data[j].1.get(self.index) == true {
+                    if self.column.data[j].1[self.index] == true {
                         data = Some(self.column.data[j].0.clone());
                         break;
                     }
