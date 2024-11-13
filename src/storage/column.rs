@@ -37,7 +37,7 @@ pub mod generic {
     impl<'a, T: Clone> Iterator for UncompressedIterator<'a, T> {
         type Item = Option<T>;
         fn next(&mut self) -> Option<Self::Item> {
-            if self.index >= self.column.data.len() {
+            if self.index >= self.column.len() {
                 None
             } else {
                 let data = Some(self.column.data[self.index].clone());
@@ -74,15 +74,51 @@ pub mod generic {
                     }
                 }
             }
+            self.len += 1;
         }
         fn extract(&self) -> Vec<Option<T>> {
-            let uncompressed_data = vec::new();
+            let mut uncompressed_data = Vec::new();
             for tup in &self.data {
                 for _ in 0..tup.1 {
                     uncompressed_data.push(tup.0.clone())
                 }
             };
             uncompressed_data
+        }
+        fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<T>> + 'a> {
+            Box::new(RunLengthIterator {
+                column: self,
+                index: 0,
+                pos: 0
+            })
+        }
+        fn len(&self) -> usize {
+            self.len
+        }
+    }
+    struct RunLengthIterator<'a, T: Clone + PartialEq> {
+        column: &'a RunLength<T>,
+        index: usize,
+        pos: usize
+    }
+    impl<'a, T: Clone + PartialEq> Iterator for RunLengthIterator<'a, T> {
+        type Item = Option<T>;
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index >= self.column.data.len() {
+                None
+            } else {
+                // Get data
+                let data = Some(self.column.data[self.index].0.clone());
+                // Increment position in tuple
+                self.pos += 1;
+                // If overshot, move on to next tuple
+                if self.pos >= self.column.data[self.index].1 {
+                    self.pos = 0;
+                    self.index += 1;
+                };
+                // Return data
+                data
+            }
         }
     }
     pub enum Column {
