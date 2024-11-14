@@ -87,7 +87,7 @@ mod test_column {
     #[test]
     fn xor_1() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(None);
         // Uncompress col
@@ -103,7 +103,7 @@ mod test_column {
     #[test]
     fn xor_2() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(None);
         col.insert(None);
@@ -123,7 +123,7 @@ mod test_column {
     #[test]
     fn xor_3() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(Some(5.0));
         // Uncompress col
@@ -136,7 +136,7 @@ mod test_column {
     #[test]
     fn xor_4() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(None);
         col.insert(Some(5.0));
@@ -150,7 +150,7 @@ mod test_column {
     #[test]
     fn xor_5() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(Some(5.0));
         col.insert(Some(5.0));
@@ -165,7 +165,7 @@ mod test_column {
     #[test]
     fn xor_6() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(Some(4.0));
         col.insert(Some(5.0));
@@ -181,7 +181,7 @@ mod test_column {
     #[test]
     fn xor_7() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(Some(0.0));
         col.insert(Some(5.0));
@@ -197,7 +197,7 @@ mod test_column {
     #[test]
     fn xor_8() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(Some(0.0));
         col.insert(Some(14.0));
@@ -227,7 +227,7 @@ mod test_column {
     #[test]
     fn xor_9() -> Result<(), String> {
         // New run length column
-        let mut col: BitMap<f64> = BitMap::new();
+        let mut col: XorCol = XorCol::new();
         // Insert some new values
         col.insert(Some(0.0));
         col.insert(Some(14.0));
@@ -252,6 +252,27 @@ mod test_column {
         assert_eq!(col_unc[5].unwrap(), -3.0);
         assert_eq!(col_unc[9].unwrap(), 5.0);
         assert_eq!(col_unc[13].unwrap(), 45.0);
+        Ok(())
+    }
+    #[test]
+    fn xor_10() -> Result<(), String> {
+        // New run length column
+        let mut col: XorCol = XorCol::new();
+        // Insert some new values
+        col.insert(Some(5.0));
+        col.insert(Some(6.0));
+        col.insert(Some(8.0));
+        col.insert(Some(13.0));
+        col.insert(Some(2.0));
+        col.insert(Some(5.0));
+        // Uncompress col5
+        let col_unc = col.uncompress();
+        // Check values
+        assert_eq!(col_unc.len(), 6);
+        assert_eq!(col_unc[1].unwrap(), 6.0);
+        assert_eq!(col_unc[2].unwrap(), 8.0);
+        assert_eq!(col_unc[4].unwrap(), 2.0);
+        assert_eq!(col_unc[5].unwrap(), 5.0);
         Ok(())
     }
     #[test]
