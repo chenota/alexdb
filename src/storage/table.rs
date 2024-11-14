@@ -1,5 +1,5 @@
 pub mod table {
-    use super::super::column::generic::{ Column, Uncompressed, ColumnInterface };
+    use super::super::column::generic::*;
     use crate::sqlscript::types::types::{ ColType, Val, Expr };
     use crate::engine::script::env::Environment;
 
@@ -34,7 +34,7 @@ pub mod table {
             // Push uncompressed column to table
             let col = match coltype {
                 ColType::Boolean => {
-                    let mut col_data: Uncompressed<bool> = Uncompressed::new();
+                    let mut col_data: BoolCol = BoolCol::new();
                     for _ in 0..self.size { col_data.insert(None) }
                     Column::Boolean(Box::new(col_data))
                 },

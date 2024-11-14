@@ -50,6 +50,58 @@ pub mod generic {
             }
         }
     }
+    pub struct BoolCol {
+        data: BitVec,
+        len: usize
+    }
+    impl BoolCol {
+        pub fn new() -> BoolCol {
+            BoolCol{ data: BitVec::new(), len: 0 }
+        }
+    }
+    impl ColumnInterface<bool> for BoolCol {
+        fn insert(&mut self, data: Option<bool>) -> () {
+            match data {
+                None => self.data.push(false),
+                Some(x) => {
+                    self.data.push(true);
+                    self.data.push(x)
+                }
+            }
+            self.len += 1
+        } 
+        fn iter<'a>(&'a self) -> Box<(dyn Iterator<Item = Option<bool>> + 'a)>{
+            Box::new(BoolColIterator {
+                column: self,
+                index: 0
+            })
+        }
+        fn len(&self) -> usize {
+            self.len
+        }
+    }
+    struct BoolColIterator<'a> {
+        column: &'a BoolCol,
+        index: usize,
+    }
+    impl<'a> Iterator for BoolColIterator<'a> {
+        type Item = Option<bool>;
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index >= self.column.len() {
+                None
+            } else {
+                let control = self.column.data[self.index];
+                self.index += 1;
+                match control {
+                    false => Some(None),
+                    true => {
+                        self.index += 1;
+                        Some(Some(self.column.data[self.index-1]))
+                    }
+                }
+            }
+        }
+    }
     pub struct RunLength<T: Clone + PartialEq> {
         data: Vec<(Option<T>, usize)>,
         len: usize,
