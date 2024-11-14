@@ -330,8 +330,6 @@ pub mod generic {
                             for i in 0..64 {
                                 self.data.push((x >> i) & 1 != 0);
                             }
-                            // Indicate previous value
-                            self.prev_value = Some(x)
                         },
                         Some(y) => {
                             // XOR value
@@ -380,6 +378,8 @@ pub mod generic {
                             }
                         }
                     }
+                    // Indicate previous value
+                    self.prev_value = Some(x)
                 }
             }
         }
