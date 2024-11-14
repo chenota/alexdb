@@ -563,4 +563,26 @@ mod test_column {
         assert_eq!(col_unc[4].unwrap(), 4.0);
         Ok(())
     }
+    #[test]
+    fn bitmap_2() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(None);
+        col.insert(None);
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 5);
+        assert_eq!(col_unc[0].unwrap(), 5.0);
+        assert_eq!(col_unc[2].unwrap(), 5.0);
+        match &col_unc[4] {
+            None => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
