@@ -68,7 +68,7 @@ pub mod generic {
                     self.data.push(x)
                 }
             }
-            self.len += 1
+            self.len += 1;
         } 
         fn iter<'a>(&'a self) -> Box<(dyn Iterator<Item = Option<bool>> + 'a)>{
             Box::new(BoolColIterator {
@@ -87,7 +87,7 @@ pub mod generic {
     impl<'a> Iterator for BoolColIterator<'a> {
         type Item = Option<bool>;
         fn next(&mut self) -> Option<Self::Item> {
-            if self.index >= self.column.len() {
+            if self.index >= self.column.data.len() {
                 None
             } else {
                 let control = self.column.data[self.index];
@@ -95,8 +95,9 @@ pub mod generic {
                 match control {
                     false => Some(None),
                     true => {
+                        let retval = Some(Some(self.column.data[self.index]));
                         self.index += 1;
-                        Some(Some(self.column.data[self.index-1]))
+                        retval
                     }
                 }
             }

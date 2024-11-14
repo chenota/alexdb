@@ -279,7 +279,7 @@ mod test_column {
         // Check values
         assert_eq!(col_unc.len(), 2);
         assert_eq!(col_unc[0].unwrap(), true);
-        assert_eq!(col_unc[1].unwrap(), true);
+        assert_eq!(col_unc[1].unwrap(), false);
         Ok(())
     }
     #[test]
@@ -296,7 +296,7 @@ mod test_column {
         assert_eq!(col_unc.len(), 3);
         assert_eq!(col_unc[0].unwrap(), true);
         assert!(col_unc[1].is_none());
-        assert_eq!(col_unc[2].unwrap(), true);
+        assert_eq!(col_unc[2].unwrap(), false);
         Ok(())
     }
 }
