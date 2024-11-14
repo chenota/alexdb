@@ -234,6 +234,228 @@ pub mod generic {
             }
         }
     }
+    pub struct XorCol {
+        data: BitVec,
+        len: usize,
+        prev_value: Option<u64>,
+        // Following only need to be u8, but for some reason rust uses u32 for these values
+        prev_num_leading: u32,
+        prev_num_trailing: u32,
+    }
+    impl ColumnInterface<f64> for XorCol {
+        fn insert(&mut self, data: Option<f64>) -> () {
+            // Increment length
+            self.len += 1;
+            // Insert value
+            match data {
+                None => self.data.push(false),
+                Some(x_f64) => {
+                    let x = f64::to_bits(x_f64);
+                    match &self.prev_value {
+                        None => {
+                            // Push true to indicate has first value
+                            self.data.push(true);
+                            // Push whole float to the column
+                            let bit_arr: BitArray<u64, Lsb0> = BitArray::new(x);
+                            let mut bit_vec2 = BitVec::from(bit_arr);
+                            self.data.append(&mut bit_vec2);
+                            // Indicate previous value
+                            self.prev_value = Some(x)
+                        },
+                        Some(y) => {
+                            // Push true to indicate existance of value
+                            self.data.push(true);
+                            // XOR value
+                            let xor_val = x ^ *y;
+                            // If XOR with the previous is zero, store single '0' bit
+                            if xor_val == 0 {
+                                self.data.push(false);
+                            }
+                            else {
+                                // When XOR is non-zero, calculate the number of leading and trailing zeros in the XOR, store bit ‘1’
+                                self.data.push(true);
+                                // Calculate number of leading and trailing zeros
+                                let num_leading = xor_val.leading_zeros();
+                                let num_trailing = xor_val.trailing_zeros();
+                                let meaningful_bits = xor_val >> num_trailing;
+                                let num_meaningful_bits = 64 - num_leading - num_trailing;
+                                // Case A: Number of leading and trailing same as previous
+                                if num_leading == self.prev_num_leading && num_trailing == self.prev_num_trailing {
+                                    // (Control bit ‘0’)
+                                    self.data.push(false);
+                                    // just store the meaningful XORed value
+                                    for i in 0..num_meaningful_bits {
+                                        self.data.push((meaningful_bits >> i) & 1 == 1)
+                                    }
+                                }
+                                // Case B: Number of leading an trailing different than previous
+                                else {
+                                    // Store new trailing and leading bits
+                                    self.prev_num_leading = num_leading;
+                                    self.prev_num_trailing = num_trailing;
+                                    // (Control bit ‘1’)
+                                    self.data.push(true);
+                                    // Store the length of the number of leading zeros in the next 5 bits
+                                    for i in 0..5 {
+                                        self.data.push((num_leading >> i) & 1 == 1)
+                                    }
+                                    // then store the length of the meaningful XORed value in the next 6 bits
+                                    for i in 0..5 {
+                                        self.data.push((num_meaningful_bits >> i) & 1 == 1)
+                                    }
+                                    // Finally store the meaningful bits of the XORed value.
+                                    for i in 0..num_meaningful_bits {
+                                        self.data.push((meaningful_bits >> i) & 1 == 1)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        fn extract(&self) -> Vec<Option<f64>> {
+            let mut values_vec = Vec::new();
+            for x in self.iter() { values_vec.push(x) }
+            values_vec
+        }
+        fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<f64>> + 'a> {
+            Box::new(XorColIterator {
+                column: self,
+                base_value: None,
+                index: 0,
+                prev_leading: u32::MAX,
+                prev_trailing: u32::MAX
+            })
+        }
+        fn len(&self) -> usize {
+            self.len
+        }
+    }
+    struct XorColIterator<'a> {
+        column: &'a XorCol,
+        base_value: Option<u64>,
+        index: usize,
+        prev_leading: u32,
+        prev_trailing: u32
+    }
+    impl<'a> Iterator for XorColIterator<'a> {
+        type Item = Option<f64>;
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index >= self.column.data.len() {
+                None
+            } else {
+                // Read first bit stored at index
+                let first_bit: bool = self.column.data[self.index];
+                self.index += 1;
+                match first_bit {
+                    // If first bit is a zero, return none
+                    false => Some(None),
+                    true => {
+                        // Check if have a base value
+                        match self.base_value {
+                            // Have base value
+                            Some(x) => {
+                                // Check if is the same or not
+                                let same_val = self.column.data[self.index];
+                                self.index += 1;
+                                // If same value, return value again
+                                if same_val {
+                                    Some(Some(f64::from_bits(x)))
+                                } else {
+                                    // Determine 'control bit'
+                                    let control_bit = self.column.data[self.index];
+                                    self.index += 1;
+                                    // Control bit true or false?
+                                    if control_bit == false {
+                                        let meaningful_size = 64 - self.prev_leading - self.prev_trailing;
+                                        let mut new_value: u64 = 0;
+                                        // Push lower bits of base value
+                                        for i in 0..self.prev_trailing {
+                                            new_value = new_value & (((x >> i) & 1) << i)
+                                        }
+                                        // Push inverse of meaningful XORed bits
+                                        for i in 0..meaningful_size {
+                                            new_value = new_value & ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
+                                            self.index += 1;
+                                        }
+                                        // Push upper bits of base value
+                                        for i in 0..self.prev_leading {
+                                            new_value = new_value & (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
+                                        }
+                                        // Set base value to be new value
+                                        self.base_value = Some(new_value);
+                                        // Return new value
+                                        Some(Some(f64::from_bits(new_value)))
+                                    } else {
+                                        // Get the length of the number of leading zeros
+                                        let mut num_leading_zeros: u32 = 0;
+                                        for i in 0..5 {
+                                            num_leading_zeros = num_leading_zeros & (self.column.data[self.index] as u32) << i;
+                                            self.index += 1;
+                                        }
+                                        // Get length of the meaningful XORed value
+                                        let mut meaningful_size: u32 = 0;
+                                        for i in 0..6 {
+                                            meaningful_size = meaningful_size & (self.column.data[self.index] as u32) << i;
+                                            self.index += 1;
+                                        }
+                                        // Reconstruct meaningful XORed value
+                                        let mut xor_meaningful: u32 = 0;
+                                        for i in 0..meaningful_size {
+                                            xor_meaningful = xor_meaningful & (self.column.data[self.index] as u32) << i;
+                                            self.index += 1;
+                                        }
+                                        // Calcualte the number of trailing zeros
+                                        let num_trailing_zeros: u32 = 64 - meaningful_size - num_leading_zeros;
+                                        // Update iterator
+                                        self.prev_leading = num_leading_zeros;
+                                        self.prev_trailing = num_trailing_zeros;
+                                        // Construct base value
+                                        let mut new_value: u64 = 0;
+                                        // Push lower bits of base value
+                                        for i in 0..self.prev_trailing {
+                                            new_value = new_value & (((x >> i) & 1) << i)
+                                        }
+                                        // Push lower bits of base value
+                                        for i in 0..self.prev_trailing {
+                                            new_value = new_value & (((x >> i) & 1) << i)
+                                        }
+                                        // Push inverse of meaningful XORed bits
+                                        for i in 0..meaningful_size {
+                                            new_value = new_value & ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
+                                            self.index += 1;
+                                        }
+                                        // Push upper bits of base value
+                                        for i in 0..self.prev_leading {
+                                            new_value = new_value & (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
+                                        }
+                                        // Set base value to be new value
+                                        self.base_value = Some(new_value);
+                                        // Return new value
+                                        Some(Some(f64::from_bits(new_value)))
+                                    }
+                                }
+                            },
+                            // No base value
+                            None => {
+                                // Read base value (next 64 bits)
+                                let mut base_value_bits: u64 = 0;
+                                for i in 0..64 {
+                                    base_value_bits = base_value_bits & ((self.column.data[self.index] as u64) << i);
+                                    self.index += 1;
+                                };
+                                // Store base value
+                                self.base_value = Some(base_value_bits);
+                                // Return base value
+                                Some(Some(f64::from_bits(base_value_bits)))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     pub enum Column {
         Number(Box<dyn ColumnInterface<f64>>),
         Boolean(Box<dyn ColumnInterface<bool>>),
