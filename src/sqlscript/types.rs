@@ -72,7 +72,7 @@ pub mod types {
         Ascending,
         Descending
     }
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq)]
     pub enum CompressType {
         Uncompressed,
         Xor,

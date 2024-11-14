@@ -304,7 +304,7 @@ mod test_column {
 #[cfg(test)]
 mod table_tests {
     use super::super::table::*;
-    use crate::sqlscript::types::types::{Val, ColType};
+    use crate::sqlscript::types::types::{Val, ColType, CompressType};
     use super::super::column::generic::Column;
     #[test]
     fn test_bool_column() -> Result<(), String> {
@@ -313,8 +313,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Boolean);
-        test_table.add_column(&col_name2, ColType::Boolean);
+        test_table.add_column(&col_name1, ColType::Boolean, CompressType::Uncompressed);
+        test_table.add_column(&col_name2, ColType::Boolean, CompressType::Uncompressed);
         // Create row
         let row1 = vec![
             Val::BoolVal(false),
@@ -350,8 +350,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number);
-        test_table.add_column(&col_name2, ColType::Number);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
+        test_table.add_column(&col_name2, ColType::Number, CompressType::Uncompressed);
         // Create row
         let row1 = vec![
             Val::NumVal(12.5),
@@ -387,8 +387,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::String);
-        test_table.add_column(&col_name2, ColType::String);
+        test_table.add_column(&col_name1, ColType::String, CompressType::Uncompressed);
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
         // Create row
         let row1 = vec![
             Val::StrVal("Hello".to_string()),
@@ -424,8 +424,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number);
-        test_table.add_column(&col_name2, ColType::String);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
         // Create row
         let row1 = vec![
             Val::NumVal(112.0),
@@ -461,8 +461,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number);
-        test_table.add_column(&col_name2, ColType::String);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
         // Create row
         let row1 = vec![
             Val::NumVal(112.2),
@@ -504,8 +504,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number);
-        test_table.add_column(&col_name2, ColType::String);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
         // Create row
         let row1 = vec![
             Val::NumVal(112.2),

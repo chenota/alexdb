@@ -138,7 +138,11 @@ pub mod engine {
             self.calculated.push(Vec::new());
             // Add schema to new table, mark all columns as not calculated
             for schema_item in schema {
-                self.tables[idx].add_column(&schema_item.0, schema_item.1);
+                let ctype = match schema_item.2 {
+                    Some(x) => x,
+                    _ => CompressType::Uncompressed
+                };
+                self.tables[idx].add_column(&schema_item.0, schema_item.1, ctype);
                 self.calculated[idx].push(None)
             }
             QueryResult::None
@@ -217,18 +221,18 @@ pub mod engine {
                 Some(v) => {
                     for field in v {
                         match table.get_column(field) {
-                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
-                            Column::Number(_) => table_project.add_column(field, ColType::Number),
-                            Column::String(_) => table_project.add_column(field, ColType::String)
+                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean, CompressType::Uncompressed),
+                            Column::Number(_) => table_project.add_column(field, ColType::Number, CompressType::Uncompressed),
+                            Column::String(_) => table_project.add_column(field, ColType::String, CompressType::Uncompressed)
                         }
                     }
                 },
                 None => {
                     for field in table.get_headers() {
                         match table.get_column(field) {
-                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean),
-                            Column::Number(_) => table_project.add_column(field, ColType::Number),
-                            Column::String(_) => table_project.add_column(field, ColType::String)
+                            Column::Boolean(_) => table_project.add_column(field, ColType::Boolean, CompressType::Uncompressed),
+                            Column::Number(_) => table_project.add_column(field, ColType::Number, CompressType::Uncompressed),
+                            Column::String(_) => table_project.add_column(field, ColType::String, CompressType::Uncompressed)
                         }
                     }
                 }
@@ -357,10 +361,15 @@ pub mod engine {
                     Column::String(Box::new(col_data))
                 }
             };
+            // Get compression type
+            let ctype = match s {
+                Some(x) => *x,
+                _ => CompressType::Uncompressed
+            };
             // Borrow table as mutable
             let table = &mut self.tables[table_idx];
             // Insert column into table
-            table.add_populated_column(col_name, col);
+            table.add_populated_column(col_name, col, ctype);
             // Mark column as calculated
             self.calculated[table_idx].push(Some(expr.clone()));
             // Return nothing

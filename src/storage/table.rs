@@ -1,8 +1,7 @@
 pub mod table {
     use super::super::column::generic::*;
-    use crate::sqlscript::types::types::{ ColType, Val, Expr };
+    use crate::sqlscript::types::types::{ ColType, Val, Expr, CompressType };
     use crate::engine::script::env::Environment;
-    use super::super::types::types::*;
 
     enum IterCont<'a> {
         Number(Box<dyn Iterator<Item=Option<f64>> + 'a>),
@@ -16,7 +15,7 @@ pub mod table {
         size: usize,
         aggregates: Vec<(String, Val, Expr, Option<Expr>)>,
         computations: Vec<(String, Val, Expr)>,
-        compression_strats: Vec<CompressionStrategy>,
+        compression_strats: Vec<CompressType>,
     }
     impl Table {
         pub fn new() -> Table {
@@ -29,7 +28,7 @@ pub mod table {
                 compression_strats: Vec::new(),
             }
         }
-        pub fn add_column(&mut self, name: &String, coltype: ColType) -> () {
+        pub fn add_column(&mut self, name: &String, coltype: ColType, compression: CompressType) -> () {
             // Check that column does not already exist
             if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
             // Add column name to headers
@@ -55,9 +54,11 @@ pub mod table {
             // Push column
             self.table.push(col);
             // Push compression strategy
-            self.compression_strats.push(CompressionStrategy::Uncompressed);
+            self.compression_strats.push(compression);
+            // Change strategy of column
+            self.recompress(self.headers.len() - 1, compression);
         }
-        pub fn add_populated_column(&mut self, name: &String, col: Column) -> () {
+        pub fn add_populated_column(&mut self, name: &String, col: Column, compression: CompressType) -> () {
             // Check that column does not already exist
             if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
             // Check length of column
@@ -73,7 +74,9 @@ pub mod table {
             // Insert column
             self.table.push(col);
             // Push compression strategy
-            self.compression_strats.push(CompressionStrategy::Uncompressed);
+            self.compression_strats.push(compression);
+            // Change strategy of column
+            self.recompress(self.headers.len() - 1, compression);
         }
         pub fn header_idx(&self, name: &String) -> usize {
             // Check that column exists
@@ -194,41 +197,43 @@ pub mod table {
             // Return
             self.computations[cmp_idx].1.clone()
         }
-        fn recompress(&mut self, col_idx: usize, strategy: CompressionStrategy) {
+        fn recompress(&mut self, col_idx: usize, strategy: CompressType) {
             // If already compressing using chosen strategy, don't do anything
             if self.compression_strats[col_idx] == strategy { return }
+            // Change comression strategy array
+            self.compression_strats[col_idx] = strategy;
             // Otherwise, compress accordingly
             match &mut self.table[col_idx] {
                 Column::Boolean(_) => {
                     match strategy {
-                        CompressionStrategy::Uncompressed => (),
+                        CompressType::Uncompressed => (),
                         _ => panic!("Boolean does not implement that compresison strategy")
                     }
                 },
                 Column::Number(curr) => {
                     let new_col: Box<dyn ColumnInterface<f64>> = match strategy {
-                        CompressionStrategy::Bitmap => {
+                        CompressType::BitMap => {
                             let mut new_col: BitMap<f64> = BitMap::new();
                             for item in curr.as_ref().iter() {
                                 new_col.insert(item);
                             }
                             Box::new(new_col)
                         },
-                        CompressionStrategy::RunLength => {
+                        CompressType::RunLength => {
                             let mut new_col: RunLength<f64> = RunLength::new();
                             for item in curr.as_ref().iter() {
                                 new_col.insert(item);
                             }
                             Box::new(new_col)
                         },
-                        CompressionStrategy::Xor => {
+                        CompressType::Xor => {
                             let mut new_col: XorCol = XorCol::new();
                             for item in curr.as_ref().iter() {
                                 new_col.insert(item);
                             }
                             Box::new(new_col)
                         },
-                        CompressionStrategy::Uncompressed => {
+                        CompressType::Uncompressed => {
                             let mut new_col: Uncompressed<f64> = Uncompressed::new();
                             for item in curr.as_ref().iter() {
                                 new_col.insert(item);
@@ -240,21 +245,21 @@ pub mod table {
                 },
                 Column::String(curr) => {
                     let new_col: Box<dyn ColumnInterface<String>> = match strategy {
-                        CompressionStrategy::Bitmap => {
+                        CompressType::BitMap => {
                             let mut new_col: BitMap<String> = BitMap::new();
                             for item in curr.as_ref().iter() {
                                 new_col.insert(item);
                             }
                             Box::new(new_col)
                         },
-                        CompressionStrategy::RunLength => {
+                        CompressType::RunLength => {
                             let mut new_col: RunLength<String> = RunLength::new();
                             for item in curr.as_ref().iter() {
                                 new_col.insert(item);
                             }
                             Box::new(new_col)
                         },
-                        CompressionStrategy::Uncompressed => {
+                        CompressType::Uncompressed => {
                             let mut new_col: Uncompressed<String> = Uncompressed::new();
                             for item in curr.as_ref().iter() {
                                 new_col.insert(item);
