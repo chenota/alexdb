@@ -49,13 +49,15 @@ pub mod generic {
     }
     pub struct RunLength<T: Clone + PartialEq> {
         data: Vec<(Option<T>, usize)>,
-        len: usize  
+        len: usize,
+        size: usize
     }
     impl<T: Clone + PartialEq> RunLength<T> {
-        fn new() -> RunLength<T> {
+        pub fn new() -> RunLength<T> {
             RunLength{
                 data: Vec::new(),
-                len: 0
+                len: 0,
+                size: 0
             }
         }    
     }
@@ -63,23 +65,26 @@ pub mod generic {
         fn insert(&mut self, data: Option<T>) -> () {
             // If no data yet, push new tuple
             if self.len == 0 {
-                self.data.push((data, 1))
+                self.data.push((data, 1));
+                self.size += 1;
             } 
             // Otherwise, compare inserted value to most recent tuple
             else {
-                match (&data, &self.data[self.len - 1].0) {
+                match (&data, &self.data[self.size - 1].0) {
                     (None, None) => {
-                        self.data[self.len - 1].1 += 1
+                        self.data[self.size - 1].1 += 1
                     },
                     (Some(x), Some(y)) => {
                         if x == y { 
-                            self.data[self.len - 1].1 += 1 
+                            self.data[self.size - 1].1 += 1 
                         } else { 
-                            self.data.push((data, 1)) 
+                            self.data.push((data, 1));
+                            self.size += 1;
                         }
                     },
                     (Some(_), None) | (None, Some(_)) => {
-                        self.data.push((data, 1))
+                        self.data.push((data, 1));
+                        self.size += 1;
                     }
                 }
             }
@@ -137,7 +142,7 @@ pub mod generic {
         size: usize
     }
     impl<T: Clone + PartialEq> BitMap<T> {
-        fn new() -> BitMap<T> {
+        pub fn new() -> BitMap<T> {
             BitMap {
                 data: Vec::new(),
                 len: 0,
@@ -260,7 +265,7 @@ pub mod generic {
         prev_num_trailing: u32,
     }
     impl XorCol {
-        fn new() -> XorCol {
+        pub fn new() -> XorCol {
             XorCol {
                 data: BitVec::new(),
                 len: 9,
@@ -488,5 +493,29 @@ pub mod generic {
         Number(Box<dyn ColumnInterface<f64>>),
         Boolean(Box<dyn ColumnInterface<bool>>),
         String(Box<dyn ColumnInterface<String>>)
+    }
+}
+
+#[cfg(test)]
+mod test_column {
+    use super::generic::*;
+
+    #[test]
+    fn run_length() -> Result<(), String> {
+        // New run length column
+        let mut col: RunLength<f64> = RunLength::new();
+        // Insert some new values
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(Some(4.0));
+        col.insert(Some(4.0));
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc[0].unwrap(), 5.0);
+        assert_eq!(col_unc[2].unwrap(), 5.0);
+        assert_eq!(col_unc[4].unwrap(), 4.0);
+        Ok(())
     }
 }
