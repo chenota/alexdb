@@ -421,7 +421,7 @@ pub mod generic {
                             // Have base value
                             Some(x) => {
                                 // Check if is the same or not
-                                let same_val = self.column.data[self.index];
+                                let same_val = ! self.column.data[self.index];
                                 self.index += 1;
                                 // If same value, return value again
                                 if same_val {
