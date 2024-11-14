@@ -2,6 +2,10 @@ pub mod table {
     use super::super::column::generic::*;
     use crate::sqlscript::types::types::{ ColType, Val, Expr };
     use crate::engine::script::env::Environment;
+    use super::super::types::types::*;
+    use bitvec::prelude::*;
+
+    const compression_trigger_default: usize = 30;
 
     enum IterCont<'a> {
         Number(Box<dyn Iterator<Item=Option<f64>> + 'a>),
@@ -14,7 +18,10 @@ pub mod table {
         headers: Vec<String>,
         size: usize,
         aggregates: Vec<(String, Val, Expr, Option<Expr>)>,
-        computations: Vec<(String, Val, Expr)>
+        computations: Vec<(String, Val, Expr)>,
+        is_auto: BitVec,
+        compression_strats: Vec<CompressionStrategy>,
+        compression_trigger: usize,
     }
     impl Table {
         pub fn new() -> Table {
@@ -23,7 +30,10 @@ pub mod table {
                 headers: Vec::new(),
                 size: 0,
                 aggregates: Vec::new(),
-                computations: Vec::new()
+                computations: Vec::new(),
+                is_auto: BitVec::new(),
+                compression_strats: Vec::new(),
+                compression_trigger: compression_trigger_default,
             }
         }
         pub fn add_column(&mut self, name: &String, coltype: ColType) -> () {
@@ -109,6 +119,14 @@ pub mod table {
             }
             // Increment size
             self.size += 1;
+            // Check if should recompress
+            if self.size >= self.compression_trigger {
+                for i in self.is_auto.clone().iter_ones() {
+                    let strategy = self.estimate_compression_type(i);
+                    self.recompress(i, strategy);
+                }
+                self.compression_trigger = self.size * 2;
+            }
         }
         pub fn get_headers(&self) -> &Vec<String> { &self.headers }
         pub fn iter<'a>(&'a self) -> TableIterator<'a> {
@@ -186,6 +204,90 @@ pub mod table {
             let cmp_idx = self.computations.iter().position(|r| r.0 == *name).unwrap();
             // Return
             self.computations[cmp_idx].1.clone()
+        }
+        fn compression_sample_size(&self) -> usize {
+            (25.0 * (self.size as f64).ln()) as usize
+        }
+        fn estimate_compression_type(&self, col_idx: usize) -> CompressionStrategy {
+            let sample_size = self.compression_sample_size();
+            match &self.table[col_idx] {
+                Column::Boolean(_) => CompressionStrategy::Uncompressed,
+                Column::String(_) => CompressionStrategy::Uncompressed,
+                Column::Number(_) => CompressionStrategy::Uncompressed,
+            }
+        }
+        fn recompress(&mut self, col_idx: usize, strategy: CompressionStrategy) {
+            // If already compressing using chosen strategy, don't do anything
+            if self.compression_strats[col_idx] == strategy { return }
+            // Otherwise, compress accordingly
+            match &mut self.table[col_idx] {
+                Column::Boolean(_) => {
+                    match strategy {
+                        CompressionStrategy::Uncompressed => (),
+                        _ => panic!("Boolean does not implement that compresison strategy")
+                    }
+                },
+                Column::Number(curr) => {
+                    let new_col: Box<dyn ColumnInterface<f64>> = match strategy {
+                        CompressionStrategy::Bitmap => {
+                            let mut new_col: BitMap<f64> = BitMap::new();
+                            for item in curr.as_ref().iter() {
+                                new_col.insert(item);
+                            }
+                            Box::new(new_col)
+                        },
+                        CompressionStrategy::RunLength => {
+                            let mut new_col: RunLength<f64> = RunLength::new();
+                            for item in curr.as_ref().iter() {
+                                new_col.insert(item);
+                            }
+                            Box::new(new_col)
+                        },
+                        CompressionStrategy::Xor => {
+                            let mut new_col: XorCol = XorCol::new();
+                            for item in curr.as_ref().iter() {
+                                new_col.insert(item);
+                            }
+                            Box::new(new_col)
+                        },
+                        CompressionStrategy::Uncompressed => {
+                            let mut new_col: Uncompressed<f64> = Uncompressed::new();
+                            for item in curr.as_ref().iter() {
+                                new_col.insert(item);
+                            }
+                            Box::new(new_col)
+                        }
+                    };
+                    *curr = new_col;
+                },
+                Column::String(curr) => {
+                    let new_col: Box<dyn ColumnInterface<String>> = match strategy {
+                        CompressionStrategy::Bitmap => {
+                            let mut new_col: BitMap<String> = BitMap::new();
+                            for item in curr.as_ref().iter() {
+                                new_col.insert(item);
+                            }
+                            Box::new(new_col)
+                        },
+                        CompressionStrategy::RunLength => {
+                            let mut new_col: RunLength<String> = RunLength::new();
+                            for item in curr.as_ref().iter() {
+                                new_col.insert(item);
+                            }
+                            Box::new(new_col)
+                        },
+                        CompressionStrategy::Uncompressed => {
+                            let mut new_col: Uncompressed<String> = Uncompressed::new();
+                            for item in curr.as_ref().iter() {
+                                new_col.insert(item);
+                            }
+                            Box::new(new_col)
+                        },
+                        _ => panic!("String does not implement that compression type")
+                    };
+                    *curr = new_col;
+                }
+            }
         }
     }
 
