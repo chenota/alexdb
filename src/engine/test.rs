@@ -1829,4 +1829,277 @@ mod test_database {
         }
         Ok(())
     }
+    #[test]
+    fn compress_num_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num none)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        db.execute("INSERT INTO test_table VALUES (6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (8)".to_string());
+        db.execute("INSERT INTO test_table VALUES (13)".to_string());
+        db.execute("INSERT INTO test_table VALUES (2)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            QueryResult::Table(t) => {
+                assert_eq!(t.len(), 6);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(5.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    if i == 4 {
+                        match row[0] {
+                            Val::NumVal(2.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn compress_num_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num bitmap)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        db.execute("INSERT INTO test_table VALUES (6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (8)".to_string());
+        db.execute("INSERT INTO test_table VALUES (13)".to_string());
+        db.execute("INSERT INTO test_table VALUES (2)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            QueryResult::Table(t) => {
+                assert_eq!(t.len(), 6);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(5.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    if i == 4 {
+                        match row[0] {
+                            Val::NumVal(2.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn compress_num_3() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num runlen)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        db.execute("INSERT INTO test_table VALUES (6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (8)".to_string());
+        db.execute("INSERT INTO test_table VALUES (13)".to_string());
+        db.execute("INSERT INTO test_table VALUES (2)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            QueryResult::Table(t) => {
+                assert_eq!(t.len(), 6);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(5.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    if i == 4 {
+                        match row[0] {
+                            Val::NumVal(2.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn compress_num_4() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num xor)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        db.execute("INSERT INTO test_table VALUES (6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (8)".to_string());
+        db.execute("INSERT INTO test_table VALUES (13)".to_string());
+        db.execute("INSERT INTO test_table VALUES (2)".to_string());
+        db.execute("INSERT INTO test_table VALUES (5)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            QueryResult::Table(t) => {
+                assert_eq!(t.len(), 6);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match row[0] {
+                            Val::NumVal(5.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    if i == 4 {
+                        match row[0] {
+                            Val::NumVal(2.0) => assert!(true),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn compress_str_1() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 str none)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES ('hello')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('my')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('name')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('is')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('hello')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('name')".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            QueryResult::Table(t) => {
+                assert_eq!(t.len(), 6);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match &row[0] {
+                            Val::StrVal(s) => assert_eq!(s, "hello"),
+                            _ => assert!(false)
+                        }
+                    }
+                    if i == 5 {
+                        match &row[0] {
+                            Val::StrVal(s) => assert_eq!(s, "name"),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn compress_str_2() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 str bitmap)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES ('hello')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('my')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('name')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('is')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('hello')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('name')".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            QueryResult::Table(t) => {
+                assert_eq!(t.len(), 6);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match &row[0] {
+                            Val::StrVal(s) => assert_eq!(s, "hello"),
+                            _ => assert!(false)
+                        }
+                    }
+                    if i == 5 {
+                        match &row[0] {
+                            Val::StrVal(s) => assert_eq!(s, "name"),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn compress_str_3() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 str runlen)".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES ('hello')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('my')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('name')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('is')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('hello')".to_string());
+        db.execute("INSERT INTO test_table VALUES ('name')".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT * FROM test_table".to_string());
+        match result {
+            QueryResult::Table(t) => {
+                assert_eq!(t.len(), 6);
+                let mut i: usize = 0;
+                for row in t.iter() {
+                    if i == 0 {
+                        match &row[0] {
+                            Val::StrVal(s) => assert_eq!(s, "hello"),
+                            _ => assert!(false)
+                        }
+                    }
+                    if i == 5 {
+                        match &row[0] {
+                            Val::StrVal(s) => assert_eq!(s, "name"),
+                            _ => assert!(false)
+                        }
+                    }
+                    i += 1;
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
