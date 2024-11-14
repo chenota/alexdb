@@ -254,6 +254,51 @@ mod test_column {
         assert_eq!(col_unc[13].unwrap(), 45.0);
         Ok(())
     }
+    #[test]
+    fn bool_1() -> Result<(), String> {
+        // New run length column
+        let mut col: BoolCol = BoolCol::new();
+        // Insert some new values
+        col.insert(Some(true));
+        // Uncompress col5
+        let col_unc = col.uncompress();
+        // Check values
+        assert_eq!(col_unc.len(), 1);
+        assert_eq!(col_unc[0].unwrap(), true);
+        Ok(())
+    }
+    #[test]
+    fn bool_2() -> Result<(), String> {
+        // New run length column
+        let mut col: BoolCol = BoolCol::new();
+        // Insert some new values
+        col.insert(Some(true));
+        col.insert(Some(false));
+        // Uncompress col5
+        let col_unc = col.uncompress();
+        // Check values
+        assert_eq!(col_unc.len(), 2);
+        assert_eq!(col_unc[0].unwrap(), true);
+        assert_eq!(col_unc[1].unwrap(), true);
+        Ok(())
+    }
+    #[test]
+    fn bool_3() -> Result<(), String> {
+        // New run length column
+        let mut col: BoolCol = BoolCol::new();
+        // Insert some new values
+        col.insert(Some(true));
+        col.insert(None);
+        col.insert(Some(false));
+        // Uncompress col5
+        let col_unc = col.uncompress();
+        // Check values
+        assert_eq!(col_unc.len(), 3);
+        assert_eq!(col_unc[0].unwrap(), true);
+        assert!(col_unc[1].is_none());
+        assert_eq!(col_unc[2].unwrap(), true);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
