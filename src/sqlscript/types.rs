@@ -7,7 +7,7 @@ pub mod types {
         SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
         Const(String, Expr), // CONST <name> = <value>
         Aggregate(String, Expr, Option<Expr>, String), // AGGREGATE <name> = <value> INIT _ INTO <table>
-        Column(ColType, String, Expr, String), // COLUMN (type comp?) <name> = <value> INTO <table>
+        Column(ColType, Option<CompressType>, String, Expr, String), // COLUMN (type comp?) <name> = <value> INTO <table>
         CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1 comp1?, col2 type2 comp2?, ...)
         Comp(String, Expr, String), // CREATE COMP <name> = <value> INTO <table>
         SelectComp(String, String), // SELECT COMP <name> FROM <table>
@@ -53,7 +53,7 @@ pub mod types {
         LogOrBop,
         LogAndBop
     }
-    pub type ColList = Vec<(String, ColType)>;
+    pub type ColList = Vec<(String, ColType, Option<CompressType>)>;
     pub type ExprList = Vec<Rc<Expr>>;
     pub type IdentList = Vec<String>;
     #[derive(PartialEq, Debug, Clone, Copy)]

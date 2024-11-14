@@ -871,7 +871,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Column(_, _, _, _) => assert!(true),
+            types::Query::Column(_, _, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())

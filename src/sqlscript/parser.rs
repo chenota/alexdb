@@ -292,6 +292,11 @@ pub mod parser {
                             self.pop_expect(TokenKind::LParen);
                             // Parse column type
                             let t = self.parsetype();
+                            // Parse compression strategy
+                            let s = match self.peek().kind {
+                                TokenKind::CompressType => Some(self.compresstype()),
+                                _ => None
+                            };
                             // Expect RPAREN
                             self.pop_expect(TokenKind::RParen);
                             // Parse single assign
@@ -301,7 +306,7 @@ pub mod parser {
                             // Parse table name
                             let tname = self.ident();
                             // Put together
-                            types::Query::Column(t, assign.0, assign.1, tname)
+                            types::Query::Column(t, s, assign.0, assign.1, tname)
                         },
                         TokenKind::AggregateKw => {
                             // Parse single equals
@@ -645,6 +650,11 @@ pub mod parser {
             let colname = self.ident();
             // Parse type
             let t = self.parsetype();
+            // Parse compression strategy
+            let s = match self.peek().kind {
+                TokenKind::CompressType => Some(self.compresstype()),
+                _ => None
+            };
             // Check if comma or not
             match self.peek().kind {
                 TokenKind::Comma => {
@@ -653,11 +663,11 @@ pub mod parser {
                     // Get rest of list
                     let mut rest = self.collist_rest();
                     // Add next to rest
-                    rest.push((colname, t));
+                    rest.push((colname, t, s));
                     rest.reverse();
                     rest
                 },
-                _ => vec![(colname, t)]
+                _ => vec![(colname, t, s)]
             }
         }
         fn collist_rest(&mut self) -> types::ColList {
@@ -665,6 +675,11 @@ pub mod parser {
             let colname = self.ident();
             // Parse type
             let t = self.parsetype();
+            // Parse compression strategy
+            let s = match self.peek().kind {
+                TokenKind::CompressType => Some(self.compresstype()),
+                _ => None
+            };
             // Check if comma or not
             match self.peek().kind {
                 TokenKind::Comma => {
@@ -673,10 +688,10 @@ pub mod parser {
                     // Get rest of list
                     let mut rest = self.collist_rest();
                     // Add next to rest
-                    rest.push((colname, t));
+                    rest.push((colname, t, s));
                     rest
                 },
-                _ => vec![(colname, t)]
+                _ => vec![(colname, t, s)]
             }
         }
         fn parsetype(&mut self) -> ColType {

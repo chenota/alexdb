@@ -125,7 +125,7 @@ pub mod engine {
             // Return
             QueryResult::None
         }
-        fn create_table(&mut self, table_name: &String, schema: &Vec<(String, ColType)>) -> QueryResult {
+        fn create_table(&mut self, table_name: &String, schema: &Vec<(String, ColType, Option<CompressType>)>) -> QueryResult {
             // Check that table doesn't already exist
             if self.table_names.contains(table_name) { panic!("Table already exists") }
             // Push table name
@@ -290,7 +290,7 @@ pub mod engine {
             // Return nothing
             QueryResult::None
         }
-        fn create_column(&mut self, t: &ColType, col_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
+        fn create_column(&mut self, t: &ColType, s: &Option<CompressType>, col_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
             // Get index of table
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -454,7 +454,7 @@ pub mod engine {
                 Query::Insert(table_name, fields, values) => self.insert(table_name, fields, values),
                 Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
                 Query::Const(name, expr) => self.create_const(name, expr),
-                Query::Column(t, col_name, expr, table_name) => self.create_column(t, col_name, expr, table_name),
+                Query::Column(t, s, col_name, expr, table_name) => self.create_column(t, s, col_name, expr, table_name),
                 Query::Aggregate(ag_name, expr, init, table_name) => self.create_aggregate(ag_name, expr, init, table_name),
                 Query::SelectAggregate(ag_name, table_name) => self.select_aggregate(ag_name, table_name),
                 Query::Comp(cmp_name, expr, table_name) => self.create_computation(cmp_name, expr, table_name),
