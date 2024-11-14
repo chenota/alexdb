@@ -319,11 +319,13 @@ pub mod generic {
             match data {
                 None => self.data.push(false),
                 Some(x_f64) => {
+                    // Inserted value as bits
                     let x = f64::to_bits(x_f64);
+                    // Push true to indicate has first value
+                    self.data.push(true);
+                    // Has previous value?
                     match &self.prev_value {
                         None => {
-                            // Push true to indicate has first value
-                            self.data.push(true);
                             // Push whole float to the column
                             for i in 0..64 {
                                 self.data.push((x >> i) & 1 != 0);
@@ -332,8 +334,6 @@ pub mod generic {
                             self.prev_value = Some(x)
                         },
                         Some(y) => {
-                            // Push true to indicate existance of value
-                            self.data.push(true);
                             // XOR value
                             let xor_val = x ^ *y;
                             // If XOR with the previous is zero, store single '0' bit
