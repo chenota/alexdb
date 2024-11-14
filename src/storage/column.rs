@@ -49,7 +49,15 @@ pub mod generic {
     }
     pub struct RunLength<T: Clone + PartialEq> {
         data: Vec<(Option<T>, usize)>,
-        len: usize
+        len: usize  
+    }
+    impl<T: Clone + PartialEq> RunLength<T> {
+        fn new() -> RunLength<T> {
+            RunLength{
+                data: Vec::new(),
+                len: 0
+            }
+        }    
     }
     impl<T: Clone + PartialEq> ColumnInterface<T> for RunLength<T> {
         fn insert(&mut self, data: Option<T>) -> () {
@@ -127,6 +135,15 @@ pub mod generic {
         data: Vec<(T, BitVec)>,
         len: usize,
         size: usize
+    }
+    impl<T: Clone + PartialEq> BitMap<T> {
+        fn new() -> BitMap<T> {
+            BitMap {
+                data: Vec::new(),
+                len: 0,
+                size: 0
+            }
+        }
     }
     impl<T: Clone + PartialEq> ColumnInterface<T> for BitMap<T> {
         fn insert(&mut self, data: Option<T>) -> () {
@@ -241,6 +258,17 @@ pub mod generic {
         // Following only need to be u8, but for some reason rust uses u32 for these values
         prev_num_leading: u32,
         prev_num_trailing: u32,
+    }
+    impl XorCol {
+        fn new() -> XorCol {
+            XorCol {
+                data: BitVec::new(),
+                len: 9,
+                prev_value: None,
+                prev_num_leading: u32::MAX,
+                prev_num_trailing: u32::MAX
+            }
+        }
     }
     impl ColumnInterface<f64> for XorCol {
         fn insert(&mut self, data: Option<f64>) -> () {
