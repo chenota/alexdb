@@ -245,7 +245,7 @@ mod table_tests {
         // Assert correct values
         match test_table.get_column(&col_name1) {
             Column::Boolean(x) => {
-                match x.as_ref().extract()[0] {
+                match x.as_ref().uncompress()[0] {
                     Some(y) => assert!(!y),
                     _ => assert!(false)
                 }
@@ -254,7 +254,7 @@ mod table_tests {
         }
         match test_table.get_column(&col_name2) {
             Column::Boolean(x) => {
-                match x.as_ref().extract()[0] {
+                match x.as_ref().uncompress()[0] {
                     None => assert!(true),
                     _ => assert!(false)
                 }
@@ -282,7 +282,7 @@ mod table_tests {
         // Assert correct values
         match test_table.get_column(&col_name1) {
             Column::Number(x) => {
-                match x.as_ref().extract()[0] {
+                match x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(y, 12.5),
                     _ => assert!(false)
                 }
@@ -291,7 +291,7 @@ mod table_tests {
         }
         match test_table.get_column(&col_name2) {
             Column::Number(x) => {
-                match x.as_ref().extract()[0] {
+                match x.as_ref().uncompress()[0] {
                     None => assert!(true),
                     _ => assert!(false)
                 }
@@ -319,7 +319,7 @@ mod table_tests {
         // Assert correct values
         match test_table.get_column(&col_name1) {
             Column::String(x) => {
-                match &x.as_ref().extract()[0] {
+                match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(y, "Hello"),
                     _ => assert!(false)
                 }
@@ -328,7 +328,7 @@ mod table_tests {
         }
         match test_table.get_column(&col_name2) {
             Column::String(x) => {
-                match x.as_ref().extract()[0] {
+                match x.as_ref().uncompress()[0] {
                     None => assert!(true),
                     _ => assert!(false)
                 }
@@ -356,7 +356,7 @@ mod table_tests {
         // Assert correct values
         match test_table.get_column(&col_name1) {
             Column::Number(x) => {
-                match &x.as_ref().extract()[0] {
+                match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(*y, 112.0),
                     _ => assert!(false)
                 }
@@ -365,7 +365,7 @@ mod table_tests {
         }
         match test_table.get_column(&col_name2) {
             Column::String(x) => {
-                match &x.as_ref().extract()[0] {
+                match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(y, "Hello"),
                     _ => assert!(false)
                 }
@@ -399,7 +399,7 @@ mod table_tests {
         // Assert correct values
         match test_table.get_column(&col_name1) {
             Column::Number(x) => {
-                match &x.as_ref().extract()[0] {
+                match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(*y, 112.2),
                     _ => assert!(false)
                 }
@@ -408,7 +408,7 @@ mod table_tests {
         }
         match test_table.get_column(&col_name2) {
             Column::String(x) => {
-                match &x.as_ref().extract()[1] {
+                match &x.as_ref().uncompress()[1] {
                     Some(y) => assert_eq!(y, "Goodbye"),
                     _ => assert!(false)
                 }

@@ -2,9 +2,15 @@ pub mod generic {
     use bitvec::prelude::*;
     pub trait ColumnInterface<T: Clone> {
         fn insert(&mut self, data: Option<T>) -> ();
-        fn extract(&self) -> Vec<Option<T>>;
         fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<T>> + 'a>;
         fn len(&self) -> usize;
+        fn uncompress(&self) -> Vec<Option<T>> {
+            let mut data = Vec::new();
+            for item in self.iter() {
+                data.push(item)
+            };
+            data
+        }
     }
     pub struct Uncompressed<T: Clone> {
         data: Vec<Option<T>>
@@ -18,9 +24,6 @@ pub mod generic {
         fn insert(&mut self, data: Option<T>) -> () {
             self.data.push(data)
         } 
-        fn extract(&self) -> Vec<Option<T>> {
-            self.data.clone()
-        }
         fn iter<'a>(&'a self) -> Box<(dyn Iterator<Item = Option<T>> + 'a)>{
             Box::new(UncompressedIterator {
                 column: self,
@@ -89,15 +92,6 @@ pub mod generic {
                 }
             }
             self.len += 1;
-        }
-        fn extract(&self) -> Vec<Option<T>> {
-            let mut uncompressed_data = Vec::new();
-            for tup in &self.data {
-                for _ in 0..tup.1 {
-                    uncompressed_data.push(tup.0.clone())
-                }
-            };
-            uncompressed_data
         }
         fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<T>> + 'a> {
             Box::new(RunLengthIterator {
@@ -208,20 +202,6 @@ pub mod generic {
             }
             // Increment length
             self.len += 1;
-        }
-        fn extract(&self) -> Vec<Option<T>> {
-            let mut uncompressed_data = Vec::new();
-            for i in 0..self.len {
-                let mut found_data = None;
-                for j in 0..self.size {
-                    if self.data[j].1[i] == true {
-                        found_data = Some(self.data[j].0.clone());
-                        break;
-                    }
-                }
-                uncompressed_data.push(found_data)
-            }
-            uncompressed_data
         }
         fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<T>> + 'a> {
             Box::new(BitMapIterator {
@@ -349,11 +329,6 @@ pub mod generic {
                     }
                 }
             }
-        }
-        fn extract(&self) -> Vec<Option<f64>> {
-            let mut values_vec = Vec::new();
-            for x in self.iter() { values_vec.push(x) }
-            values_vec
         }
         fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<f64>> + 'a> {
             Box::new(XorColIterator {
@@ -514,7 +489,7 @@ mod test_column {
         col.insert(Some(4.0));
         col.insert(Some(4.0));
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 5);
         assert_eq!(col_unc[0].unwrap(), 5.0);
@@ -533,7 +508,7 @@ mod test_column {
         col.insert(None);
         col.insert(None);
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 5);
         assert_eq!(col_unc[0].unwrap(), 5.0);
@@ -555,7 +530,7 @@ mod test_column {
         col.insert(Some(4.0));
         col.insert(Some(4.0));
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 5);
         assert_eq!(col_unc[0].unwrap(), 5.0);
@@ -574,7 +549,7 @@ mod test_column {
         col.insert(None);
         col.insert(None);
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 5);
         assert_eq!(col_unc[0].unwrap(), 5.0);
@@ -592,7 +567,7 @@ mod test_column {
         // Insert some new values
         col.insert(None);
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 1);
         match &col_unc[0] {
@@ -612,7 +587,7 @@ mod test_column {
         col.insert(None);
         col.insert(None);
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 5);
         match &col_unc[4] {
@@ -628,7 +603,7 @@ mod test_column {
         // Insert some new values
         col.insert(Some(5.0));
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 1);
         assert_eq!(col_unc[0].unwrap(), 5.0);
@@ -642,7 +617,7 @@ mod test_column {
         col.insert(None);
         col.insert(Some(5.0));
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 2);
         assert_eq!(col_unc[1].unwrap(), 5.0);
@@ -657,7 +632,7 @@ mod test_column {
         col.insert(Some(5.0));
         col.insert(Some(5.0));
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 3);
         assert_eq!(col_unc[2].unwrap(), 5.0);
@@ -672,7 +647,7 @@ mod test_column {
         col.insert(Some(5.0));
         col.insert(Some(5.0));
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 3);
         assert_eq!(col_unc[0].unwrap(), 4.0);
@@ -688,7 +663,7 @@ mod test_column {
         col.insert(Some(5.0));
         col.insert(Some(3.0));
         // Uncompress col
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 3);
         assert_eq!(col_unc[0].unwrap(), 0.0);
@@ -716,7 +691,7 @@ mod test_column {
         col.insert(Some(45.0));
         col.insert(Some(0.0000005));
         // Uncompress col5
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 15);
         assert_eq!(col_unc[1].unwrap(), 14.0);
@@ -746,7 +721,7 @@ mod test_column {
         col.insert(Some(45.0));
         col.insert(None);
         // Uncompress col5
-        let col_unc = col.extract();
+        let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 15);
         assert_eq!(col_unc[1].unwrap(), 14.0);
