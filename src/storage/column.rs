@@ -306,8 +306,8 @@ pub mod generic {
                 data: BitVec::new(),
                 len: 9,
                 prev_value: None,
-                prev_num_leading: u32::MAX,
-                prev_num_trailing: u32::MAX
+                prev_num_leading: 0,
+                prev_num_trailing: 0
             }
         }
     }
@@ -369,7 +369,7 @@ pub mod generic {
                                         self.data.push((num_leading >> i) & 1 == 1)
                                     }
                                     // then store the length of the meaningful XORed value in the next 6 bits
-                                    for i in 0..5 {
+                                    for i in 0..6 {
                                         self.data.push((num_meaningful_bits >> i) & 1 == 1)
                                     }
                                     // Finally store the meaningful bits of the XORed value.
@@ -388,8 +388,8 @@ pub mod generic {
                 column: self,
                 base_value: None,
                 index: 0,
-                prev_leading: u32::MAX,
-                prev_trailing: u32::MAX
+                prev_leading: 0,
+                prev_trailing: 0
             })
         }
         fn len(&self) -> usize {
