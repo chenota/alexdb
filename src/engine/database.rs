@@ -453,6 +453,20 @@ pub mod engine {
             // Return aggregate
             QueryResult::Value(table.get_computation(cmp_name))
         }
+        fn compress(&mut self, table_name: &String, fields: &Vec<String>, strats: &Vec<CompressType>) -> QueryResult {
+            // Get index of table
+            let table_idx = self.get_table_index(table_name).unwrap();
+            let table = &mut self.tables[table_idx];
+            // Check fields and strats len
+            if fields.len() != strats.len() { panic!("Unequal amount of fields and strategies") }
+            // Call recompress on each column
+            for i in 0..fields.len() {
+                let col_idx = table.get_headers().iter().position(|r| *r == fields[i]).unwrap();
+                table.recompress(col_idx, strats[i])
+            }
+            // Return aggregate
+            QueryResult::None
+        }
         pub fn execute(&mut self, q: String) -> QueryResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -468,6 +482,7 @@ pub mod engine {
                 Query::SelectAggregate(ag_name, table_name) => self.select_aggregate(ag_name, table_name),
                 Query::Comp(cmp_name, expr, table_name) => self.create_computation(cmp_name, expr, table_name),
                 Query::SelectComp(cmp_name, table_name) => self.select_computation(cmp_name, table_name),
+                Query::Compress(table_name, fields, strats) => self.compress(table_name, fields, strats),
                 _ => panic!("Unimplemented")
             }
         }

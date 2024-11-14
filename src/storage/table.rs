@@ -197,7 +197,7 @@ pub mod table {
             // Return
             self.computations[cmp_idx].1.clone()
         }
-        fn recompress(&mut self, col_idx: usize, strategy: CompressType) {
+        pub fn recompress(&mut self, col_idx: usize, strategy: CompressType) {
             // If already compressing using chosen strategy, don't do anything
             if self.compression_strats[col_idx] == strategy { return }
             // Change comression strategy array
