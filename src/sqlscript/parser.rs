@@ -709,8 +709,6 @@ pub mod parser {
             }
         }
         fn compresslist(&mut self) -> types::CompressList {
-            // Parse column name
-            let colname = self.ident();
             // Parse type
             let t = self.compresstype();
             // Check if comma or not
@@ -729,8 +727,6 @@ pub mod parser {
             }
         }
         fn compresslist_rest(&mut self) -> types::CompressList {
-            // Parse column name
-            let colname = self.ident();
             // Parse type
             let t = self.compresstype();
             // Check if comma or not
