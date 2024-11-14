@@ -159,6 +159,7 @@ mod test_column {
         let col_unc = col.uncompress();
         // Check values
         assert_eq!(col_unc.len(), 3);
+        assert_eq!(col_unc[0].unwrap(), 5.0);
         assert_eq!(col_unc[2].unwrap(), 5.0);
         Ok(())
     }

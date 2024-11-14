@@ -325,9 +325,9 @@ pub mod generic {
                             // Push true to indicate has first value
                             self.data.push(true);
                             // Push whole float to the column
-                            let bit_arr: BitArray<u64, Lsb0> = BitArray::new(x);
-                            let mut bit_vec2 = BitVec::from(bit_arr);
-                            self.data.append(&mut bit_vec2);
+                            for i in 0..64 {
+                                self.data.push((x >> i) & 1 != 0);
+                            }
                             // Indicate previous value
                             self.prev_value = Some(x)
                         },
@@ -436,16 +436,16 @@ pub mod generic {
                                         let mut new_value: u64 = 0;
                                         // Push lower bits of base value
                                         for i in 0..self.prev_trailing {
-                                            new_value = new_value & (((x >> i) & 1) << i)
+                                            new_value = new_value | (((x >> i) & 1) << i)
                                         }
                                         // Push inverse of meaningful XORed bits
                                         for i in 0..meaningful_size {
-                                            new_value = new_value & ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
+                                            new_value = new_value | ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
                                             self.index += 1;
                                         }
                                         // Push upper bits of base value
                                         for i in 0..self.prev_leading {
-                                            new_value = new_value & (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
+                                            new_value = new_value | (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
                                         }
                                         // Set base value to be new value
                                         self.base_value = Some(new_value);
@@ -455,19 +455,19 @@ pub mod generic {
                                         // Get the length of the number of leading zeros
                                         let mut num_leading_zeros: u32 = 0;
                                         for i in 0..5 {
-                                            num_leading_zeros = num_leading_zeros & (self.column.data[self.index] as u32) << i;
+                                            num_leading_zeros = num_leading_zeros | (self.column.data[self.index] as u32) << i;
                                             self.index += 1;
                                         }
                                         // Get length of the meaningful XORed value
                                         let mut meaningful_size: u32 = 0;
                                         for i in 0..6 {
-                                            meaningful_size = meaningful_size & (self.column.data[self.index] as u32) << i;
+                                            meaningful_size = meaningful_size | (self.column.data[self.index] as u32) << i;
                                             self.index += 1;
                                         }
                                         // Reconstruct meaningful XORed value
                                         let mut xor_meaningful: u32 = 0;
                                         for i in 0..meaningful_size {
-                                            xor_meaningful = xor_meaningful & (self.column.data[self.index] as u32) << i;
+                                            xor_meaningful = xor_meaningful | (self.column.data[self.index] as u32) << i;
                                             self.index += 1;
                                         }
                                         // Calcualte the number of trailing zeros
@@ -479,20 +479,20 @@ pub mod generic {
                                         let mut new_value: u64 = 0;
                                         // Push lower bits of base value
                                         for i in 0..self.prev_trailing {
-                                            new_value = new_value & (((x >> i) & 1) << i)
+                                            new_value = new_value | (((x >> i) & 1) << i)
                                         }
                                         // Push lower bits of base value
                                         for i in 0..self.prev_trailing {
-                                            new_value = new_value & (((x >> i) & 1) << i)
+                                            new_value = new_value | (((x >> i) & 1) << i)
                                         }
                                         // Push inverse of meaningful XORed bits
                                         for i in 0..meaningful_size {
-                                            new_value = new_value & ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
+                                            new_value = new_value | ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
                                             self.index += 1;
                                         }
                                         // Push upper bits of base value
                                         for i in 0..self.prev_leading {
-                                            new_value = new_value & (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
+                                            new_value = new_value | (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
                                         }
                                         // Set base value to be new value
                                         self.base_value = Some(new_value);
@@ -506,7 +506,7 @@ pub mod generic {
                                 // Read base value (next 64 bits)
                                 let mut base_value_bits: u64 = 0;
                                 for i in 0..64 {
-                                    base_value_bits = base_value_bits & ((self.column.data[self.index] as u64) << i);
+                                    base_value_bits = base_value_bits | ((self.column.data[self.index] as u64) << i);
                                     self.index += 1;
                                 };
                                 // Store base value
