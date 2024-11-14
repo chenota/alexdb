@@ -1,4 +1,6 @@
 pub mod parser {
+    use crate::sqlscript::types::types::CompressType;
+
     use super::super::lexer::lexer::*;
     use std::rc::Rc;
     use super::super::types::types;
@@ -226,6 +228,41 @@ pub mod parser {
                     // Return
                     types::Query::Insert(tableid, colids, vlist)
                 },
+                TokenKind::CompressKw => {
+                    // Parse table name
+                    let table = self.ident();
+                    // Expect LPAREN
+                    self.pop_expect(TokenKind::LParen);
+                    // Fields
+                    let fields = self.identlist();
+                    // Expect RPAREN
+                    self.pop_expect(TokenKind::RParen);
+                    // Check if LPAREN
+                    let comptypes = match self.peek().kind {
+                        TokenKind::LParen => {
+                            // Pop LPAREN
+                            self.pop();
+                            // List of compression types
+                            let types = self.compresslist();
+                            // Expect RPAREN
+                            self.pop_expect(TokenKind::RParen);
+                            // Return types
+                            types
+                        },
+                        _ => {
+                            // Expect a single compression type
+                            let ctype = self.compresstype();
+                            // Push as many of that type as there are fields
+                            let mut clist = Vec::new();
+                            for _ in &fields {
+                                clist.push(ctype)
+                            };
+                            // Return types list
+                            clist
+                        }
+                    };
+                    types::Query::Compress(table, fields, comptypes)
+                }
                 TokenKind::CreateKw => {
                     match self.pop().kind {
                         TokenKind::TableKw => {
@@ -647,6 +684,52 @@ pub mod parser {
             match self.pop().value {
                 TokenValue::Type(x) => x,
                 _ => panic!("Parsing error")
+            }
+        }
+        fn compresstype(&mut self) -> CompressType {
+            // Extract type from token
+            match self.pop().value {
+                TokenValue::CompressionType(x) => x,
+                _ => panic!("Parsing error")
+            }
+        }
+        fn compresslist(&mut self) -> types::CompressList {
+            // Parse column name
+            let colname = self.ident();
+            // Parse type
+            let t = self.compresstype();
+            // Check if comma or not
+            match self.peek().kind {
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Get rest of list
+                    let mut rest = self.compresslist_rest();
+                    // Add next to rest
+                    rest.push(t);
+                    rest.reverse();
+                    rest
+                },
+                _ => vec![t]
+            }
+        }
+        fn compresslist_rest(&mut self) -> types::CompressList {
+            // Parse column name
+            let colname = self.ident();
+            // Parse type
+            let t = self.compresstype();
+            // Check if comma or not
+            match self.peek().kind {
+                TokenKind::Comma => {
+                    // Pop comma
+                    self.pop();
+                    // Get rest of list
+                    let mut rest = self.compresslist_rest();
+                    // Add next to rest
+                    rest.push(t);
+                    rest
+                },
+                _ => vec![t]
             }
         }
     }

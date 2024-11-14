@@ -7,10 +7,11 @@ pub mod types {
         SelectAggregate(String, String), // SELECT AGGREGATE <name> FROM <table>
         Const(String, Expr), // CONST <name> = <value>
         Aggregate(String, Expr, Option<Expr>, String), // AGGREGATE <name> = <value> INIT _ INTO <table>
-        Column(ColType, String, Expr, String), // COLUMN (type) <name> = <value> INTO <table>
-        CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1, col2type2, ...)
+        Column(ColType, String, Expr, String), // COLUMN (type comp?) <name> = <value> INTO <table>
+        CreateTable(String, ColList), // CREATE TABLE <name> (col1 type1 comp1?, col2 type2 comp2?, ...)
         Comp(String, Expr, String), // CREATE COMP <name> = <value> INTO <table>
-        SelectComp(String, String) // SELECT COMP <name> FROM <table>
+        SelectComp(String, String), // SELECT COMP <name> FROM <table>
+        Compress(String, IdentList, CompressList), // COMPRESS <table> (<field>, <field>, ...) ((<strategy>, <strategy>, ...) | <strategy>)
     }
     #[derive(Clone)]
     pub enum Expr {
@@ -71,5 +72,13 @@ pub mod types {
         Ascending,
         Descending
     }
+    #[derive(Clone, Copy)]
+    pub enum CompressType {
+        Uncompressed,
+        Xor,
+        RunLength,
+        BitMap
+    }
+    pub type CompressList = Vec<CompressType>;
 }
 

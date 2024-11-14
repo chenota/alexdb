@@ -1,5 +1,7 @@
 pub mod lexer {
     use regex::Regex;
+    use crate::sqlscript::types::types::CompressType;
+
     use super::super::types::types::ColType;
     use super::super::types::types::SortType;
     #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -64,6 +66,8 @@ pub mod lexer {
         SortType,
         InitKw,
         CompKw,
+        CompressKw,
+        CompressType,
         // Type keywords
         NumberKw,
         StrKw,
@@ -76,7 +80,8 @@ pub mod lexer {
         String(String),
         Boolean(bool),
         Type(ColType),
-        SortType(SortType)
+        SortType(SortType),
+        CompressionType(CompressType)
     }
     #[derive(Clone)]
     pub struct Token {
@@ -101,6 +106,10 @@ pub mod lexer {
     fn str_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::String) }
     fn bool_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Boolean) }
     fn sort_value(s: &str) -> TokenValue { if s == "ASC" { TokenValue::SortType(SortType::Ascending) } else { TokenValue::SortType(SortType::Descending) } }
+    fn compression_value_none (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::Uncompressed) }
+    fn compression_value_xor (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::Xor) }
+    fn compression_value_bitmap (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::BitMap) }
+    fn compression_value_runlen (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::RunLength) }
     // Associates a kind of token with a regular expression that matches it, a function to derive a value.
     // If token kind is none, won't generate a token
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
@@ -129,6 +138,11 @@ pub mod lexer {
         (Some(TokenKind::ByKw), reg!(r"BY"), none_value),
         (Some(TokenKind::InitKw), reg!(r"INIT"), none_value),
         (Some(TokenKind::CompKw), reg!(r"COMP"), none_value),
+        (Some(TokenKind::CompressKw), reg!(r"COMPRESS"), none_value),
+        (Some(TokenKind::CompressType), reg!(r"none"), compression_value_none),
+        (Some(TokenKind::CompressType), reg!(r"bitmap"), compression_value_bitmap),
+        (Some(TokenKind::CompressType), reg!(r"xor"), compression_value_xor),
+        (Some(TokenKind::CompressType), reg!(r"runlen"), compression_value_runlen),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),
