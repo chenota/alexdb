@@ -61,6 +61,9 @@ pub mod table {
             };
             // Push column
             self.table.push(col);
+            // Push compression strategy
+            self.is_auto.push(true);
+            self.compression_strats.push(CompressionStrategy::Uncompressed);
         }
         pub fn add_populated_column(&mut self, name: &String, col: Column) -> () {
             // Check that column does not already exist
@@ -77,6 +80,9 @@ pub mod table {
             self.headers.push(name.clone());
             // Insert column
             self.table.push(col);
+            // Push compression strategy
+            self.is_auto.push(true);
+            self.compression_strats.push(CompressionStrategy::Uncompressed);
         }
         pub fn header_idx(&self, name: &String) -> usize {
             // Check that column exists
@@ -123,7 +129,8 @@ pub mod table {
             if self.size >= self.compression_trigger {
                 for i in self.is_auto.clone().iter_ones() {
                     let strategy = self.estimate_compression_type(i);
-                    self.recompress(i, strategy);
+                    self.recompress(i, strategy.clone());
+                    self.compression_strats[i] = strategy;
                 }
                 self.compression_trigger = self.size * 2;
             }
