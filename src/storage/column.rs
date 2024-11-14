@@ -501,7 +501,7 @@ mod test_column {
     use super::generic::*;
 
     #[test]
-    fn run_length() -> Result<(), String> {
+    fn run_length_1() -> Result<(), String> {
         // New run length column
         let mut col: RunLength<f64> = RunLength::new();
         // Insert some new values
@@ -513,9 +513,32 @@ mod test_column {
         // Uncompress col
         let col_unc = col.extract();
         // Check values
+        assert_eq!(col_unc.len(), 5);
         assert_eq!(col_unc[0].unwrap(), 5.0);
         assert_eq!(col_unc[2].unwrap(), 5.0);
         assert_eq!(col_unc[4].unwrap(), 4.0);
+        Ok(())
+    }
+    #[test]
+    fn run_length_2() -> Result<(), String> {
+        // New run length column
+        let mut col: RunLength<f64> = RunLength::new();
+        // Insert some new values
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(None);
+        col.insert(None);
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 5);
+        assert_eq!(col_unc[0].unwrap(), 5.0);
+        assert_eq!(col_unc[2].unwrap(), 5.0);
+        match &col_unc[4] {
+            None => assert!(true),
+            _ => assert!(false)
+        }
         Ok(())
     }
 }
