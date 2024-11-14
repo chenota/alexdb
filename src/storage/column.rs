@@ -164,7 +164,7 @@ pub mod generic {
                     None => ()
                 }
             } 
-            // Otherwise, compare inserted value to most recent tuple
+            // Otherwise, compare inserted value to existing tuples
             else {
                 match data {
                     // If pushing null, push false to everything
@@ -189,13 +189,16 @@ pub mod generic {
                             None => {
                                 // Add new value
                                 self.data.push((x, BitVec::new()));
-                                // Push false to every other value, n falses to new data
+                                // Push false to every other value
                                 for j in 0..self.size { 
                                     self.data[j].1.push(false);
+                                }
+                                // Push self.len falses to new data
+                                for _ in 0..self.len {
                                     self.data[self.size].1.push(false)
                                 }
                                 // Push one true to new data's bitmap
-                                self.data[self.len].1.push(true);
+                                self.data[self.size].1.push(true);
                                 // Increment size
                                 self.size += 1;
                             }
