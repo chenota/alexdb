@@ -585,4 +585,144 @@ mod test_column {
         }
         Ok(())
     }
+    #[test]
+    fn xor_1() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(None);
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 1);
+        match &col_unc[0] {
+            None => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn xor_2() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(None);
+        col.insert(None);
+        col.insert(None);
+        col.insert(None);
+        col.insert(None);
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 5);
+        match &col_unc[4] {
+            None => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn xor_3() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(Some(5.0));
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 1);
+        assert_eq!(col_unc[0].unwrap(), 5.0);
+        Ok(())
+    }
+    #[test]
+    fn xor_4() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(None);
+        col.insert(Some(5.0));
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 2);
+        assert_eq!(col_unc[1].unwrap(), 5.0);
+        Ok(())
+    }
+    #[test]
+    fn xor_5() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 3);
+        assert_eq!(col_unc[2].unwrap(), 5.0);
+        Ok(())
+    }
+    #[test]
+    fn xor_6() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(Some(4.0));
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 3);
+        assert_eq!(col_unc[0].unwrap(), 4.0);
+        assert_eq!(col_unc[2].unwrap(), 5.0);
+        Ok(())
+    }
+    #[test]
+    fn xor_7() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(Some(0.0));
+        col.insert(Some(5.0));
+        col.insert(Some(3.0));
+        // Uncompress col
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 3);
+        assert_eq!(col_unc[0].unwrap(), 0.0);
+        assert_eq!(col_unc[2].unwrap(), 3.0);
+        Ok(())
+    }
+    #[test]
+    fn xor_8() -> Result<(), String> {
+        // New run length column
+        let mut col: BitMap<f64> = BitMap::new();
+        // Insert some new values
+        col.insert(Some(0.0));
+        col.insert(Some(14.0));
+        col.insert(Some(3.0));
+        col.insert(Some(-1110.2292));
+        col.insert(Some(3.0));
+        col.insert(Some(-3.0));
+        col.insert(Some(5.0));
+        col.insert(Some(5.0));
+        col.insert(Some(45.654));
+        col.insert(Some(5.0));
+        col.insert(Some(13.6765));
+        col.insert(Some(100000.7));
+        col.insert(Some(0.0));
+        col.insert(Some(45.0));
+        col.insert(Some(0.0000005));
+        // Uncompress col5
+        let col_unc = col.extract();
+        // Check values
+        assert_eq!(col_unc.len(), 15);
+        assert_eq!(col_unc[1].unwrap(), 14.0);
+        assert_eq!(col_unc[5].unwrap(), -3.0);
+        assert_eq!(col_unc[9].unwrap(), 5.0);
+        assert_eq!(col_unc[13].unwrap(), 45.0);
+        Ok(())
+    }
 }
