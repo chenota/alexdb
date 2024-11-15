@@ -661,6 +661,38 @@ mod test_script {
         }
         Ok(())
     }
+    #[test]
+    fn test_floor() -> Result<(), String> {
+        // Setup
+        let test_input: String = "_1.45493839".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::NumVal(1.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn test_ceil() -> Result<(), String> {
+        // Setup
+        let test_input: String = "^1.45493839".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::NumVal(2.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
