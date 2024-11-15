@@ -613,6 +613,54 @@ mod test_script {
         }
         Ok(())
     }
+    #[test]
+    fn type_cvt_str() -> Result<(), String> {
+        // Setup
+        let test_input: String = ":1982".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::StrVal(s) => assert_eq!(s, "1982"),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn type_cvt_bool() -> Result<(), String> {
+        // Setup
+        let test_input: String = "?''".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::BoolVal(false) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn type_cvt_num() -> Result<(), String> {
+        // Setup
+        let test_input: String = "+''".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::NumVal(0.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
