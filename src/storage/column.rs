@@ -371,11 +371,11 @@ pub mod generic {
                                     println!("Different number of leading and trailing. pushing '1'");
                                     self.data.push(true);
                                     // Store the length of the number of leading zeros in the next 5 bits
-                                    for i in 0..5 {
+                                    for i in 0..6 {
                                         self.data.push(((num_leading >> i) & 1) == 1)
                                     }
                                     // then store the length of the meaningful XORed value in the next 6 bits
-                                    for i in 0..6 {
+                                    for i in 0..7 {
                                         self.data.push(((num_meaningful_bits >> i) & 1) == 1)
                                     }
                                     // Finally store the meaningful bits of the XORed value.
@@ -443,13 +443,13 @@ pub mod generic {
                                     if control_bit == true {
                                         // Get the length of the number of leading zeros
                                         let mut num_leading_zeros: u32 = 0;
-                                        for i in 0..5 {
+                                        for i in 0..6 {
                                             num_leading_zeros = num_leading_zeros | (self.column.data[self.index] as u32) << i;
                                             self.index += 1;
                                         }
                                         // Get length of the meaningful XORed value
                                         let mut meaningful_size: u32 = 0;
-                                        for i in 0..6 {
+                                        for i in 0..7 {
                                             meaningful_size = meaningful_size | (self.column.data[self.index] as u32) << i;
                                             self.index += 1;
                                         }
@@ -469,7 +469,6 @@ pub mod generic {
                                     println!("After lower: {:064b}", new_value);
                                     // Push inverse of meaningful XORed bits
                                     for i in 0..meaningful_size {
-                                        println!("Meaningful bit: {}", self.column.data[self.index]);
                                         new_value = new_value | (((((self.column.data[self.index] as u64) << (i + self.prev_trailing)) ^ x) & (1 << (i + self.prev_trailing))));
                                         self.index += 1;
                                     }
