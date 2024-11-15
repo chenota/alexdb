@@ -53,8 +53,8 @@ pub mod table {
             };
             // Push column
             self.table.push(col);
-            // Push compression strategy
-            self.compression_strats.push(compression);
+            // Push uncompressed
+            self.compression_strats.push(CompressType::Uncompressed);
             // Change strategy of column
             self.recompress(self.headers.len() - 1, compression);
         }
@@ -73,8 +73,8 @@ pub mod table {
             self.headers.push(name.clone());
             // Insert column
             self.table.push(col);
-            // Push compression strategy
-            self.compression_strats.push(compression);
+            // Push uncompressed
+            self.compression_strats.push(CompressType::Uncompressed);
             // Change strategy of column
             self.recompress(self.headers.len() - 1, compression);
         }
