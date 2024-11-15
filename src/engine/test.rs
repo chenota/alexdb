@@ -616,7 +616,7 @@ mod test_script {
     #[test]
     fn type_cvt_str() -> Result<(), String> {
         // Setup
-        let test_input: String = ":1982".to_string();
+        let test_input: String = "&1982".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
         let ast = types::Expr::BlockExpr(test_parser.parse_script());

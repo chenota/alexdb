@@ -86,7 +86,7 @@ pub mod parser {
                 TokenKind::MinusKw => Some(types::UopType::NegUop),
                 TokenKind::NotKw => Some(types::UopType::NotUop),
                 TokenKind::PlusKw => Some(types::UopType::NumUop),
-                TokenKind::Colon => Some(types::UopType::StrUop),
+                TokenKind::Ampersand => Some(types::UopType::StrUop),
                 TokenKind::Question => Some(types::UopType::BoolUop),
                 TokenKind::Carrot => Some(types::UopType::CeilUop),
                 TokenKind::Underscore => Some(types::UopType::FloorUop),
