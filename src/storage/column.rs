@@ -317,12 +317,11 @@ pub mod generic {
             self.len += 1;
             // Insert value
             match data {
-                None => {println!("NULL. Inserting '0'"); self.data.push(false)},
+                None => self.data.push(false),
                 Some(x_f64) => {
                     // Inserted value as bits
                     let x = f64::to_bits(x_f64);
                     // Push true to indicate has first value
-                    println!("Not NULL. Inserting '1'");
                     self.data.push(true);
                     // Has previous value?
                     match &self.prev_value {
@@ -331,31 +330,25 @@ pub mod generic {
                             for i in 0..64 {
                                 self.data.push((x >> i) & 1 != 0);
                             }
-                            println!("No base value. Inserting bits({})", x_f64)
                         },
                         Some(y) => {
                             // XOR value
                             let xor_val = x ^ *y;
-                            println!("XORED Value is {:064b}", xor_val);
                             // If XOR with the previous is zero, store single '0' bit
                             if xor_val == 0 {
-                                println!("Same value. pushing '0'");
                                 self.data.push(false);
                             }
                             else {
                                 // When XOR is non-zero, calculate the number of leading and trailing zeros in the XOR, store bit ‘1’
-                                println!("Different value. pushing '1'");
                                 self.data.push(true);
                                 // Calculate number of leading and trailing zeros
                                 let num_leading = xor_val.leading_zeros();
                                 let num_trailing = xor_val.trailing_zeros();
-                                println!("{} leading zeros and {} trailing zeros", num_leading, num_trailing);
                                 let meaningful_bits = xor_val >> num_trailing;
                                 let num_meaningful_bits = 64 - num_leading - num_trailing;
                                 // Case A: Number of leading and trailing same as previous
                                 if num_leading == self.prev_num_leading && num_trailing == self.prev_num_trailing {
                                     // (Control bit ‘0’)
-                                    println!("Same number of leading and trailing. pushing '0'");
                                     self.data.push(false);
                                     // just store the meaningful XORed value
                                     for i in 0..num_meaningful_bits {
@@ -368,7 +361,6 @@ pub mod generic {
                                     self.prev_num_leading = num_leading;
                                     self.prev_num_trailing = num_trailing;
                                     // (Control bit ‘1’)
-                                    println!("Different number of leading and trailing. pushing '1'");
                                     self.data.push(true);
                                     // Store the length of the number of leading zeros in the next 5 bits
                                     for i in 0..6 {
@@ -422,7 +414,7 @@ pub mod generic {
                 self.index += 1;
                 match first_bit {
                     // If first bit is a zero, return none
-                    false => {println!("Zero bit. Returning null. Index={}", self.index); Some(None)},
+                    false => Some(None),
                     true => {
                         // Check if have a base value
                         match self.base_value {
@@ -433,7 +425,6 @@ pub mod generic {
                                 self.index += 1;
                                 // If same value, return value again
                                 if same_val {
-                                    println!("Same value. Returning {}. Index={}", f64::from_bits(x), self.index);
                                     Some(Some(f64::from_bits(x)))
                                 } else {
                                     // Determine 'control bit'
@@ -458,7 +449,6 @@ pub mod generic {
                                         // Update iterator
                                         self.prev_leading = num_leading_zeros;
                                         self.prev_trailing = num_trailing_zeros;
-                                        println!("Control bit true {} leading zeros and {} trailing zeros", num_leading_zeros, num_trailing_zeros);
                                     }
                                     let meaningful_size = 64 - self.prev_leading - self.prev_trailing;
                                     let mut new_value: u64 = 0;
@@ -466,19 +456,15 @@ pub mod generic {
                                     for i in 0..self.prev_trailing {
                                         new_value = new_value | (x & (1 << i))
                                     }
-                                    println!("After lower: {:064b}", new_value);
                                     // Push inverse of meaningful XORed bits
                                     for i in 0..meaningful_size {
                                         new_value = new_value | (((((self.column.data[self.index] as u64) << (i + self.prev_trailing)) ^ x) & (1 << (i + self.prev_trailing))));
                                         self.index += 1;
                                     }
-                                    println!("After meaningful: {:064b}", new_value);
                                     // Push upper bits of base value
                                     for i in 0..self.prev_leading {
                                         new_value = new_value | (x & (1 << (i + self.prev_trailing + meaningful_size)))
                                     }
-                                    println!("After upper: {:064b}", new_value);
-                                    println!("Returning {}. Index={}", f64::from_bits(new_value), self.index);
                                     // Set base value to be new value
                                     self.base_value = Some(new_value);
                                     // Return new value
@@ -495,7 +481,6 @@ pub mod generic {
                                 };
                                 // Store base value
                                 self.base_value = Some(base_value_bits);
-                                println!("Base value. Returning {}. Index={}", f64::from_bits(base_value_bits), self.index);
                                 // Return base value
                                 Some(Some(f64::from_bits(base_value_bits)))
                             }
