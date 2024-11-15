@@ -74,6 +74,7 @@ pub mod parser {
             match token.kind {
                 TokenKind::TimesKw => Some(types::BopType::TimesBop),
                 TokenKind::DivKw => Some(types::BopType::DivBop),
+                TokenKind::Percent => Some(types::BopType::ModBop),
                 _ => None
             }
         }
@@ -87,6 +88,8 @@ pub mod parser {
                 TokenKind::PlusKw => Some(types::UopType::NumUop),
                 TokenKind::Colon => Some(types::UopType::StrUop),
                 TokenKind::Question => Some(types::UopType::BoolUop),
+                TokenKind::Carrot => Some(types::UopType::CeilUop),
+                TokenKind::Underscore => Some(types::UopType::FloorUop),
                 _ => None
             }
         }

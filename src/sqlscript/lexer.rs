@@ -24,6 +24,9 @@ pub mod lexer {
         NotKw,
         Colon,
         Question,
+        Carrot,
+        Underscore,
+        Percent,
         // Functions
         Arrow,
         FunKw,
@@ -184,6 +187,9 @@ pub mod lexer {
         (Some(TokenKind::DivKw), reg!(r"/"), none_value),
         (Some(TokenKind::Question), reg!(r"\?"), none_value),
         (Some(TokenKind::Colon), reg!(r":"), none_value),
+        (Some(TokenKind::Carrot), reg!(r"\^"), none_value),
+        (Some(TokenKind::Underscore), reg!(r"_"), none_value),
+        (Some(TokenKind::Percent), reg!(r"%"), none_value),
         // Values
         (Some(TokenKind::Number), reg!(r"[0-9]+\.[0-9]+"), number_value),
         (Some(TokenKind::Number), reg!(r"[0-9]+"), number_value),

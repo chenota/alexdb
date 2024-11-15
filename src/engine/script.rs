@@ -114,7 +114,7 @@ pub mod engine {
             Val::NullVal => Val::NumVal(0.0),
             Val::UndefVal => Val::NumVal(f64::NAN),
             Val::StrVal(x) => {
-                if(x == "") {
+                if x == "" {
                     Val::NumVal(0.0)
                 } else {
                     match x.parse::<f64>() {
@@ -213,6 +213,7 @@ pub mod engine {
                     BopType::MinusBop => Val::NumVal(extract_num(&to_num(&v1)) - extract_num(&to_num(&v2))),
                     BopType::TimesBop => Val::NumVal(extract_num(&to_num(&v1)) * extract_num(&to_num(&v2))),
                     BopType::DivBop => Val::NumVal(extract_num(&to_num(&v1)) / extract_num(&to_num(&v2))),
+                    BopType::ModBop => Val::NumVal(extract_num(&to_num(&v1)) % extract_num(&to_num(&v2))),
                     // Comparison
                     BopType::EqBop => Val::BoolVal(eq(&v1, &v2)),
                     BopType::StrEqBop => Val::BoolVal(stricteq(&v1, &v2)),
@@ -237,7 +238,9 @@ pub mod engine {
                     UopType::NotUop => Val::BoolVal(! extract_bool(&to_bool(&v1))),
                     UopType::BoolUop => to_bool(&v1),
                     UopType::NumUop => to_num(&v1),
-                    UopType::StrUop => to_str(&v1)
+                    UopType::StrUop => to_str(&v1),
+                    UopType::FloorUop => Val::NumVal(f64::floor(extract_num(&to_num(&v1)))),
+                    UopType::CeilUop => Val::NumVal(f64::ceil(extract_num(&to_num(&v1)))),
                 }
             }
             Expr::ValExpr(v1) => v1.clone(),

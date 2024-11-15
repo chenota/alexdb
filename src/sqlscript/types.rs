@@ -51,7 +51,8 @@ pub mod types {
         EqBop,
         StrEqBop,
         LogOrBop,
-        LogAndBop
+        LogAndBop,
+        ModBop
     }
     pub type ColList = Vec<(String, ColType, Option<CompressType>)>;
     pub type ExprList = Vec<Rc<Expr>>;
@@ -62,7 +63,9 @@ pub mod types {
         NotUop,
         NumUop,
         StrUop,
-        BoolUop
+        BoolUop,
+        FloorUop,
+        CeilUop,
     }
     #[derive(Clone, Copy)]
     pub enum ColType {
