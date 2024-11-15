@@ -414,7 +414,7 @@ pub mod generic {
                 self.index += 1;
                 match first_bit {
                     // If first bit is a zero, return none
-                    false => Some(None),
+                    false => {println!("Zero bit. Returning null. Index={}", self.index); Some(None)},
                     true => {
                         // Check if have a base value
                         match self.base_value {
@@ -425,6 +425,7 @@ pub mod generic {
                                 self.index += 1;
                                 // If same value, return value again
                                 if same_val {
+                                    println!("Same value. Returning {}. Index={}", f64::from_bits(x), self.index);
                                     Some(Some(f64::from_bits(x)))
                                 } else {
                                     // Determine 'control bit'
@@ -447,6 +448,7 @@ pub mod generic {
                                         for i in 0..self.prev_leading {
                                             new_value = new_value | (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
                                         }
+                                        println!("Control bit false. Returning {}. Index={}", f64::from_bits(new_value), self.index);
                                         // Set base value to be new value
                                         self.base_value = Some(new_value);
                                         // Return new value
@@ -494,6 +496,7 @@ pub mod generic {
                                         for i in 0..self.prev_leading {
                                             new_value = new_value | (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
                                         }
+                                        println!("Control bit true. Returning {}. Index={}", f64::from_bits(new_value), self.index);
                                         // Set base value to be new value
                                         self.base_value = Some(new_value);
                                         // Return new value
@@ -511,6 +514,7 @@ pub mod generic {
                                 };
                                 // Store base value
                                 self.base_value = Some(base_value_bits);
+                                println!("Base value. Returning {}. Index={}", f64::from_bits(base_value_bits), self.index);
                                 // Return base value
                                 Some(Some(f64::from_bits(base_value_bits)))
                             }
