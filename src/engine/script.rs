@@ -230,7 +230,10 @@ pub mod engine {
                 let v1 = eval(e1.as_ref(), env);
                 match uop {
                     UopType::NegUop => Val::NumVal(- extract_num(&to_num(&v1))),
-                    UopType::NotUop => Val::BoolVal(! extract_bool(&to_bool(&v1)))
+                    UopType::NotUop => Val::BoolVal(! extract_bool(&to_bool(&v1))),
+                    UopType::BoolUop => to_bool(&v1),
+                    UopType::NumUop => to_num(&v1),
+                    UopType::StrUop => to_str(&v1)
                 }
             }
             Expr::ValExpr(v1) => v1.clone(),

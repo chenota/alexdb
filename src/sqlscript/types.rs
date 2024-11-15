@@ -59,7 +59,10 @@ pub mod types {
     #[derive(PartialEq, Debug, Clone, Copy)]
     pub enum UopType {
         NegUop,
-        NotUop
+        NotUop,
+        NumUop,
+        StrUop,
+        BoolUop
     }
     #[derive(Clone, Copy)]
     pub enum ColType {

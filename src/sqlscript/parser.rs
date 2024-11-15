@@ -77,6 +77,19 @@ pub mod parser {
                 _ => None
             }
         }
+        fn peek_uop(&self) -> Option<types::UopType> {
+            // Peek first token
+            let token = self.peek();
+            // Match type, return appropriate value
+            match token.kind {
+                TokenKind::MinusKw => Some(types::UopType::NegUop),
+                TokenKind::NotKw => Some(types::UopType::NotUop),
+                TokenKind::PlusKw => Some(types::UopType::NumUop),
+                TokenKind::Colon => Some(types::UopType::StrUop),
+                TokenKind::Question => Some(types::UopType::BoolUop),
+                _ => None
+            }
+        }
         fn pop(&mut self) -> Token {
             let old_token = self.token.clone();
             self.token = self.lexer.produce();
@@ -452,22 +465,14 @@ pub mod parser {
             }
         }
         fn expr_level_5(&mut self) -> types::Expr {
-            match self.peek().kind {
-                TokenKind::MinusKw => {
-                    // Pop minus sign
+            match self.peek_uop() {
+                Some(u) => {
+                    // Pop uop
                     self.pop();
                     // Parse expr
                     let expr = self.expr_level_5();
-                    // Return negated expression
-                    types::Expr::UopExpr(types::UopType::NegUop, Rc::new(expr))
-                },
-                TokenKind::NotKw => {
-                    // Pop not sign
-                    self.pop();
-                    // Parse expr
-                    let expr = self.expr_level_5();
-                    // Return negated expression
-                    types::Expr::UopExpr(types::UopType::NotUop, Rc::new(expr))
+                    // Return expression
+                    types::Expr::UopExpr(u, Rc::new(expr))
                 },
                 _ => self.expr_level_6()
             }

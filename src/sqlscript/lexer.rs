@@ -22,6 +22,8 @@ pub mod lexer {
         LogAndKw,
         StrEq,
         NotKw,
+        Colon,
+        Question,
         // Functions
         Arrow,
         FunKw,
@@ -180,6 +182,8 @@ pub mod lexer {
         (Some(TokenKind::MinusKw), reg!(r"-"), none_value),
         (Some(TokenKind::TimesKw), reg!(r"\*"), none_value),
         (Some(TokenKind::DivKw), reg!(r"/"), none_value),
+        (Some(TokenKind::Question), reg!(r"\?"), none_value),
+        (Some(TokenKind::Colon), reg!(r":"), none_value),
         // Values
         (Some(TokenKind::Number), reg!(r"[0-9]+\.[0-9]+"), number_value),
         (Some(TokenKind::Number), reg!(r"[0-9]+"), number_value),
