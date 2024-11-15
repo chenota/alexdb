@@ -114,9 +114,13 @@ pub mod engine {
             Val::NullVal => Val::NumVal(0.0),
             Val::UndefVal => Val::NumVal(f64::NAN),
             Val::StrVal(x) => {
-                match x.parse::<f64>() {
-                    Ok(v) => Val::NumVal(v),
-                    _ => Val::NumVal(f64::NAN)
+                if(x == "") {
+                    Val::NumVal(0.0)
+                } else {
+                    match x.parse::<f64>() {
+                        Ok(v) => Val::NumVal(v),
+                        _ => Val::NumVal(f64::NAN)
+                    }
                 }
             },
             _ => panic!("Unexpected value")
