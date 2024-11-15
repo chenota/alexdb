@@ -317,11 +317,12 @@ pub mod generic {
             self.len += 1;
             // Insert value
             match data {
-                None => self.data.push(false),
+                None => {println!("NULL. Inserting '0'"); self.data.push(false)},
                 Some(x_f64) => {
                     // Inserted value as bits
                     let x = f64::to_bits(x_f64);
                     // Push true to indicate has first value
+                    println!("Not NULL. Inserting '1'");
                     self.data.push(true);
                     // Has previous value?
                     match &self.prev_value {
@@ -330,29 +331,35 @@ pub mod generic {
                             for i in 0..64 {
                                 self.data.push((x >> i) & 1 != 0);
                             }
+                            println!("No base value. Inserting bits({})", x_f64)
                         },
                         Some(y) => {
                             // XOR value
                             let xor_val = x ^ *y;
+                            println!("XORED Value is {:064b}", xor_val);
                             // If XOR with the previous is zero, store single '0' bit
                             if xor_val == 0 {
+                                println!("Same value. pushing '0'");
                                 self.data.push(false);
                             }
                             else {
                                 // When XOR is non-zero, calculate the number of leading and trailing zeros in the XOR, store bit ‘1’
+                                println!("Different value. pushing '1'");
                                 self.data.push(true);
                                 // Calculate number of leading and trailing zeros
                                 let num_leading = xor_val.leading_zeros();
                                 let num_trailing = xor_val.trailing_zeros();
+                                println!("{} leading zeros and {} trailing zeros", num_leading, num_trailing);
                                 let meaningful_bits = xor_val >> num_trailing;
                                 let num_meaningful_bits = 64 - num_leading - num_trailing;
                                 // Case A: Number of leading and trailing same as previous
                                 if num_leading == self.prev_num_leading && num_trailing == self.prev_num_trailing {
                                     // (Control bit ‘0’)
+                                    println!("Same number of leading and trailing. pushing '0'");
                                     self.data.push(false);
                                     // just store the meaningful XORed value
                                     for i in 0..num_meaningful_bits {
-                                        self.data.push((meaningful_bits >> i) & 1 == 1)
+                                        self.data.push(((meaningful_bits >> i) & 1) == 1)
                                     }
                                 }
                                 // Case B: Number of leading an trailing different than previous
@@ -361,18 +368,19 @@ pub mod generic {
                                     self.prev_num_leading = num_leading;
                                     self.prev_num_trailing = num_trailing;
                                     // (Control bit ‘1’)
+                                    println!("Different number of leading and trailing. pushing '1'");
                                     self.data.push(true);
                                     // Store the length of the number of leading zeros in the next 5 bits
                                     for i in 0..5 {
-                                        self.data.push((num_leading >> i) & 1 == 1)
+                                        self.data.push(((num_leading >> i) & 1) == 1)
                                     }
                                     // then store the length of the meaningful XORed value in the next 6 bits
                                     for i in 0..6 {
-                                        self.data.push((num_meaningful_bits >> i) & 1 == 1)
+                                        self.data.push(((num_meaningful_bits >> i) & 1) == 1)
                                     }
                                     // Finally store the meaningful bits of the XORed value.
                                     for i in 0..num_meaningful_bits {
-                                        self.data.push((meaningful_bits >> i) & 1 == 1)
+                                        self.data.push(((meaningful_bits >> i) & 1) == 1)
                                     }
                                 }
                             }
@@ -432,28 +440,7 @@ pub mod generic {
                                     let control_bit = self.column.data[self.index];
                                     self.index += 1;
                                     // Control bit true or false?
-                                    if control_bit == false {
-                                        let meaningful_size = 64 - self.prev_leading - self.prev_trailing;
-                                        let mut new_value: u64 = 0;
-                                        // Push lower bits of base value
-                                        for i in 0..self.prev_trailing {
-                                            new_value = new_value | (x & (1 << i))
-                                        }
-                                        // Push inverse of meaningful XORed bits
-                                        for i in 0..meaningful_size {
-                                            new_value = new_value | (((self.column.data[self.index] as u64 ^ x) & (1 << (i + self.prev_trailing))));
-                                            self.index += 1;
-                                        }
-                                        // Push upper bits of base value
-                                        for i in 0..self.prev_leading {
-                                            new_value = new_value | (x & (1 << (i + self.prev_trailing + meaningful_size)))
-                                        }
-                                        println!("Control bit false. Returning {}. Index={}", f64::from_bits(new_value), self.index);
-                                        // Set base value to be new value
-                                        self.base_value = Some(new_value);
-                                        // Return new value
-                                        Some(Some(f64::from_bits(new_value)))
-                                    } else {
+                                    if control_bit == true {
                                         // Get the length of the number of leading zeros
                                         let mut num_leading_zeros: u32 = 0;
                                         for i in 0..5 {
@@ -466,38 +453,37 @@ pub mod generic {
                                             meaningful_size = meaningful_size | (self.column.data[self.index] as u32) << i;
                                             self.index += 1;
                                         }
-                                        // Reconstruct meaningful XORed value
-                                        let mut xor_meaningful: u32 = 0;
-                                        for i in 0..meaningful_size {
-                                            xor_meaningful = xor_meaningful | (self.column.data[self.index] as u32) << i;
-                                            self.index += 1;
-                                        }
                                         // Calcualte the number of trailing zeros
                                         let num_trailing_zeros: u32 = 64 - meaningful_size - num_leading_zeros;
                                         // Update iterator
                                         self.prev_leading = num_leading_zeros;
                                         self.prev_trailing = num_trailing_zeros;
-                                        // Construct base value
-                                        let mut new_value: u64 = 0;
-                                        // Push lower bits of base value
-                                        for i in 0..self.prev_trailing {
-                                            new_value = new_value | (x & (1 << i))
-                                        }
-                                        // Push inverse of meaningful XORed bits
-                                        for i in 0..meaningful_size {
-                                            new_value = new_value | (((self.column.data[self.index] as u64 ^ x) & (1 << (i + self.prev_trailing))));
-                                            self.index += 1;
-                                        }
-                                        // Push upper bits of base value
-                                        for i in 0..self.prev_leading {
-                                            new_value = new_value | (x & (1 << (i + self.prev_trailing + meaningful_size)))
-                                        }
-                                        println!("Control bit true. Returning {}. Index={}", f64::from_bits(new_value), self.index);
-                                        // Set base value to be new value
-                                        self.base_value = Some(new_value);
-                                        // Return new value
-                                        Some(Some(f64::from_bits(new_value)))
+                                        println!("Control bit true {} leading zeros and {} trailing zeros", num_leading_zeros, num_trailing_zeros);
                                     }
+                                    let meaningful_size = 64 - self.prev_leading - self.prev_trailing;
+                                    let mut new_value: u64 = 0;
+                                    // Push lower bits of base value
+                                    for i in 0..self.prev_trailing {
+                                        new_value = new_value | (x & (1 << i))
+                                    }
+                                    println!("After lower: {:064b}", new_value);
+                                    // Push inverse of meaningful XORed bits
+                                    for i in 0..meaningful_size {
+                                        println!("Meaningful bit: {}", self.column.data[self.index]);
+                                        new_value = new_value | (((((self.column.data[self.index] as u64) << (i + self.prev_trailing)) ^ x) & (1 << (i + self.prev_trailing))));
+                                        self.index += 1;
+                                    }
+                                    println!("After meaningful: {:064b}", new_value);
+                                    // Push upper bits of base value
+                                    for i in 0..self.prev_leading {
+                                        new_value = new_value | (x & (1 << (i + self.prev_trailing + meaningful_size)))
+                                    }
+                                    println!("After upper: {:064b}", new_value);
+                                    println!("Returning {}. Index={}", f64::from_bits(new_value), self.index);
+                                    // Set base value to be new value
+                                    self.base_value = Some(new_value);
+                                    // Return new value
+                                    Some(Some(f64::from_bits(new_value)))
                                 }
                             },
                             // No base value
