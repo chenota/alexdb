@@ -437,16 +437,16 @@ pub mod generic {
                                         let mut new_value: u64 = 0;
                                         // Push lower bits of base value
                                         for i in 0..self.prev_trailing {
-                                            new_value = new_value | (((x >> i) & 1) << i)
+                                            new_value = new_value | (x & (1 << i))
                                         }
                                         // Push inverse of meaningful XORed bits
                                         for i in 0..meaningful_size {
-                                            new_value = new_value | ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
+                                            new_value = new_value | (((self.column.data[self.index] as u64 ^ x) & (1 << (i + self.prev_trailing))));
                                             self.index += 1;
                                         }
                                         // Push upper bits of base value
                                         for i in 0..self.prev_leading {
-                                            new_value = new_value | (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
+                                            new_value = new_value | (x & (1 << (i + self.prev_trailing + meaningful_size)))
                                         }
                                         println!("Control bit false. Returning {}. Index={}", f64::from_bits(new_value), self.index);
                                         // Set base value to be new value
@@ -481,20 +481,16 @@ pub mod generic {
                                         let mut new_value: u64 = 0;
                                         // Push lower bits of base value
                                         for i in 0..self.prev_trailing {
-                                            new_value = new_value | (((x >> i) & 1) << i)
-                                        }
-                                        // Push lower bits of base value
-                                        for i in 0..self.prev_trailing {
-                                            new_value = new_value | (((x >> i) & 1) << i)
+                                            new_value = new_value | (x & (1 << i))
                                         }
                                         // Push inverse of meaningful XORed bits
                                         for i in 0..meaningful_size {
-                                            new_value = new_value | ((!self.column.data[self.index] as u64) << (i + self.prev_trailing));
+                                            new_value = new_value | (((self.column.data[self.index] as u64 ^ x) & (1 << (i + self.prev_trailing))));
                                             self.index += 1;
                                         }
                                         // Push upper bits of base value
                                         for i in 0..self.prev_leading {
-                                            new_value = new_value | (((x >> (i + self.prev_trailing + meaningful_size)) & 1) << (i + self.prev_trailing + meaningful_size))
+                                            new_value = new_value | (x & (1 << (i + self.prev_trailing + meaningful_size)))
                                         }
                                         println!("Control bit true. Returning {}. Index={}", f64::from_bits(new_value), self.index);
                                         // Set base value to be new value
