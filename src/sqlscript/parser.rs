@@ -481,7 +481,39 @@ pub mod parser {
             }
         }
         fn expr_level_6(&mut self) -> types::Expr {
-            let first = match self.peek().kind {
+            let first = self.expr_level_7();
+            // Check if postfix (call only postfix) at front
+            match self.peek().kind {
+                TokenKind::LParen => {
+                    // Pop LParen
+                    self.pop();
+                    // Check if next is rparen. If not, parse exprlist
+                    let elist = match self.peek().kind {
+                        TokenKind::RParen => Vec::new(),
+                        _ => self.exprlist()
+                    };
+                    // Expect RParen
+                    self.pop_expect(TokenKind::RParen);
+                    // Construct expression
+                    types::Expr::CallExpr(Rc::new(first), elist)
+                },
+                _ => first
+            }
+        }
+        fn expr_level_7(&mut self) -> types::Expr {
+            let first = self.expr_level_8();
+            match self.peek().kind {
+                TokenKind::Dot => {
+                    // Pop bop
+                    self.pop();
+                    // Return parsed expr
+                    types::Expr::BopExpr(Rc::new(first), types::BopType::DotBop, Rc::new(self.expr_level_4()))
+                },
+                _ => first
+            }
+        }
+        fn expr_level_8(&mut self) -> types::Expr {
+            match self.peek().kind {
                 TokenKind::Identifier => types::Expr::IdentExpr(match self.pop().value {
                     TokenValue::String(x) => x.clone(),
                     _ => panic!("Parsing error")
@@ -506,24 +538,17 @@ pub mod parser {
                     // Return parsed expression
                     expr
                 },
-                _ => types::Expr::ValExpr(self.value())
-            };
-            // Check if postfix (call only postfix) at front
-            match self.peek().kind {
-                TokenKind::LParen => {
-                    // Pop LParen
+                TokenKind::LBracket => {
+                    // Pop lbracket
                     self.pop();
-                    // Check if next is rparen. If not, parse exprlist
-                    let elist = match self.peek().kind {
-                        TokenKind::RParen => Vec::new(),
-                        _ => self.exprlist()
-                    };
-                    // Expect RParen
-                    self.pop_expect(TokenKind::RParen);
-                    // Construct expression
-                    types::Expr::CallExpr(Rc::new(first), elist)
+                    // Parse exprlist
+                    let exprlist = self.exprlist();
+                    // Expect rbracket, pop it
+                    self.pop_expect(TokenKind::RBracket);
+                    // Return parsed expression
+                    types::Expr::TupExpr(exprlist)
                 },
-                _ => first
+                _ => types::Expr::ValExpr(self.value())
             }
         }
         fn value(&mut self) -> types::Val {

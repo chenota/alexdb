@@ -91,6 +91,8 @@ pub mod engine {
     use core::f64;
     use crate::sqlscript::types::types::*;
     use super::env::{Frame, Environment};
+    use std::rc::Rc;
+
     fn to_bool(val: &Val) -> Val {
         match val {
             Val::BoolVal(x) => Val::BoolVal(*x),
@@ -224,8 +226,24 @@ pub mod engine {
                     // Logical
                     BopType::LogAndBop => if extract_bool(&to_bool(&v1)) { v2 } else { v1 },
                     BopType::LogOrBop => if extract_bool(&to_bool(&v1)) { v1 } else { v2 },
+                    // Tuple
+                    BopType::DotBop => match v1 { 
+                        Val::TupVal(vvec) => {
+                            let v2_num = extract_num(&to_num(&v2)) as usize;
+                            if v2_num >= vvec.len() { panic!("Bad tuple index") }
+                            vvec[v2_num].as_ref().clone()
+                        },
+                        _ => panic!("Cannot use dot on a non-tuple type")
+                    },
                     _ => panic!("Unimplemented")
                 }
+            },
+            Expr::TupExpr(es) => {
+                let mut tup_vec = Vec::new();
+                for e1 in es {
+                    tup_vec.push(Rc::new(eval(e1.as_ref(), env)))
+                };
+                Val::TupVal(tup_vec)
             },
             Expr::CondExpr(e1, e2, e3) => {
                 let v1 = eval(e1.as_ref(), env);

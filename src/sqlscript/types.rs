@@ -22,7 +22,8 @@ pub mod types {
         IdentExpr(String),
         CallExpr(Rc<Expr>, ExprList),
         FunExpr(IdentList, Rc<Expr>),
-        CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>) // if _ then _ else _
+        CondExpr(Rc<Expr>, Rc<Expr>, Rc<Expr>), // if _ then _ else _
+        TupExpr(ExprList)
     }
     #[derive(Clone)]
     pub enum Block {
@@ -36,7 +37,8 @@ pub mod types {
         BoolVal(bool),
         UndefVal,
         NullVal,
-        ClosureVal(Frame, IdentList, Rc<Expr>)
+        ClosureVal(Frame, IdentList, Rc<Expr>),
+        TupVal(Vec<Rc<Val>>)
     }
     #[derive(PartialEq, Debug, Clone, Copy)]
     pub enum BopType {
@@ -52,7 +54,8 @@ pub mod types {
         StrEqBop,
         LogOrBop,
         LogAndBop,
-        ModBop
+        ModBop,
+        DotBop
     }
     pub type ColList = Vec<(String, ColType, Option<CompressType>)>;
     pub type ExprList = Vec<Rc<Expr>>;

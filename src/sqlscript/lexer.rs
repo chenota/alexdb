@@ -27,6 +27,9 @@ pub mod lexer {
         Carrot,
         Underscore,
         Percent,
+        Dot,
+        LBracket,
+        RBracket,
         // Functions
         Arrow,
         FunKw,
@@ -180,6 +183,8 @@ pub mod lexer {
         (Some(TokenKind::RParen), reg!(r"\)"), none_value),
         (Some(TokenKind::LCBracket), reg!(r"\{"), none_value),
         (Some(TokenKind::RCBracket), reg!(r"\}"), none_value),
+        (Some(TokenKind::LBracket), reg!(r"\["), none_value),
+        (Some(TokenKind::RBracket), reg!(r"\]"), none_value),
         // Operators
         (Some(TokenKind::PlusKw), reg!(r"\+"), none_value),
         (Some(TokenKind::MinusKw), reg!(r"-"), none_value),
@@ -190,6 +195,7 @@ pub mod lexer {
         (Some(TokenKind::Carrot), reg!(r"\^"), none_value),
         (Some(TokenKind::Underscore), reg!(r"_"), none_value),
         (Some(TokenKind::Percent), reg!(r"%"), none_value),
+        (Some(TokenKind::Dot), reg!(r"\."), none_value),
         // Values
         (Some(TokenKind::Number), reg!(r"[0-9]+\.[0-9]+"), number_value),
         (Some(TokenKind::Number), reg!(r"[0-9]+"), number_value),
