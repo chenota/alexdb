@@ -278,7 +278,26 @@ pub mod parser {
                         }
                     };
                     types::Query::Compress(table, fields, comptypes)
-                }
+                },
+                TokenKind::ScriptKw => {
+                    // Parse expr
+                    let e = self.expr();
+                    // Check if FROM
+                    match self.peek().kind {
+                        TokenKind::FromKw => {
+                            // Pop FROM
+                            self.pop();
+                            // Get table name
+                            let tname = self.ident();
+                            // Return
+                            types::Query::Script(e, Some(tname))
+                        },
+                        _ => {
+                            // Return
+                            types::Query::Script(e, None)
+                        }
+                    }
+                },
                 TokenKind::CreateKw => {
                     match self.pop().kind {
                         TokenKind::TableKw => {

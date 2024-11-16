@@ -76,6 +76,7 @@ pub mod lexer {
         CompKw,
         CompressKw,
         CompressType,
+        ScriptKw,
         // Type keywords
         NumberKw,
         StrKw,
@@ -151,6 +152,7 @@ pub mod lexer {
         (Some(TokenKind::CompressType), reg!(r"bitmap"), compression_value_bitmap),
         (Some(TokenKind::CompressType), reg!(r"xor"), compression_value_xor),
         (Some(TokenKind::CompressType), reg!(r"runlen"), compression_value_runlen),
+        (Some(TokenKind::ScriptKw), reg!(r"SCRIPT"), none_value),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),
@@ -202,7 +204,7 @@ pub mod lexer {
         (Some(TokenKind::Identifier), reg!(r"[a-zA-Z]([a-zA-Z0-9]|_)*"), ident_value),
         (Some(TokenKind::String), reg!(r"'[^']*'"), string_value),
         // Whitespace
-        (None, reg!(r"[ \t]+"), none_value),
+        (None, reg!(r"[ \t\n]+"), none_value),
     ];
     pub struct Lexer {
         stream: String,

@@ -467,6 +467,24 @@ pub mod engine {
             // Return aggregate
             QueryResult::None
         }
+        fn script(&mut self, expr: &Expr, tname: &Option<String>) -> QueryResult {
+            // Setup environment
+            let mut env = self.default_environment();
+            match tname {
+                Some(table_name) => {
+                    // Get index of table
+                    let table_idx = self.get_table_index(table_name).unwrap();
+                    let table = &mut self.tables[table_idx];
+                    // Load table into env
+                    table.push_all(&mut env);
+                },
+                _ => ()
+            };
+            // Evaluate expr
+            let val = eval(expr, &mut env);
+            // Return value
+            QueryResult::Value(val)
+        }
         pub fn execute(&mut self, q: String) -> QueryResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -483,6 +501,7 @@ pub mod engine {
                 Query::Comp(cmp_name, expr, table_name) => self.create_computation(cmp_name, expr, table_name),
                 Query::SelectComp(cmp_name, table_name) => self.select_computation(cmp_name, table_name),
                 Query::Compress(table_name, fields, strats) => self.compress(table_name, fields, strats),
+                Query::Script(expr, tname) => self.script(expr, tname),
                 _ => panic!("Unimplemented")
             }
         }
