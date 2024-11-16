@@ -1990,6 +1990,33 @@ mod test_database {
         Ok(())
     }
     #[test]
+    fn tuple_ag() -> Result<(), String> {
+        // Setup
+        let mut db = Database::new();
+        // Create table
+        db.execute("CREATE TABLE test_table (field1 num, field2 num)".to_string());
+        // Add aggregate
+        db.execute("CREATE AGGREGATE counters = [current.0 + 1, current.1 + 2, current.2 + 3] INIT [1, 2, 3] INTO test_table".to_string());
+        // Add computation
+        db.execute("CREATE COMP counter = counters.2 INTO test_table".to_string());
+        // Insert values into table
+        db.execute("INSERT INTO test_table VALUES (5, 6)".to_string());
+        db.execute("INSERT INTO test_table VALUES (15, 11)".to_string());
+        db.execute("INSERT INTO test_table VALUES (10, 11)".to_string());
+        // Perform select query using aggregate
+        let result = db.execute("SELECT COMP counter FROM test_table".to_string());
+        match result {
+            QueryResult::Value(v) => {
+                match v {
+                    Val::NumVal(x) => assert_eq!(x as i32, 9),
+                    _ => assert!(false)
+                }
+            },
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
     fn compress_num_1() -> Result<(), String> {
         // Setup
         let mut db = Database::new();
