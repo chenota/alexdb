@@ -805,6 +805,22 @@ mod test_script {
         }
         Ok(())
     }
+    #[test]
+    fn test_tup_8() -> Result<(), String> {
+        // Setup
+        let test_input: String = "my_tup = [11, fun -> 11.87, 15]; &_my_tup.1()".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::StrVal(s) => assert_eq!(s, "11"),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
