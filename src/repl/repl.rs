@@ -1,5 +1,6 @@
 pub mod repl {
-    use std::io::{stdin, stdout, Write};
+    use rustyline::{DefaultEditor, Result};
+    use rustyline::error::ReadlineError;
     use crate::engine::database::engine::*;
     use crate::sqlscript::types::types::Val;
 
@@ -19,28 +20,41 @@ pub mod repl {
         }   
     }
 
-    pub fn repl_main() {
+    pub fn repl_main() -> Result<()> {
         // Create database
         let mut db = Database::new();
+        // Create editor
+        let mut rl = DefaultEditor::new()?;
         loop {
-            // Print entry carrot
-            print!("> ");
-            // Flush stdout buffer
-            let _ = stdout().flush();
-            // Container for line
-            let mut s = String::new();
-            // Read line
-            stdin().read_line(&mut s).expect("Did not enter a correct string");
-            // Query database
-            let res = db.execute(s);
-            // Handle response
-            match res {
-                QueryResult::Success(s) => println!("{}", s),
-                QueryResult::Table(_) => println!("Table"),
-                QueryResult::Value(v) => println!("{}", pretty_print(v)),
-                QueryResult::Error(s) => println!("Error: {}", s),
-                QueryResult::Exit => break
+            // Readline
+            let readline = rl.readline("> ");
+            // Act
+            match readline {
+                Ok(line) => {
+                    let res = db.execute(line);
+                    // Handle response
+                    match res {
+                        QueryResult::Success(s) => println!("{}", s),
+                        QueryResult::Table(_) => println!("Table"),
+                        QueryResult::Value(v) => println!("{}", pretty_print(v)),
+                        QueryResult::Error(s) => println!("Error: {}", s),
+                        QueryResult::Exit => break
+                    }
+                },
+                Err(ReadlineError::Interrupted) => {
+                    println!("SIGINT");
+                    break
+                },
+                Err(ReadlineError::Eof) => {
+                    println!("EOF");
+                    break
+                },
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    break
+                }
             }
-        }
+        };
+        Ok(())
     }
 }
