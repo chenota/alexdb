@@ -13,6 +13,7 @@ pub mod types {
         SelectComp(String, String), // SELECT COMP <name> FROM <table>
         Compress(String, IdentList, CompressList), // COMPRESS <table> (<field>, <field>, ...) ((<strategy>, <strategy>, ...) | <strategy>)
         Script(Expr, Option<String>), // SCRIPT <expr> (FROM <table>)?
+        Exit,
     }
     #[derive(Clone)]
     pub enum Expr {

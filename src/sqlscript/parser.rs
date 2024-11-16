@@ -298,6 +298,9 @@ pub mod parser {
                         }
                     }
                 },
+                TokenKind::ExitKw => {
+                    types::Query::Exit
+                }
                 TokenKind::CreateKw => {
                     match self.pop().kind {
                         TokenKind::TableKw => {

@@ -504,6 +504,7 @@ pub mod engine {
                 Query::SelectComp(cmp_name, table_name) => self.select_computation(cmp_name, table_name),
                 Query::Compress(table_name, fields, strats) => self.compress(table_name, fields, strats),
                 Query::Script(expr, tname) => self.script(expr, tname),
+                Query::Exit => QueryResult::Exit,
                 _ => panic!("Unimplemented")
             }
         }

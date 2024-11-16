@@ -77,6 +77,7 @@ pub mod lexer {
         CompressKw,
         CompressType,
         ScriptKw,
+        ExitKw,
         // Type keywords
         NumberKw,
         StrKw,
@@ -153,6 +154,7 @@ pub mod lexer {
         (Some(TokenKind::CompressType), reg!(r"xor"), compression_value_xor),
         (Some(TokenKind::CompressType), reg!(r"runlen"), compression_value_runlen),
         (Some(TokenKind::ScriptKw), reg!(r"SCRIPT"), none_value),
+        (Some(TokenKind::ExitKw), reg!(r"EXIT"), none_value),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),
