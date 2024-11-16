@@ -62,7 +62,7 @@ pub mod table {
             // Push uncompressed
             self.compression_strats.push(CompressType::Uncompressed);
             // Change strategy of column
-            self.recompress(self.headers.len() - 1, compression);
+            handle!(self.recompress(self.headers.len() - 1, compression));
             Ok(())
         }
         pub fn add_populated_column(&mut self, name: &String, col: Column, compression: CompressType) -> Result<(), String> {
@@ -83,7 +83,7 @@ pub mod table {
             // Push uncompressed
             self.compression_strats.push(CompressType::Uncompressed);
             // Change strategy of column
-            self.recompress(self.headers.len() - 1, compression);
+            handle!(self.recompress(self.headers.len() - 1, compression));
             Ok(())
         }
         pub fn header_idx(&self, name: &String) -> Result<usize, String> {

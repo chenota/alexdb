@@ -24,7 +24,7 @@ pub mod parser {
     impl Parser {
         // Constructor
         pub fn new(stream: String) -> Parser {
-            let mut lexer = Lexer::new(stream);
+            let lexer = Lexer::new(stream);
             Parser {
                 lexer: lexer,
                 token: Token { kind: TokenKind::Dot, value: TokenValue::None, start: 0, end: 0 }
