@@ -345,7 +345,7 @@ mod table_tests {
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
-        match test_table.get_column(&col_name1) {
+        match test_table.get_column(&col_name1).unwrap() {
             Column::Boolean(x) => {
                 match x.as_ref().uncompress()[0] {
                     Some(y) => assert!(!y),
@@ -354,7 +354,7 @@ mod table_tests {
             },
             _ => assert!(false)
         }
-        match test_table.get_column(&col_name2) {
+        match test_table.get_column(&col_name2).unwrap() {
             Column::Boolean(x) => {
                 match x.as_ref().uncompress()[0] {
                     None => assert!(true),
@@ -382,7 +382,7 @@ mod table_tests {
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
-        match test_table.get_column(&col_name1) {
+        match test_table.get_column(&col_name1).unwrap() {
             Column::Number(x) => {
                 match x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(y, 12.5),
@@ -391,7 +391,7 @@ mod table_tests {
             },
             _ => assert!(false)
         }
-        match test_table.get_column(&col_name2) {
+        match test_table.get_column(&col_name2).unwrap() {
             Column::Number(x) => {
                 match x.as_ref().uncompress()[0] {
                     None => assert!(true),
@@ -419,7 +419,7 @@ mod table_tests {
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
-        match test_table.get_column(&col_name1) {
+        match test_table.get_column(&col_name1).unwrap() {
             Column::String(x) => {
                 match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(y, "Hello"),
@@ -428,7 +428,7 @@ mod table_tests {
             },
             _ => assert!(false)
         }
-        match test_table.get_column(&col_name2) {
+        match test_table.get_column(&col_name2).unwrap() {
             Column::String(x) => {
                 match x.as_ref().uncompress()[0] {
                     None => assert!(true),
@@ -456,7 +456,7 @@ mod table_tests {
         // Add row to table
         test_table.add_row(row1);
         // Assert correct values
-        match test_table.get_column(&col_name1) {
+        match test_table.get_column(&col_name1).unwrap() {
             Column::Number(x) => {
                 match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(*y, 112.0),
@@ -465,7 +465,7 @@ mod table_tests {
             },
             _ => assert!(false)
         }
-        match test_table.get_column(&col_name2) {
+        match test_table.get_column(&col_name2).unwrap() {
             Column::String(x) => {
                 match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(y, "Hello"),
@@ -499,7 +499,7 @@ mod table_tests {
         test_table.add_row(row1);
         test_table.add_row(row2);
         // Assert correct values
-        match test_table.get_column(&col_name1) {
+        match test_table.get_column(&col_name1).unwrap() {
             Column::Number(x) => {
                 match &x.as_ref().uncompress()[0] {
                     Some(y) => assert_eq!(*y, 112.2),
@@ -508,7 +508,7 @@ mod table_tests {
             },
             _ => assert!(false)
         }
-        match test_table.get_column(&col_name2) {
+        match test_table.get_column(&col_name2).unwrap() {
             Column::String(x) => {
                 match &x.as_ref().uncompress()[1] {
                     Some(y) => assert_eq!(y, "Goodbye"),

@@ -221,7 +221,7 @@ pub mod lexer {
             }
         }
         // Produce next token
-        pub fn produce(&mut self) -> Token {
+        pub fn produce(&mut self) -> Result<Token, String> {
             // Length of stream
             let stream_len: usize = self.stream.len();
             // Check if length left to go
@@ -256,23 +256,24 @@ pub mod lexer {
                 }
                 // Panic if didn't find a longest token
                 if longest_token_len == 0 {
-                    panic!("Lexing error")
-                }
-                // Update self pos
-                self.pos += longest_token_len;
-                // Check if longest token is to be materialized or thrown away (if throw away, produce next token)
-                match longest_token {
-                    Some(token) => token,
-                    None => self.produce()
+                    Err("Bad token at ".to_string() + &self.pos.to_string())
+                } else {
+                    // Update self pos
+                    self.pos += longest_token_len;
+                    // Check if longest token is to be materialized or thrown away (if throw away, produce next token)
+                    match longest_token {
+                        Some(token) => Ok(token),
+                        None => self.produce()
+                    }
                 }
             } else {
                 // Return EOF token if at end of stream
-                Token {
+                Ok(Token {
                     kind: TokenKind::EOF, 
                     value: TokenValue::None, 
                     start: self.stream.len(), 
                     end: self.stream.len()
-                }
+                })
             }
         }
         // Reset lexer

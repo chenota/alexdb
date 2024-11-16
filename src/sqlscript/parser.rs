@@ -1,10 +1,22 @@
 pub mod parser {
     use crate::sqlscript::types::types::CompressType;
-
     use super::super::lexer::lexer::*;
     use std::rc::Rc;
     use super::super::types::types;
     use super::super::types::types::{ ColType, SortType };
+
+    macro_rules! handle{
+        ($e:expr) => {
+            (match $e { Ok(v) => v, Err(s) => return Err(s) })
+        }
+    }
+
+    macro_rules! perr{
+        ($i:ident) => {
+            (return Err("Unexpected token at ".to_string() + &($i.lexer.get_pos().to_string()) ))
+        }
+    }
+
     pub struct Parser {
         lexer: Lexer,
         token: Token
@@ -13,25 +25,24 @@ pub mod parser {
         // Constructor
         pub fn new(stream: String) -> Parser {
             let mut lexer = Lexer::new(stream);
-            let token = lexer.produce();
             Parser {
                 lexer: lexer,
-                token: token
+                token: Token { kind: TokenKind::Dot, value: TokenValue::None, start: 0, end: 0 }
             }
         }
         // Program control
         fn peek(&self) -> &Token {
             &self.token
         }
-        fn peek_ahead(&mut self) -> Token {
+        fn peek_ahead(&mut self) -> Result<Token, String> {
             // Save current position
             let pos_save = self.lexer.get_pos();
             // Produce next token
-            let next_token = self.lexer.produce();
+            let next_token = handle!(self.lexer.produce());
             // Reset lexer
             self.lexer.set_pos(pos_save);
             // Return
-            next_token
+            Ok(next_token)
         }
         fn peek_l1_bop(&self) -> Option<types::BopType> {
             // Peek first token
@@ -93,107 +104,122 @@ pub mod parser {
                 _ => None
             }
         }
-        fn pop(&mut self) -> Token {
+        fn pop(&mut self) -> Result<Token, String> {
             let old_token = self.token.clone();
-            self.token = self.lexer.produce();
-            old_token
+            match self.lexer.produce() {
+                Ok(t) => {
+                    self.token = t;
+                    Ok(old_token)
+                },
+                Err(s) => Err(s)
+            }
         }
-        fn peek_expect(&self, kind: TokenKind) -> &Token {
-            let token = self.peek();
-            if token.kind != kind { panic!("Parsing error") };
-            token
-        }
-        fn pop_expect(&mut self, kind: TokenKind) -> Token {
-            let old_token = self.pop();
-            if old_token.kind != kind { panic!("Parsing error") };
-            old_token
+        fn pop_expect(&mut self, kind: TokenKind) -> Result<Token, String> {
+            let old_token = self.token.clone();
+            if old_token.kind != kind {
+                Err("Unexpected token at ".to_string() + &self.lexer.get_pos().to_string())
+            } else {
+                match self.lexer.produce() {
+                    Ok(t) => {
+                        self.token = t;
+                        Ok(old_token)
+                    },
+                    Err(s) => Err(s)
+                }
+            }
         }
         // Parsing entry point
-        pub fn parse_script(&mut self) -> types::Block {
+        pub fn parse_script(&mut self) -> Result<types::Block, String> {
             // Reset lexer
             self.lexer.reset();
             // Produce first token
-            self.token = self.lexer.produce();
-            // Call start symbol (script for now, will eventually be query)
+            self.token = match self.lexer.produce() {
+                Ok(t) => t,
+                Err(s) => return Err(s)
+            };
+            // Call start symbol
             self.block()
         }
         // Parsing entry point
-        pub fn parse(&mut self) -> types::Query {
+        pub fn parse(&mut self) -> Result<types::Query, String> {
             // Reset lexer
             self.lexer.reset();
             // Produce first token
-            self.token = self.lexer.produce();
-            // Call start symbol (script for now, will eventually be query)
+            self.token = match self.lexer.produce() {
+                Ok(t) => t,
+                Err(s) => return Err(s)
+            };
+            // Call start symbol
             self.query()
         }
-        fn query(&mut self) -> types::Query {
+        fn query(&mut self) -> Result<types::Query, String> {
             // Match on first item
-            match self.pop().kind {
+            match handle!(self.pop()).kind {
                 TokenKind::SelectKw => {
                     // Check if select aggregate or regular select
                     match self.peek().kind {
                         TokenKind::AggregateKw => {
                             // Pop aggregate keyword
-                            self.pop();
+                            handle!(self.pop());
                             // Parse single ident
-                            let agid = self.ident();
+                            let agid = handle!(self.ident());
                             // Expect and pop FROM keyword
-                            self.pop_expect(TokenKind::FromKw);
+                            handle!(self.pop_expect(TokenKind::FromKw));
                             // Parse table id
-                            let tabid = self.ident();
+                            let tabid = handle!(self.ident());
                             // Put it together
-                            types::Query::SelectAggregate(agid, tabid)
+                            Ok(types::Query::SelectAggregate(agid, tabid))
                         },
                         TokenKind::CompKw => {
                             // Pop aggregate keyword
-                            self.pop();
+                            handle!(self.pop());
                             // Parse single ident
-                            let cmpid = self.ident();
+                            let cmpid = handle!(self.ident());
                             // Expect and pop FROM keyword
-                            self.pop_expect(TokenKind::FromKw);
+                            handle!(self.pop_expect(TokenKind::FromKw));
                             // Parse table id
-                            let tabid = self.ident();
+                            let tabid = handle!(self.ident());
                             // Put it together
-                            types::Query::SelectComp(cmpid, tabid)
+                            Ok(types::Query::SelectComp(cmpid, tabid))
                         },
                         _ => {
                             // Parse identlist
                             let ilist = match self.peek().kind {
                                 TokenKind::TimesKw => {
                                     // Pop *
-                                    self.pop();
+                                    handle!(self.pop());
                                     // Return identlist none
                                     None
                                 },
-                                _ => Some(self.identlist())
+                                _ => Some(handle!(self.identlist()))
                             };
                             // Expect and pop FROM keyword
-                            self.pop_expect(TokenKind::FromKw);
+                            handle!(self.pop_expect(TokenKind::FromKw));
                             // Parse single ident
-                            let tableid = self.ident();
+                            let tableid = handle!(self.ident());
                             // Check if where clause
                             let wherescript = match self.peek().kind {
                                 TokenKind::WhereKw => {
                                     // Pop where keyword
-                                    self.pop();
+                                    handle!(self.pop());
                                     // Parse script
-                                    Some(self.expr())
+                                    Some(handle!(self.expr()))
                                 },
                                 _ => None
                             };
                             let sortscript = match self.peek().kind {
                                 TokenKind::SortKw => {
                                     // Pop sort keyword
-                                    self.pop();
+                                    handle!(self.pop());
                                     // Pop expect by keyword
-                                    self.pop_expect(TokenKind::ByKw);
+                                    handle!(self.pop_expect(TokenKind::ByKw));
                                     // Parse ident
-                                    let ident = self.ident();
+                                    let ident = handle!(self.ident());
                                     // Check if sort type
                                     match self.peek().kind {
-                                        TokenKind::SortType => match self.pop().value {
+                                        TokenKind::SortType => match handle!(self.pop()).value {
                                             TokenValue::SortType(t) => Some((ident, t)),
-                                            _ => panic!("Parsing error")
+                                            _ => perr!(self)
                                         },
                                         _ => Some((ident, SortType::Ascending))
                                     }
@@ -203,71 +229,71 @@ pub mod parser {
                             let limitscript = match self.peek().kind {
                                 TokenKind::LimitKw => {
                                     // Pop limit keyword
-                                    self.pop();
+                                    handle!(self.pop());
                                     // Parse script
-                                    Some(self.expr())
+                                    Some(handle!(self.expr()))
                                 },
                                 _ => None
                             };
                             // Put everything together
-                            types::Query::Select(ilist, tableid, wherescript, sortscript, limitscript)
+                            Ok(types::Query::Select(ilist, tableid, wherescript, sortscript, limitscript))
                         }
                     }
                 },
                 TokenKind::InsertKw => {
                     // Expect and pop INTO
-                    self.pop_expect(TokenKind::IntoKw);
+                    handle!(self.pop_expect(TokenKind::IntoKw));
                     // Parse table name
-                    let tableid = self.ident();
+                    let tableid = handle!(self.ident());
                     // Get column ids
                     let colids = match self.peek().kind {
                         TokenKind::LParen => {
                             // Pop lparen
-                            self.pop();
+                            handle!(self.pop());
                             // Parse identlist
-                            let ilist = self.identlist();
+                            let ilist = handle!(self.identlist());
                             // Expect and pop rparen
-                            self.pop_expect(TokenKind::RParen);
+                            handle!(self.pop_expect(TokenKind::RParen));
                             // Return ilist 
                             Some(ilist)
                         },
                         _ => None
                     };
                     // Expect and pop VALUES
-                    self.pop_expect(TokenKind::ValuesKw);
+                    handle!(self.pop_expect(TokenKind::ValuesKw));
                     // Expect and pop LPAREN
-                    self.pop_expect(TokenKind::LParen);
+                    handle!(self.pop_expect(TokenKind::LParen));
                     // Parse values list
-                    let vlist = self.exprlist();
+                    let vlist = handle!(self.exprlist());
                     // Expect and pop RPAREN
-                    self.pop_expect(TokenKind::RParen);
+                    handle!(self.pop_expect(TokenKind::RParen));
                     // Return
-                    types::Query::Insert(tableid, colids, vlist)
+                    Ok(types::Query::Insert(tableid, colids, vlist))
                 },
                 TokenKind::CompressKw => {
                     // Parse table name
-                    let table = self.ident();
+                    let table = handle!(self.ident());
                     // Expect LPAREN
-                    self.pop_expect(TokenKind::LParen);
+                    handle!(self.pop_expect(TokenKind::LParen));
                     // Fields
-                    let fields = self.identlist();
+                    let fields = handle!(self.identlist());
                     // Expect RPAREN
-                    self.pop_expect(TokenKind::RParen);
+                    handle!(self.pop_expect(TokenKind::RParen));
                     // Check if LPAREN
                     let comptypes = match self.peek().kind {
                         TokenKind::LParen => {
                             // Pop LPAREN
-                            self.pop();
+                            handle!(self.pop());
                             // List of compression types
-                            let types = self.compresslist();
+                            let types = handle!(self.compresslist());
                             // Expect RPAREN
-                            self.pop_expect(TokenKind::RParen);
+                            handle!(self.pop_expect(TokenKind::RParen));
                             // Return types
                             types
                         },
                         _ => {
                             // Expect a single compression type
-                            let ctype = self.compresstype();
+                            let ctype = handle!(self.compresstype());
                             // Push as many of that type as there are fields
                             let mut clist = Vec::new();
                             for _ in &fields {
@@ -277,525 +303,525 @@ pub mod parser {
                             clist
                         }
                     };
-                    types::Query::Compress(table, fields, comptypes)
+                    Ok(types::Query::Compress(table, fields, comptypes))
                 },
                 TokenKind::ScriptKw => {
                     // Parse expr
-                    let e = self.expr();
+                    let e = handle!(self.expr());
                     // Check if FROM
                     match self.peek().kind {
                         TokenKind::FromKw => {
                             // Pop FROM
-                            self.pop();
+                            handle!(self.pop());
                             // Get table name
-                            let tname = self.ident();
+                            let tname = handle!(self.ident());
                             // Return
-                            types::Query::Script(e, Some(tname))
+                            Ok(types::Query::Script(e, Some(tname)))
                         },
                         _ => {
                             // Return
-                            types::Query::Script(e, None)
+                            Ok(types::Query::Script(e, None))
                         }
                     }
                 },
                 TokenKind::ExitKw => {
-                    types::Query::Exit
+                    Ok(types::Query::Exit)
                 }
                 TokenKind::CreateKw => {
-                    match self.pop().kind {
+                    match handle!(self.pop()).kind {
                         TokenKind::TableKw => {
                             // Read table name
-                            let tname = self.ident();
+                            let tname = handle!(self.ident());
                             // Expect and pop paren
-                            self.pop_expect(TokenKind::LParen);
+                            handle!(self.pop_expect(TokenKind::LParen));
                             // Parse column list
-                            let clist = self.collist();
+                            let clist = handle!(self.collist());
                             // Expect and pop rparen
-                            self.pop_expect(TokenKind::RParen);
+                            handle!(self.pop_expect(TokenKind::RParen));
                             // Return
-                            types::Query::CreateTable(tname, clist)
+                            Ok(types::Query::CreateTable(tname, clist))
                         },
                         TokenKind::CompKw => {
                             // Parse single assignment
-                            let assign = self.singleassign();
+                            let assign = handle!(self.singleassign());
                             // Parse INTO
-                            self.pop_expect(TokenKind::IntoKw);
+                            handle!(self.pop_expect(TokenKind::IntoKw));
                             // Parse name
-                            let table_name = self.ident();
+                            let table_name = handle!(self.ident());
                             // Put together
-                            types::Query::Comp(assign.0, assign.1, table_name)
+                            Ok(types::Query::Comp(assign.0, assign.1, table_name))
                         },
                         TokenKind::ColumnKw => {
                             // Expect LPAREN
-                            self.pop_expect(TokenKind::LParen);
+                            handle!(self.pop_expect(TokenKind::LParen));
                             // Parse column type
-                            let t = self.parsetype();
+                            let t = handle!(self.parsetype());
                             // Parse compression strategy
                             let s = match self.peek().kind {
-                                TokenKind::CompressType => Some(self.compresstype()),
+                                TokenKind::CompressType => Some(handle!(self.compresstype())),
                                 _ => None
                             };
                             // Expect RPAREN
-                            self.pop_expect(TokenKind::RParen);
+                            handle!(self.pop_expect(TokenKind::RParen));
                             // Parse single assign
-                            let assign = self.singleassign();
+                            let assign = handle!(self.singleassign());
                             // Expect and pop INTO
-                            self.pop_expect(TokenKind::IntoKw);
+                            handle!(self.pop_expect(TokenKind::IntoKw));
                             // Parse table name
-                            let tname = self.ident();
+                            let tname = handle!(self.ident());
                             // Put together
-                            types::Query::Column(t, s, assign.0, assign.1, tname)
+                            Ok(types::Query::Column(t, s, assign.0, assign.1, tname))
                         },
                         TokenKind::AggregateKw => {
                             // Parse single equals
-                            let assign = self.singleassign();
+                            let assign = handle!(self.singleassign());
                             // Parse INIT
                             let init = match self.peek().kind {
                                 TokenKind::InitKw => {
                                     // Pop INIT
-                                    self.pop();
+                                    handle!(self.pop());
                                     // Parse expr
-                                    Some(self.expr())
+                                    Some(handle!(self.expr()))
                                 },
                                 _ => None
                             };
                             // Expect and pop INTO
-                            self.pop_expect(TokenKind::IntoKw);
+                            handle!(self.pop_expect(TokenKind::IntoKw));
                             // Parse table name
-                            let tname = self.ident();
+                            let tname = handle!(self.ident());
                             // Put together
-                            types::Query::Aggregate(assign.0, assign.1, init, tname)
+                            Ok(types::Query::Aggregate(assign.0, assign.1, init, tname))
                         },
                         TokenKind::ConstKw => {
                             // Parse single assignment
-                            let assign = self.singleassign();
+                            let assign = handle!(self.singleassign());
                             // Put together
-                            types::Query::Const(assign.0, assign.1)
+                            Ok(types::Query::Const(assign.0, assign.1))
                         },
-                        _ => panic!("Parsing error")
+                        _ => perr!(self)
                     }
                     
                 },
-                _ => panic!("Parsing error")
+                _ => perr!(self)
             }
         }
         // Parsing functions
-        fn block(&mut self) -> types::Block {
-            match self.peek_ahead().kind {
+        fn block(&mut self) -> Result<types::Block, String> {
+            match handle!(self.peek_ahead()).kind {
                 // If 2nd token is an assignment, parse as statement
                 TokenKind::AssignKw => {
                     // Save ident value
                     let ident_val: String = match &self.token.value {
                         TokenValue::String(x) => x.clone(),
-                        _ => panic!("Parsing error")
+                        _ => perr!(self)
                     };
                     // Pop ident and assignment
-                    self.pop();
-                    self.pop();
+                    handle!(self.pop());
+                    handle!(self.pop());
                     // Parse expr
-                    let expr: types::Expr = self.expr();
+                    let expr: types::Expr = handle!(self.expr());
                     // Expect semicolon, pop it
-                    self.pop_expect(TokenKind::SemiKw);
+                    handle!(self.pop_expect(TokenKind::SemiKw));
                     // Return constructed statement
-                    types::Block::StmtBlock(ident_val, Rc::new(expr), Rc::new(self.block()))
+                    Ok(types::Block::StmtBlock(ident_val, Rc::new(expr), Rc::new(handle!(self.block()))))
                 }
                 // Parse as expression
-                _ => types::Block::ExprBlock(Rc::new(self.expr()))
+                _ => Ok(types::Block::ExprBlock(Rc::new(handle!(self.expr()))))
             }
         }
-        fn expr(&mut self) -> types::Expr {
+        fn expr(&mut self) -> Result<types::Expr, String> {
             // Check first value
             let first = match self.peek().kind {
                 TokenKind::FunKw => {
                     // Pop fun kw
-                    self.pop();
+                    handle!(self.pop());
                     // Get parameter list
                     let paramlist = match self.peek().kind {
                         TokenKind::Arrow => Vec::new(),
-                        _ => self.identlist()
+                        _ => handle!(self.identlist())
                     };
                     // Expect arrow, pop it
                     self.pop_expect(TokenKind::Arrow);
                     // Parse body
-                    let body = self.expr();
+                    let body = handle!(self.expr());
                     // Put everything together
                     types::Expr::FunExpr(paramlist, Rc::new(body))
                 },
                 TokenKind::IfKw => {
                     // Pop if kw
-                    self.pop();
+                    handle!(self.pop());
                     // Parse conditional
-                    let if_expr = self.expr();
+                    let if_expr = handle!(self.expr());
                     // Expect then keyword
                     self.pop_expect(TokenKind::ThenKw);
                     // Parse then expr
-                    let then_expr = self.expr();
+                    let then_expr = handle!(self.expr());
                     // Expect else kw
                     self.pop_expect(TokenKind::ElseKw);
                     // Parse else expr
-                    let else_expr = self.expr();
+                    let else_expr = handle!(self.expr());
                     // Put it all together
                     types::Expr::CondExpr(Rc::new(if_expr), Rc::new(then_expr), Rc::new(else_expr))
                 },
-                _ => self.expr_level_2()
+                _ => handle!(self.expr_level_2())
             };
             // Check if bop at front
             match self.peek_l1_bop() {
                 Some(bop) => {
                     // Pop bop
-                    self.pop();
+                    handle!(self.pop());
                     // Return parsed expr
-                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr()))
+                    Ok(types::Expr::BopExpr(Rc::new(first), bop, Rc::new(handle!(self.expr()))))
                 },
-                None => first
+                None => Ok(first)
             }
         }
-        fn expr_level_2(&mut self) -> types::Expr {
-            let first = self.expr_level_3();
+        fn expr_level_2(&mut self) -> Result<types::Expr, String> {
+            let first = handle!(self.expr_level_3());
             // Check if bop at front
             match self.peek_l2_bop() {
                 Some(bop) => {
                     // Pop bop
-                    self.pop();
+                    handle!(self.pop());
                     // Return parsed expr
-                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_2()))
+                    Ok(types::Expr::BopExpr(Rc::new(first), bop, Rc::new(handle!(self.expr_level_2()))))
                 },
-                None => first
+                None => Ok(first)
             }
         }
-        fn expr_level_3(&mut self) -> types::Expr {
-            let first = self.expr_level_4();
+        fn expr_level_3(&mut self) -> Result<types::Expr, String> {
+            let first = handle!(self.expr_level_4());
             // Check if bop at front
             match self.peek_l3_bop() {
                 Some(bop) => {
                     // Pop bop
-                    self.pop();
+                    handle!(self.pop());
                     // Return parsed expr
-                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_3()))
+                    Ok(types::Expr::BopExpr(Rc::new(first), bop, Rc::new(handle!(self.expr_level_3()))))
                 },
-                None => first
+                None => Ok(first)
             }
         }
-        fn expr_level_4(&mut self) -> types::Expr {
-            let first = self.expr_level_5();
+        fn expr_level_4(&mut self) -> Result<types::Expr, String> {
+            let first = handle!(self.expr_level_5());
             // Check if bop at front
             match self.peek_l4_bop() {
                 Some(bop) => {
                     // Pop bop
-                    self.pop();
+                    handle!(self.pop());
                     // Return parsed expr
-                    types::Expr::BopExpr(Rc::new(first), bop, Rc::new(self.expr_level_4()))
+                    Ok(types::Expr::BopExpr(Rc::new(first), bop, Rc::new(handle!(self.expr_level_4()))))
                 },
-                None => first
+                None => Ok(first)
             }
         }
-        fn expr_level_5(&mut self) -> types::Expr {
+        fn expr_level_5(&mut self) -> Result<types::Expr, String> {
             match self.peek_uop() {
                 Some(u) => {
                     // Pop uop
-                    self.pop();
+                    handle!(self.pop());
                     // Parse expr
-                    let expr = self.expr_level_5();
+                    let expr = handle!(self.expr_level_5());
                     // Return expression
-                    types::Expr::UopExpr(u, Rc::new(expr))
+                    Ok(types::Expr::UopExpr(u, Rc::new(expr)))
                 },
-                _ => self.expr_level_6()
+                _ => Ok(handle!(self.expr_level_6()))
             }
         }
-        fn expr_level_6(&mut self) -> types::Expr {
-            let first = self.expr_level_7();
+        fn expr_level_6(&mut self) -> Result<types::Expr, String> {
+            let first = handle!(self.expr_level_7());
             // Check if postfix (call only postfix) at front
             match self.peek().kind {
                 TokenKind::LParen => {
                     // Pop LParen
-                    self.pop();
+                    handle!(self.pop());
                     // Check if next is rparen. If not, parse exprlist
                     let elist = match self.peek().kind {
                         TokenKind::RParen => Vec::new(),
-                        _ => self.exprlist()
+                        _ => handle!(self.exprlist())
                     };
                     // Expect RParen
                     self.pop_expect(TokenKind::RParen);
                     // Construct expression
-                    types::Expr::CallExpr(Rc::new(first), elist)
+                    Ok(types::Expr::CallExpr(Rc::new(first), elist))
                 },
-                _ => first
+                _ => Ok(first)
             }
         }
-        fn expr_level_7(&mut self) -> types::Expr {
-            let first = self.expr_level_8();
+        fn expr_level_7(&mut self) -> Result<types::Expr, String> {
+            let first = handle!(self.expr_level_8());
             match self.peek().kind {
                 TokenKind::Dot => {
                     // Pop bop
-                    self.pop();
+                    handle!(self.pop());
                     // Return parsed expr
-                    types::Expr::BopExpr(Rc::new(first), types::BopType::DotBop, Rc::new(self.expr_level_7()))
+                    Ok(types::Expr::BopExpr(Rc::new(first), types::BopType::DotBop, Rc::new(handle!(self.expr_level_7()))))
                 },
-                _ => first
+                _ => Ok(first)
             }
         }
-        fn expr_level_8(&mut self) -> types::Expr {
+        fn expr_level_8(&mut self) -> Result<types::Expr, String> {
             match self.peek().kind {
-                TokenKind::Identifier => types::Expr::IdentExpr(match self.pop().value {
+                TokenKind::Identifier => Ok(types::Expr::IdentExpr(match handle!(self.pop()).value {
                     TokenValue::String(x) => x.clone(),
-                    _ => panic!("Parsing error")
-                }),
+                    _ => perr!(self)
+                })),
                 TokenKind::LCBracket => {
                     // Pop curly bracket
-                    self.pop();
+                    handle!(self.pop());
                     // Parse script
-                    let script = self.block();
+                    let script = handle!(self.block());
                     // Expect right curly bracket, pop it
                     self.pop_expect(TokenKind::RCBracket);
                     // Return parsed expression
-                    types::Expr::BlockExpr(script)
+                    Ok(types::Expr::BlockExpr(script))
                 },
                 TokenKind::LParen => {
                     // Pop lparen
-                    self.pop();
+                    handle!(self.pop());
                     // Parse expr
-                    let expr = self.expr();
+                    let expr = handle!(self.expr());
                     // Expect rparen, pop it
-                    self.pop_expect(TokenKind::RParen);
+                    handle!(self.pop_expect(TokenKind::RParen));
                     // Return parsed expression
-                    expr
+                    Ok(expr)
                 },
                 TokenKind::LBracket => {
                     // Pop lbracket
-                    self.pop();
+                    handle!(self.pop());
                     // Parse exprlist
-                    let exprlist = self.exprlist();
+                    let exprlist = handle!(self.exprlist());
                     // Expect rbracket, pop it
-                    self.pop_expect(TokenKind::RBracket);
+                    handle!(self.pop_expect(TokenKind::RBracket));
                     // Return parsed expression
-                    types::Expr::TupExpr(exprlist)
+                    Ok(types::Expr::TupExpr(exprlist))
                 },
-                _ => types::Expr::ValExpr(self.value())
+                _ => Ok(types::Expr::ValExpr(handle!(self.value())))
             }
         }
-        fn value(&mut self) -> types::Val {
+        fn value(&mut self) -> Result<types::Val, String> {
             // Pop first token
-            let token = self.pop();
+            let token = handle!(self.pop());
             // Match type, return appropriate value
             match token.value {
-                TokenValue::Number(x) => types::Val::NumVal(x),
-                TokenValue::Boolean(x) => types::Val::BoolVal(x),
+                TokenValue::Number(x) => Ok(types::Val::NumVal(x)),
+                TokenValue::Boolean(x) => Ok(types::Val::BoolVal(x)),
                 // String could be either ident or string value
                 TokenValue::String(x) => {
                     match token.kind {
-                        TokenKind::String => types::Val::StrVal(x),
-                        _ => panic!("Parsing error")
+                        TokenKind::String => Ok(types::Val::StrVal(x)),
+                        _ => perr!(self)
                     }
                 },
                 // None could either be undefined or null
                 TokenValue::None => {
                     match token.kind {
-                        TokenKind::UndefinedKw => types::Val::UndefVal,
-                        TokenKind::NullKw => types::Val::NullVal,
-                        _ => panic!("Parsing error")
+                        TokenKind::UndefinedKw => Ok(types::Val::UndefVal),
+                        TokenKind::NullKw => Ok(types::Val::NullVal),
+                        _ => perr!(self)
                     }
                 },
-                _ => panic!("Parsing error")
+                _ => perr!(self)
             }
         }
-        fn exprlist(&mut self) -> types::ExprList {
+        fn exprlist(&mut self) -> Result<types::ExprList, String> {
             // Parse expr
-            let expr = self.expr();
+            let expr = handle!(self.expr());
             // Check if comma
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Get rest of list
-                    let mut rest = self.exprlist_rest();
+                    let mut rest = handle!(self.exprlist_rest());
                     // Parse next expr
                     rest.push(Rc::new(expr));
                     rest.reverse();
-                    rest
+                    Ok(rest)
                 },
                 _ => {
                     let new_vec = vec![Rc::new(expr)];
-                    new_vec
+                    Ok(new_vec)
                 }
             }
         }
-        fn exprlist_rest(&mut self) -> types::ExprList {
+        fn exprlist_rest(&mut self) -> Result<types::ExprList, String> {
             // Parse expr
-            let expr = self.expr();
+            let expr = handle!(self.expr());
             // Check if comma
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Get rest of list
-                    let mut rest = self.exprlist_rest();
+                    let mut rest = handle!(self.exprlist_rest());
                     // Parse next expr
                     rest.push(Rc::new(expr));
-                    rest
+                    Ok(rest)
                 },
                 _ => {
                     let new_vec = vec![Rc::new(expr)];
-                    new_vec
+                    Ok(new_vec)
                 }
             }
         }
-        fn identlist(&mut self) -> types::IdentList {
+        fn identlist(&mut self) -> Result<types::IdentList, String> {
             // Parse value
-            let val = self.ident();
+            let val = handle!(self.ident());
             // Check if comma
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Parse next expr
-                    let mut next_vec = self.identlist_rest();
+                    let mut next_vec = handle!(self.identlist_rest());
                     next_vec.push(val);
                     next_vec.reverse();
-                    next_vec
+                    Ok(next_vec)
                 },
                 _ => {
                     let new_vec = vec![val];
-                    new_vec
+                    Ok(new_vec)
                 }
             }
         }
-        fn identlist_rest(&mut self) -> types::IdentList {
+        fn identlist_rest(&mut self) -> Result<types::IdentList, String> {
             // Parse value
-            let val = self.ident();
+            let val = handle!(self.ident());
             // Check if comma
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Parse next expr
-                    let mut next_vec = self.identlist_rest();
+                    let mut next_vec = handle!(self.identlist_rest());
                     next_vec.push(val);
-                    next_vec
+                    Ok(next_vec)
                 },
                 _ => {
                     let new_vec = vec![val];
-                    new_vec
+                    Ok(new_vec)
                 }
             }
         }
-        fn ident(&mut self) -> String {
+        fn ident(&mut self) -> Result<String, String> {
             // Extract string from ident
             match self.peek().kind {
                 TokenKind::Identifier => {
-                    match self.pop().value {
-                        TokenValue::String(x) => x.clone(),
-                        _ => panic!("Parsing error")
+                    match handle!(self.pop()).value {
+                        TokenValue::String(x) => Ok(x.clone()),
+                        _ => perr!(self)
                     }
                 },
-                _ => panic!("Parsing error")
+                _ => perr!(self)
             }
         }
-        fn singleassign(&mut self) -> (String, types::Expr) {
+        fn singleassign(&mut self) -> Result<(String, types::Expr), String> {
             // Parse ident
-            let id = self.ident();
+            let id = handle!(self.ident());
             // Expect and pop = sign
             self.pop_expect(TokenKind::AssignKw);
             // Parse expr
-            let expr = self.expr();
+            let expr = handle!(self.expr());
             // Put together
-            (id, expr)
+            Ok((id, expr))
         }
-        fn collist(&mut self) -> types::ColList {
+        fn collist(&mut self) -> Result<types::ColList, String> {
             // Parse column name
-            let colname = self.ident();
+            let colname = handle!(self.ident());
             // Parse type
-            let t = self.parsetype();
+            let t = handle!(self.parsetype());
             // Parse compression strategy
             let s = match self.peek().kind {
-                TokenKind::CompressType => Some(self.compresstype()),
+                TokenKind::CompressType => Some(handle!(self.compresstype())),
                 _ => None
             };
             // Check if comma or not
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Get rest of list
-                    let mut rest = self.collist_rest();
+                    let mut rest = handle!(self.collist_rest());
                     // Add next to rest
                     rest.push((colname, t, s));
                     rest.reverse();
-                    rest
+                    Ok(rest)
                 },
-                _ => vec![(colname, t, s)]
+                _ => Ok(vec![(colname, t, s)])
             }
         }
-        fn collist_rest(&mut self) -> types::ColList {
+        fn collist_rest(&mut self) -> Result<types::ColList, String> {
             // Parse column name
-            let colname = self.ident();
+            let colname = handle!(self.ident());
             // Parse type
-            let t = self.parsetype();
+            let t = handle!(self.parsetype());
             // Parse compression strategy
             let s = match self.peek().kind {
-                TokenKind::CompressType => Some(self.compresstype()),
+                TokenKind::CompressType => Some(handle!(self.compresstype())),
                 _ => None
             };
             // Check if comma or not
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Get rest of list
-                    let mut rest = self.collist_rest();
+                    let mut rest = handle!(self.collist_rest());
                     // Add next to rest
                     rest.push((colname, t, s));
-                    rest
+                    Ok(rest)
                 },
-                _ => vec![(colname, t, s)]
+                _ => Ok(vec![(colname, t, s)])
             }
         }
-        fn parsetype(&mut self) -> ColType {
+        fn parsetype(&mut self) -> Result<ColType, String> {
             // Extract type from token
-            match self.pop().value {
-                TokenValue::Type(x) => x,
-                _ => panic!("Parsing error")
+            match handle!(self.pop()).value {
+                TokenValue::Type(x) => Ok(x),
+                _ => perr!(self)
             }
         }
-        fn compresstype(&mut self) -> CompressType {
+        fn compresstype(&mut self) -> Result<CompressType, String> {
             // Extract type from token
-            match self.pop().value {
-                TokenValue::CompressionType(x) => x,
-                _ => panic!("Parsing error")
+            match handle!(self.pop()).value {
+                TokenValue::CompressionType(x) => Ok(x),
+                _ => perr!(self)
             }
         }
-        fn compresslist(&mut self) -> types::CompressList {
+        fn compresslist(&mut self) -> Result<types::CompressList, String> {
             // Parse type
-            let t = self.compresstype();
+            let t = handle!(self.compresstype());
             // Check if comma or not
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Get rest of list
-                    let mut rest = self.compresslist_rest();
+                    let mut rest = handle!(self.compresslist_rest());
                     // Add next to rest
                     rest.push(t);
                     rest.reverse();
-                    rest
+                    Ok(rest)
                 },
-                _ => vec![t]
+                _ => Ok(vec![t])
             }
         }
-        fn compresslist_rest(&mut self) -> types::CompressList {
+        fn compresslist_rest(&mut self) -> Result<types::CompressList, String> {
             // Parse type
-            let t = self.compresstype();
+            let t = handle!(self.compresstype());
             // Check if comma or not
             match self.peek().kind {
                 TokenKind::Comma => {
                     // Pop comma
-                    self.pop();
+                    handle!(self.pop());
                     // Get rest of list
-                    let mut rest = self.compresslist_rest();
+                    let mut rest = handle!(self.compresslist_rest());
                     // Add next to rest
                     rest.push(t);
-                    rest
+                    Ok(rest)
                 },
-                _ => vec![t]
+                _ => Ok(vec![t])
             }
         }
     }

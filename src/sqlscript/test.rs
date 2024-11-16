@@ -6,7 +6,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "4 + 5".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token
         assert_eq!(next_token.kind, lexer::TokenKind::Number);
         Ok(())
@@ -16,8 +16,8 @@ mod lexer_tests {
         // Setup
         let test_input: String = "45 + 53".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        test_lexer.produce();
-        let next_token = test_lexer.produce();
+        test_lexer.produce().unwrap();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token
         assert_eq!(next_token.kind, lexer::TokenKind::PlusKw);
         Ok(())
@@ -27,7 +27,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "432 + 5".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is integer type with correct value
         match next_token.value {
             lexer::TokenValue::Number(x) => assert_eq!(x, 432.0),
@@ -40,7 +40,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "false".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is boolean type
         assert_eq!(next_token.kind, lexer::TokenKind::Boolean);
         // Assert token is boolean type with correct value
@@ -55,7 +55,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "true".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is boolean type
         assert_eq!(next_token.kind, lexer::TokenKind::Boolean);
         // Assert token is boolean type with correct value
@@ -70,7 +70,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "x".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is identifier type
         assert_eq!(next_token.kind, lexer::TokenKind::Identifier);
         // Assert token is correct type with correct value
@@ -85,7 +85,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "field_two".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is identifier type
         assert_eq!(next_token.kind, lexer::TokenKind::Identifier);
         // Assert token is correct type with correct value
@@ -100,7 +100,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "field2".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is identifier type
         assert_eq!(next_token.kind, lexer::TokenKind::Identifier);
         // Assert token is correct type with correct value
@@ -115,7 +115,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "'I love cats!'".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is correct type with correct value
         match next_token.value {
             lexer::TokenValue::String(x) => assert_eq!(x, "I love cats!"),
@@ -130,8 +130,8 @@ mod lexer_tests {
         // Setup
         let test_input: String = "45 + 53".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        for _ in 0..3 { test_lexer.produce(); }
-        let next_token = test_lexer.produce();
+        for _ in 0..3 { test_lexer.produce().unwrap(); }
+        let next_token = test_lexer.produce().unwrap();
         // Assert token
         assert_eq!(next_token.kind, lexer::TokenKind::EOF);
         Ok(())
@@ -141,8 +141,8 @@ mod lexer_tests {
         // Setup
         let test_input: String = "( )".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
-        let next_next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
+        let next_next_token = test_lexer.produce().unwrap();
         // Assert token kind
         assert_eq!(next_token.kind, lexer::TokenKind::LParen);
         assert_eq!(next_next_token.kind, lexer::TokenKind::RParen);
@@ -153,9 +153,9 @@ mod lexer_tests {
         // Setup
         let test_input: String = "5 + 15".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        test_lexer.produce();
-        test_lexer.produce();
-        let next_token = test_lexer.produce();
+        test_lexer.produce().unwrap();
+        test_lexer.produce().unwrap();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is integer type with correct value
         match next_token.value {
             lexer::TokenValue::Number(x) => assert_eq!(x, 15.0),
@@ -168,7 +168,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "if true".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token is integer type with correct value
         match next_token.kind {
             lexer::TokenKind::IfKw => assert!(true),
@@ -181,9 +181,9 @@ mod lexer_tests {
         // Setup
         let test_input: String = "45 + 53".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        test_lexer.produce();
+        test_lexer.produce().unwrap();
         test_lexer.reset();
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token
         assert_eq!(next_token.kind, lexer::TokenKind::Number);
         Ok(())
@@ -193,7 +193,7 @@ mod lexer_tests {
         // Setup
         let test_input: String = "ASC".to_string();
         let mut test_lexer: lexer::Lexer = lexer::Lexer::new(test_input);
-        let next_token = test_lexer.produce();
+        let next_token = test_lexer.produce().unwrap();
         // Assert token
         assert_eq!(next_token.kind, lexer::TokenKind::SortType);
         Ok(())
@@ -209,7 +209,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "4".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -235,7 +235,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "5 + 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -268,7 +268,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "(5 + 10) - 3".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -301,7 +301,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "((((((((((((4))))))))))))".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be just expr
@@ -327,7 +327,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = 5; x".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -360,7 +360,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = (3+2)-1; x - 15".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -382,7 +382,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = 5; y = 10; x + y".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -407,7 +407,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "{a = 4; a} + 5".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -432,7 +432,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x = {a = 4; a}; x".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be stmtscript
@@ -452,7 +452,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "-5".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -478,7 +478,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "0 - -1".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -503,7 +503,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x()".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -529,7 +529,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x() + y".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -560,7 +560,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "y + x()".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -580,7 +580,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x(1)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -600,7 +600,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "x(1,2,3)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -620,7 +620,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "fun -> 0.0".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -646,7 +646,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "fun x -> x".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -672,7 +672,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "fun x,y,z -> x".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -698,7 +698,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "f = fun x -> x; f(5)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -724,7 +724,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "if true then 1 else 0".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -744,7 +744,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "max = fun x,y -> if x > y then x else y; max(15, 10)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse_script();
+        let ast = test_parser.parse_script().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -769,7 +769,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT field1, field2 FROM tablename".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -783,7 +783,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT field2 FROM tablename WHERE field1 > 100".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -797,7 +797,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "INSERT INTO table VALUES (1,1+1,3)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -811,7 +811,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "INSERT INTO table (field1, field2, field3) VALUES (1,2,3)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -825,7 +825,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT AGGREGATE ag1 FROM table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -839,7 +839,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "CREATE CONST max = fun x, y -> if x > y then x else y".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -853,7 +853,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "CREATE AGGREGATE maxval = max(field1, current) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -867,7 +867,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "CREATE COLUMN (num) awesome = max(field1, field2) INTO table".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -881,7 +881,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "CREATE TABLE people (age num, name str, height num)".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -895,7 +895,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT * FROM table1".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -914,7 +914,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT * FROM table1 WHERE x > 10 LIMIT 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -937,7 +937,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT * FROM table1 LIMIT 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -960,7 +960,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT * FROM table1 ORDER BY test2 LIMIT 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -987,7 +987,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT * FROM table1 ORDER BY test1".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript
@@ -1006,7 +1006,7 @@ mod parser_tests {
         // Setup
         let test_input: String = "SELECT * FROM table1 WHERE x > 5 ORDER BY x LIMIT 10".to_string();
         let mut test_parser: Parser = Parser::new(test_input);
-        let ast = test_parser.parse();
+        let ast = test_parser.parse().unwrap();
         // Assert correct AST
         match ast {
             // Should be exprscript

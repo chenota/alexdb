@@ -7,6 +7,12 @@ pub mod engine {
     use super::super::script::engine::*;
     use std::rc::Rc;
 
+    macro_rules! handle{
+        ($e:expr) => {
+            (match $e { Ok(v) => v, Err(s) => return QueryResult::Error(s) })
+        }
+    }
+
     pub enum QueryResult {
         Table(Table),
         Value(Val),
@@ -42,7 +48,7 @@ pub mod engine {
                             env.push(&table.get_headers()[j], &values_insert[j]);
                         }
                         // Evaluate
-                        let val = eval(expr, &mut env);
+                        let val = handle!(eval(expr, &mut env));
                         // Insert val
                         values_insert.push(val);
                     },
@@ -53,7 +59,7 @@ pub mod engine {
                                 match inserted_fields.iter().position(|r| { r == field_name }) {
                                     Some(idx) => {
                                         // Evaluate next value
-                                        let val = eval(values[idx].as_ref(), &mut default_env);
+                                        let val = handle!(eval(values[idx].as_ref(), &mut default_env));
                                         // Push onto values_insert
                                         values_insert.push(val);
                                     },
@@ -62,7 +68,7 @@ pub mod engine {
                             },
                             None => {
                                 // Evaluate next value
-                                let val = eval(values[i].as_ref(), &mut default_env);
+                                let val = handle!(eval(values[i].as_ref(), &mut default_env));
                                 // Push onto values_insert
                                 values_insert.push(val);
                             }
@@ -95,10 +101,10 @@ pub mod engine {
                 // Evaluate
                 let val = match first_row {
                     true => match &ag.3 {
-                        Some(e1) => eval(e1, &mut env),
-                        None => eval(&ag.2, &mut env)
+                        Some(e1) => handle!(eval(e1, &mut env)),
+                        None => handle!(eval(&ag.2, &mut env))
                     },
-                    false => eval(&ag.2, &mut env)
+                    false => handle!(eval(&ag.2, &mut env))
                 };
                 // Push
                 ag_vals.push(val);
@@ -114,7 +120,7 @@ pub mod engine {
                     i += 1;
                 }
                 // Evaluate
-                cmp_vals.push(eval(&cmp.2, &mut env));
+                cmp_vals.push(handle!(eval(&cmp.2, &mut env)));
             }
             // Borrow table as mutable
             let table = &mut self.tables[table_idx];
@@ -167,27 +173,27 @@ pub mod engine {
                 table.push_aggregates(&mut env);
                 // Add all fields to environment
                 for field in table.get_headers() {
-                    let idx = table.header_idx(field);
+                    let idx = handle!(table.header_idx(field));
                     env.push(field, &row[idx]);
                 }
                 // Add items to new row
                 match fields {
                     Some(v) => {
                         for field in v {
-                            let idx = table.header_idx(field);
+                            let idx = handle!(table.header_idx(field));
                             new_row.push(row[idx].clone());
                         }
                     },
                     None => {
                         for field in table.get_headers() {
-                            let idx = table.header_idx(field);
+                            let idx = handle!(table.header_idx(field));
                             new_row.push(row[idx].clone());
                         }
                     }
                 }
                 // Evaluate where clause, convert to bool
                 let should_add = match where_ {
-                    Some(expr) => eval_bool(expr, &mut env),
+                    Some(expr) => handle!(eval_bool(expr, &mut env)),
                     None => true
                 };
                 // Push to new table if should add
@@ -208,7 +214,7 @@ pub mod engine {
             // If sorting, sort full rows by sort_by header
             match sort_by {
                 Some(s) => {
-                    let col_idx = table.header_idx(&s.0);
+                    let col_idx = handle!(table.header_idx(&s.0));
                     match &s.1 {
                         SortType::Ascending => full_rows.sort_by(|a, b| eval_ordering(&(a.0)[col_idx], &(b.0)[col_idx])),
                         SortType::Descending => full_rows.sort_by(|a, b| eval_ordering_desc(&(a.0)[col_idx], &(b.0)[col_idx]))
@@ -222,20 +228,20 @@ pub mod engine {
             match fields {
                 Some(v) => {
                     for field in v {
-                        match table.get_column(field) {
+                        handle!(match handle!(table.get_column(field)) {
                             Column::Boolean(_) => table_project.add_column(field, ColType::Boolean, CompressType::Uncompressed),
                             Column::Number(_) => table_project.add_column(field, ColType::Number, CompressType::Uncompressed),
                             Column::String(_) => table_project.add_column(field, ColType::String, CompressType::Uncompressed)
-                        }
+                        })
                     }
                 },
                 None => {
                     for field in table.get_headers() {
-                        match table.get_column(field) {
+                        handle!(match handle!(table.get_column(field)) {
                             Column::Boolean(_) => table_project.add_column(field, ColType::Boolean, CompressType::Uncompressed),
                             Column::Number(_) => table_project.add_column(field, ColType::Number, CompressType::Uncompressed),
                             Column::String(_) => table_project.add_column(field, ColType::String, CompressType::Uncompressed)
-                        }
+                        })
                     }
                 }
             };
@@ -246,7 +252,7 @@ pub mod engine {
                     let mut env = self.default_environment();
                     // Add aggregates into environment
                     table.push_aggregates(&mut env);
-                    Some(eval_num(expr, &mut env) as usize)
+                    Some(handle!(eval_num(expr, &mut env)) as usize)
                 },
                 None => None
             };
@@ -262,7 +268,7 @@ pub mod engine {
                         // Matching index of added row
                         let matching_index = full_rows[i].1;
                         // Add row to table
-                        table_project.add_row(added_rows[matching_index].clone())
+                        handle!(table_project.add_row(added_rows[matching_index].clone()))
                     };
                 },
                 None => {
@@ -276,7 +282,7 @@ pub mod engine {
                             None => ()
                         };
                         // Add row to table
-                        table_project.add_row(added_rows.pop().unwrap())
+                        handle!(table_project.add_row(added_rows.pop().unwrap()))
                     };
                 }
             }
@@ -286,7 +292,7 @@ pub mod engine {
         fn create_const(&mut self, name: &String, expr: &Expr) -> QueryResult {
             // Evaluate expr
             let mut env = self.default_environment();
-            let val = eval(expr, &mut env);
+            let val = handle!(eval(expr, &mut env));
             // Check if name already in constants
             let pos = self.constants.iter().position(|r| r.0 == *name);
             match pos {
@@ -311,11 +317,11 @@ pub mod engine {
                         let mut env = self.default_environment();
                         // Push row to environment
                         for field in table.get_headers() {
-                            let idx = table.header_idx(field);
+                            let idx = handle!(table.header_idx(field));
                             env.push(field, &row[idx]);
                         }
                         // Get column value
-                        let val = eval_bool_option(expr, &mut env);
+                        let val = handle!(eval_bool_option(expr, &mut env));
                         // Push value to data container
                         col_data.insert(val);
                     }
@@ -331,11 +337,11 @@ pub mod engine {
                         let mut env = self.default_environment();
                         // Push row to environment
                         for field in table.get_headers() {
-                            let idx = table.header_idx(field);
+                            let idx = handle!(table.header_idx(field));
                             env.push(field, &row[idx]);
                         }
                         // Get column value
-                        let val = eval_num_option(expr, &mut env);
+                        let val = handle!(eval_num_option(expr, &mut env));
                         // Push value to data container
                         col_data.insert(val);
                     }
@@ -351,11 +357,11 @@ pub mod engine {
                         let mut env = self.default_environment();
                         // Push row to environment
                         for field in table.get_headers() {
-                            let idx = table.header_idx(field);
+                            let idx = handle!(table.header_idx(field));
                             env.push(field, &row[idx]);
                         }
                         // Get column value
-                        let val = eval_str_option(expr, &mut env);
+                        let val = handle!(eval_str_option(expr, &mut env));
                         // Push value to data container
                         col_data.insert(val);
                     }
@@ -404,13 +410,13 @@ pub mod engine {
                     env.push(&"current".to_string(), &ag_val);
                 }
                 // Evaluate
-                ag_val = match first_row {
+                ag_val = handle!(match first_row {
                     true => match init {
                         Some(e1) => eval(e1, &mut env),
                         None => eval(expr, &mut env)
                     },
                     false => eval(expr, &mut env)
-                };
+                });
                 // Increment i
                 i += 1;
             };
@@ -425,7 +431,7 @@ pub mod engine {
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
             // Return aggregate
-            QueryResult::Value(table.get_aggregate(ag_name))
+            QueryResult::Value(handle!(table.get_aggregate(ag_name)))
         }
         fn create_computation(&mut self, cmp_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
             // Get index of table
@@ -439,7 +445,7 @@ pub mod engine {
                     let mut env = self.default_environment();
                     table.push_aggregates(&mut env);
                     // Evaluate
-                    eval(expr, &mut env)
+                    handle!(eval(expr, &mut env))
                 }
             };
             // Register computation into table
@@ -453,7 +459,7 @@ pub mod engine {
             let table_idx = self.get_table_index(table_name).unwrap();
             let table = &self.tables[table_idx];
             // Return aggregate
-            QueryResult::Value(table.get_computation(cmp_name))
+            QueryResult::Value(handle!(table.get_computation(cmp_name)))
         }
         fn compress(&mut self, table_name: &String, fields: &Vec<String>, strats: &Vec<CompressType>) -> QueryResult {
             // Get index of table
@@ -464,7 +470,7 @@ pub mod engine {
             // Call recompress on each column
             for i in 0..fields.len() {
                 let col_idx = table.get_headers().iter().position(|r| *r == fields[i]).unwrap();
-                table.recompress(col_idx, strats[i])
+                handle!(table.recompress(col_idx, strats[i]))
             }
             // Return aggregate
             QueryResult::Success("Compression success on ".to_string() + table_name)
@@ -483,14 +489,17 @@ pub mod engine {
                 _ => ()
             };
             // Evaluate expr
-            let val = eval(expr, &mut env);
+            let val = handle!(eval(expr, &mut env));
             // Return value
             QueryResult::Value(val)
         }
         pub fn execute(&mut self, q: String) -> QueryResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
-            let parsed_query = query_parser.parse();
+            let parsed_query = match query_parser.parse() {
+                Ok(q) => q,
+                Err(s) => return QueryResult::Error(s)
+            };
             // Execute query
             match &parsed_query {
                 Query::CreateTable(table_name, schema) => self.create_table(table_name, schema),

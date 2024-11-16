@@ -91,5 +91,14 @@ pub mod types {
         BitMap
     }
     pub type CompressList = Vec<CompressType>;
+
+    pub fn str_of_ctype(c: CompressType) -> String {
+        match c {
+            CompressType::Uncompressed => "none".to_string(),
+            CompressType::RunLength => "runlen".to_string(),
+            CompressType::BitMap => "bitmap".to_string(),
+            CompressType::Xor => "xor".to_string()
+        }
+    }
 }
 

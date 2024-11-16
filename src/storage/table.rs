@@ -1,7 +1,13 @@
 pub mod table {
     use super::super::column::generic::*;
-    use crate::sqlscript::types::types::{ ColType, Val, Expr, CompressType };
+    use crate::sqlscript::types::types::{ ColType, Val, Expr, CompressType, str_of_ctype };
     use crate::engine::script::env::Environment;
+
+    macro_rules! handle{
+        ($e:expr) => {
+            (match $e { Ok(v) => v, Err(s) => return Err(s) })
+        }
+    }
 
     enum IterCont<'a> {
         Number(Box<dyn Iterator<Item=Option<f64>> + 'a>),
@@ -28,9 +34,9 @@ pub mod table {
                 compression_strats: Vec::new(),
             }
         }
-        pub fn add_column(&mut self, name: &String, coltype: ColType, compression: CompressType) -> () {
+        pub fn add_column(&mut self, name: &String, coltype: ColType, compression: CompressType) -> Result<(), String> {
             // Check that column does not already exist
-            if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
+            if self.headers.contains(&name) { return Err("Duplicate column ".to_string() + name) }
             // Add column name to headers
             self.headers.push(name.clone());
             // Push uncompressed column to table
@@ -57,10 +63,11 @@ pub mod table {
             self.compression_strats.push(CompressType::Uncompressed);
             // Change strategy of column
             self.recompress(self.headers.len() - 1, compression);
+            Ok(())
         }
-        pub fn add_populated_column(&mut self, name: &String, col: Column, compression: CompressType) -> () {
+        pub fn add_populated_column(&mut self, name: &String, col: Column, compression: CompressType) -> Result<(), String> {
             // Check that column does not already exist
-            if self.headers.contains(&name) { panic!("Cannot insert duplicate columns") }
+            if self.headers.contains(&name) { return Err("Duplicate column ".to_string() + name) }
             // Check length of column
             let len = match &col {
                 Column::Boolean(cbox) => cbox.as_ref().len(),
@@ -68,7 +75,7 @@ pub mod table {
                 Column::String(cbox) => cbox.as_ref().len(),
             };
             // Check that length of column matches current length
-            if len != self.size { panic!("Inconsistent column length") }
+            if len != self.size { return Err("Could not insert pre-populated column due to size mismatch ".to_string() + name) }
             // Insert header
             self.headers.push(name.clone());
             // Insert column
@@ -77,20 +84,21 @@ pub mod table {
             self.compression_strats.push(CompressType::Uncompressed);
             // Change strategy of column
             self.recompress(self.headers.len() - 1, compression);
+            Ok(())
         }
-        pub fn header_idx(&self, name: &String) -> usize {
+        pub fn header_idx(&self, name: &String) -> Result<usize, String> {
             // Check that column exists
-            if !self.headers.contains(name) { panic!("Invalid column name") }
+            if !self.headers.contains(name) { return Err("Invalid column name ".to_string() + name) }
             // Find column index
-            self.headers.iter().position(|r| *r == *name).unwrap()
+            Ok(self.headers.iter().position(|r| *r == *name).unwrap())
         }
-        pub fn get_column(&self, name: &String) -> &Column {
+        pub fn get_column(&self, name: &String) -> Result<&Column, String> {
             // Return column at index
-            &self.table[self.header_idx(name)]
+            Ok(&self.table[handle!(self.header_idx(name))])
         }
-        pub fn add_row(&mut self, data: Vec<Val>) {
+        pub fn add_row(&mut self, data: Vec<Val>) -> Result<(), String> {
             // Check that vector has appropriate number of items
-            if data.len() != self.table.len() { panic!("Incorrect number of items") }
+            if data.len() != self.table.len() { return Err("Number of items inserted does not match number of fields".to_string()) }
             // Add item to each column
             for i in 0..data.len() {
                 match &mut self.table[i] {
@@ -98,27 +106,28 @@ pub mod table {
                         match data[i] {
                             Val::NumVal(x) => vec.as_mut().insert(Some(x)),
                             Val::NullVal => vec.as_mut().insert(None),
-                            _ => panic!("Bad data type")
+                            _ => return Err("Cannot insert non-number into a number column".to_string())
                         }
                     },
                     Column::Boolean(vec) => {
                         match data[i] {
                             Val::BoolVal(x) => vec.as_mut().insert(Some(x)),
                             Val::NullVal => vec.as_mut().insert(None),
-                            _ => panic!("Bad data type")
+                            _ => return Err("Cannot insert non-boolean into a boolean column".to_string())
                         }
                     },
                     Column::String(vec) => {
                         match data[i].clone() {
                             Val::StrVal(x) => vec.as_mut().insert(Some(x)),
                             Val::NullVal => vec.as_mut().insert(None),
-                            _ => panic!("Bad data type")
+                            _ => return Err("Cannot insert non-string into a string column".to_string())
                         }
                     }
                 }
             }
             // Increment size
             self.size += 1;
+            Ok(())
         }
         pub fn get_headers(&self) -> &Vec<String> { &self.headers }
         pub fn iter<'a>(&'a self) -> TableIterator<'a> {
@@ -143,24 +152,28 @@ pub mod table {
         pub fn add_aggregate(&mut self, name: &String, val: &Val, expr: &Expr, init: &Option<Expr>) {
             self.aggregates.push((name.clone(), val.clone(), expr.clone(), init.clone()))
         }
-        pub fn update_aggregates(&mut self, vals: &Vec<Val>) {
+        pub fn update_aggregates(&mut self, vals: &Vec<Val>) -> Result<(), String> {
             // Check length of values vector
-            if vals.len() != self.aggregates.len() { panic!("Unequal lengths") }
+            if vals.len() != self.aggregates.len() { return Err("Number of aggregate values given does not match number of aggregates stored".to_string()) }
             // Update all aggregate values
             let mut i: usize = 0;
             for val in vals {
                 self.aggregates[i].1 = val.clone();
                 i += 1;
-            }
+            };
+            Ok(())
         }
         pub fn get_aggregates(&self) -> &Vec<(String, Val, Expr, Option<Expr>)> {
             &self.aggregates
         }
-        pub fn get_aggregate(&self, name: &String) -> Val {
+        pub fn get_aggregate(&self, name: &String) -> Result<Val, String> {
             // Find index of aggregate
-            let ag_idx = self.aggregates.iter().position(|r| r.0 == *name).unwrap();
+            let ag_idx = match self.aggregates.iter().position(|r| r.0 == *name) {
+                Some(i) => i,
+                _ => return Err("Aggregate ".to_string() + " does not exist")
+            };
             // Return
-            self.aggregates[ag_idx].1.clone()
+            Ok(self.aggregates[ag_idx].1.clone())
         }
         pub fn push_aggregates(&self, env: &mut Environment) {
             for ag in &self.aggregates {
@@ -178,28 +191,32 @@ pub mod table {
         pub fn add_computation(&mut self, name: &String, val: &Val, expr: &Expr) {
             self.computations.push((name.clone(), val.clone(), expr.clone()))
         }
-        pub fn update_computations(&mut self, vals: &Vec<Val>) {
+        pub fn update_computations(&mut self, vals: &Vec<Val>) -> Result<(), String> {
             // Check length of values vector
-            if vals.len() != self.computations.len() { panic!("Unequal lengths") }
+            if vals.len() != self.computations.len() { return Err("Number of values given does not match number of computations".to_string()) }
             // Update all aggregate values
             let mut i: usize = 0;
             for val in vals {
                 self.computations[i].1 = val.clone();
                 i += 1;
-            }
+            };
+            Ok(())
         }
         pub fn get_computations(&self) -> &Vec<(String, Val, Expr)> {
             &self.computations
         }
-        pub fn get_computation(&self, name: &String) -> Val {
+        pub fn get_computation(&self, name: &String) -> Result<Val, String> {
             // Find index of computation
-            let cmp_idx = self.computations.iter().position(|r| r.0 == *name).unwrap();
+            let cmp_idx = match self.computations.iter().position(|r| r.0 == *name) {
+                Some(i) => i,
+                _ => return Err("Computation ".to_string() + name + " does not exist")
+            };
             // Return
-            self.computations[cmp_idx].1.clone()
+            Ok(self.computations[cmp_idx].1.clone())
         }
-        pub fn recompress(&mut self, col_idx: usize, strategy: CompressType) {
+        pub fn recompress(&mut self, col_idx: usize, strategy: CompressType) -> Result<(), String> {
             // If already compressing using chosen strategy, don't do anything
-            if self.compression_strats[col_idx] == strategy { return }
+            if self.compression_strats[col_idx] == strategy { return Ok(()) }
             // Change comression strategy array
             self.compression_strats[col_idx] = strategy;
             // Otherwise, compress accordingly
@@ -207,7 +224,7 @@ pub mod table {
                 Column::Boolean(_) => {
                     match strategy {
                         CompressType::Uncompressed => (),
-                        _ => panic!("Boolean does not implement that compresison strategy")
+                        _ => return Err("Boolean columns do not implement compression type ".to_string() + &str_of_ctype(strategy))
                     }
                 },
                 Column::Number(curr) => {
@@ -266,11 +283,12 @@ pub mod table {
                             }
                             Box::new(new_col)
                         },
-                        _ => panic!("String does not implement that compression type")
+                        _ => return Err("String columns do not implement compression type ".to_string() + &str_of_ctype(strategy))
                     };
                     *curr = new_col;
                 }
-            }
+            };
+            Ok(())
         }
     }
 
