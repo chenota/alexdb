@@ -10,6 +10,7 @@ pub mod engine {
     pub enum QueryResult {
         Table(Table),
         Value(Val),
+        Error(String),
         None
     }
 
