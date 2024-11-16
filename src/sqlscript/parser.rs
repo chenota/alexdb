@@ -507,7 +507,7 @@ pub mod parser {
                     // Pop bop
                     self.pop();
                     // Return parsed expr
-                    types::Expr::BopExpr(Rc::new(first), types::BopType::DotBop, Rc::new(self.expr_level_4()))
+                    types::Expr::BopExpr(Rc::new(first), types::BopType::DotBop, Rc::new(self.expr_level_7()))
                 },
                 _ => first
             }

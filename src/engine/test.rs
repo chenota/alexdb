@@ -760,7 +760,7 @@ mod test_script {
     #[test]
     fn test_tup_5() -> Result<(), String> {
         // Setup
-        let test_input: String = "x = 5; my_tup = [fun y -> x + y, 11]; (my_tup.0)(my_tup.1)".to_string();
+        let test_input: String = "x = 5; my_tup = [fun y -> x + y, 11]; my_tup.0(my_tup.1)".to_string();
         let mut test_environment = Environment::new();
         let mut test_parser = Parser::new(test_input);
         let ast = types::Expr::BlockExpr(test_parser.parse_script());
@@ -769,6 +769,38 @@ mod test_script {
         // Check output value
         match test_val {
             types::Val::NumVal(16.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn test_tup_6() -> Result<(), String> {
+        // Setup
+        let test_input: String = "my_tup = [11, 12, 15]; -my_tup.0".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::NumVal(-11.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
+    fn test_tup_7() -> Result<(), String> {
+        // Setup
+        let test_input: String = "my_tup = [11, fun -> 11.87, 15]; _my_tup.1()".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(test_parser.parse_script());
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment);
+        // Check output value
+        match test_val {
+            types::Val::NumVal(11.0) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
