@@ -307,7 +307,7 @@ pub mod parser {
                 },
                 TokenKind::ScriptKw => {
                     // Parse expr
-                    let e = handle!(self.expr());
+                    let e = types::Expr::BlockExpr(handle!(self.block()));
                     // Check if FROM
                     match self.peek().kind {
                         TokenKind::FromKw => {
