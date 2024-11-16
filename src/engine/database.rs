@@ -125,11 +125,11 @@ pub mod engine {
             // Borrow table as mutable
             let table = &mut self.tables[table_idx];
             // Add row to table
-            table.add_row(values_insert);
+            handle!(table.add_row(values_insert));
             // Add aggregates
-            table.update_aggregates(&ag_vals);
+            handle!(table.update_aggregates(&ag_vals));
             // Add computations
-            table.update_computations(&cmp_vals);
+            handle!(table.update_computations(&cmp_vals));
             // Return
             QueryResult::Success("Insert success on ".to_string() + table_name)
         }
@@ -150,7 +150,7 @@ pub mod engine {
                     Some(x) => x,
                     _ => CompressType::Uncompressed
                 };
-                self.tables[idx].add_column(&schema_item.0, schema_item.1, ctype);
+                handle!(self.tables[idx].add_column(&schema_item.0, schema_item.1, ctype));
                 self.calculated[idx].push(None)
             }
             QueryResult::Success("Created table ".to_string() + table_name)
@@ -377,7 +377,7 @@ pub mod engine {
             // Borrow table as mutable
             let table = &mut self.tables[table_idx];
             // Insert column into table
-            table.add_populated_column(col_name, col, ctype);
+            handle!(table.add_populated_column(col_name, col, ctype));
             // Mark column as calculated
             self.calculated[table_idx].push(Some(expr.clone()));
             // Return nothing
@@ -525,7 +525,6 @@ pub mod engine {
                 calculated: Vec::new()
             }
         }
-        pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
         pub fn get_table_index(&self, name: &String) -> Option<usize> { self.table_names.iter().position(|r| *r == *name) }
         pub fn default_environment(&self) -> Environment {  
             // New environment

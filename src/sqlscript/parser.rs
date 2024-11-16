@@ -441,7 +441,7 @@ pub mod parser {
                         _ => handle!(self.identlist())
                     };
                     // Expect arrow, pop it
-                    self.pop_expect(TokenKind::Arrow);
+                    handle!(self.pop_expect(TokenKind::Arrow));
                     // Parse body
                     let body = handle!(self.expr());
                     // Put everything together
@@ -453,11 +453,11 @@ pub mod parser {
                     // Parse conditional
                     let if_expr = handle!(self.expr());
                     // Expect then keyword
-                    self.pop_expect(TokenKind::ThenKw);
+                    handle!(self.pop_expect(TokenKind::ThenKw));
                     // Parse then expr
                     let then_expr = handle!(self.expr());
                     // Expect else kw
-                    self.pop_expect(TokenKind::ElseKw);
+                    handle!(self.pop_expect(TokenKind::ElseKw));
                     // Parse else expr
                     let else_expr = handle!(self.expr());
                     // Put it all together
@@ -720,7 +720,7 @@ pub mod parser {
             // Parse ident
             let id = handle!(self.ident());
             // Expect and pop = sign
-            self.pop_expect(TokenKind::AssignKw);
+            handle!(self.pop_expect(TokenKind::AssignKw));
             // Parse expr
             let expr = handle!(self.expr());
             // Put together
