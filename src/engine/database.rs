@@ -11,7 +11,8 @@ pub mod engine {
         Table(Table),
         Value(Val),
         Error(String),
-        None
+        Success(String),
+        Exit
     }
 
     pub struct Database {
@@ -124,7 +125,7 @@ pub mod engine {
             // Add computations
             table.update_computations(&cmp_vals);
             // Return
-            QueryResult::None
+            QueryResult::Success("Insert success on ".to_string() + table_name)
         }
         fn create_table(&mut self, table_name: &String, schema: &Vec<(String, ColType, Option<CompressType>)>) -> QueryResult {
             // Check that table doesn't already exist
@@ -146,7 +147,7 @@ pub mod engine {
                 self.tables[idx].add_column(&schema_item.0, schema_item.1, ctype);
                 self.calculated[idx].push(None)
             }
-            QueryResult::None
+            QueryResult::Success("Created table ".to_string() + table_name)
         }
         fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<(String, SortType)>, limit: &Option<Expr>) -> QueryResult {
             // Get referenced table
@@ -293,7 +294,7 @@ pub mod engine {
                 None => self.constants.push((name.clone(), val))
             };
             // Return nothing
-            QueryResult::None
+            QueryResult::Success("Const ".to_string() + name)
         }
         fn create_column(&mut self, t: &ColType, s: &Option<CompressType>, col_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
             // Get index of table
@@ -374,7 +375,7 @@ pub mod engine {
             // Mark column as calculated
             self.calculated[table_idx].push(Some(expr.clone()));
             // Return nothing
-            QueryResult::None
+            QueryResult::Success("Column ".to_string() + col_name + " on " + table_name)
         }
         fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, init: &Option<Expr>, table_name: &String) -> QueryResult {
             // Get index of table
@@ -417,7 +418,7 @@ pub mod engine {
             let table = &mut self.tables[table_idx];
             table.add_aggregate(ag_name, &ag_val, expr, init);
             // Finished
-            QueryResult::None
+            QueryResult::Success("Aggregate ".to_string() + ag_name + " on " + table_name)
         }
         fn select_aggregate(&mut self, ag_name: &String, table_name: &String) -> QueryResult {
             // Get index of table
@@ -445,7 +446,7 @@ pub mod engine {
             let table = &mut self.tables[table_idx];
             table.add_computation(cmp_name, &comp_val, expr);
             // Return nothing
-            QueryResult::None
+            QueryResult::Success("Computation ".to_string() + cmp_name + " on " + table_name)
         }
         fn select_computation(&mut self, cmp_name: &String, table_name: &String) -> QueryResult {
             // Get index of table
@@ -466,7 +467,7 @@ pub mod engine {
                 table.recompress(col_idx, strats[i])
             }
             // Return aggregate
-            QueryResult::None
+            QueryResult::Success("Compression success on ".to_string() + table_name)
         }
         fn script(&mut self, expr: &Expr, tname: &Option<String>) -> QueryResult {
             // Setup environment

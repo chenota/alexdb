@@ -33,13 +33,14 @@ pub mod repl {
             stdin().read_line(&mut s).expect("Did not enter a correct string");
             // Query database
             let res = db.execute(s);
-            // Print response
-            println!("{}", match res {
-                QueryResult::None => "Success".to_string(),
-                QueryResult::Table(_) => "Table".to_string(),
-                QueryResult::Value(v) => pretty_print(v),
-                QueryResult::Error(_) => "Error".to_string(),
-            })
+            // Handle response
+            match res {
+                QueryResult::Success(s) => println!("{}", s),
+                QueryResult::Table(_) => println!("Table"),
+                QueryResult::Value(v) => println!("{}", pretty_print(v)),
+                QueryResult::Error(s) => println!("Error: {}", s),
+                QueryResult::Exit => break
+            }
         }
     }
 }
