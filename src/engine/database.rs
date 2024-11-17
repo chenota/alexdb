@@ -162,8 +162,8 @@ pub mod engine {
             QueryResult::Success("Created table ".to_string() + table_name)
         }
         fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<(String, SortType)>, limit: &Option<Expr>, ecsv: &Option<String>) -> QueryResult {
-            // Get referenced table
-            let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
+            // Get index of table
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx];
             // Vector of added rows
             let mut added_rows: Vec<Vec<Val>> = Vec::new();
