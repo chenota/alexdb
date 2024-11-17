@@ -13,7 +13,9 @@ pub mod types {
         SelectComp(String, String), // SELECT COMP <name> FROM <table>
         Compress(String, IdentList, CompressList), // COMPRESS <table> (<field>, <field>, ...) ((<strategy>, <strategy>, ...) | <strategy>)
         Script(Expr, Option<String>), // SCRIPT <expr> (FROM <table>)?
-        Exit,
+        Exit, // EXIT
+        ImportCSV(String, String), // IMPORT CSV <path> INTO <table>
+        ExportCSV(String, String), // EXPORT CSV <path> FROM <table>
     }
     #[derive(Clone)]
     pub enum Expr {

@@ -78,6 +78,9 @@ pub mod lexer {
         CompressType,
         ScriptKw,
         ExitKw,
+        ImportKw,
+        ExportKw,
+        CSVKw,
         // Type keywords
         NumberKw,
         StrKw,
@@ -155,6 +158,9 @@ pub mod lexer {
         (Some(TokenKind::CompressType), reg!(r"runlen"), compression_value_runlen),
         (Some(TokenKind::ScriptKw), reg!(r"SCRIPT"), none_value),
         (Some(TokenKind::ExitKw), reg!(r"EXIT"), none_value),
+        (Some(TokenKind::ImportKw), reg!(r"IMPORT"), none_value),
+        (Some(TokenKind::ExportKw), reg!(r"EXPORT"), none_value),
+        (Some(TokenKind::CSVKw), reg!(r"CSV"), none_value),
         // Type keywords
         (Some(TokenKind::NumberKw), reg!(r"num"), num_type_value),
         (Some(TokenKind::StrKw), reg!(r"str"), str_type_value),

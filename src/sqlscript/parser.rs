@@ -326,7 +326,31 @@ pub mod parser {
                 },
                 TokenKind::ExitKw => {
                     Ok(types::Query::Exit)
-                }
+                },
+                TokenKind::ImportKw => {
+                    // Pop expect CSV
+                    handle!(self.pop_expect(TokenKind::CSVKw));
+                    // Get CSV name
+                    let cpath = handle!(self.ident());
+                    // Expect INTO 
+                    handle!(self.pop_expect(TokenKind::IntoKw));
+                    // Get table name
+                    let tname = handle!(self.ident());
+                    // Put query together
+                    Ok(types::Query::ImportCSV(cpath, tname))
+                },
+                TokenKind::ExportKw => {
+                    // Pop expect CSV
+                    handle!(self.pop_expect(TokenKind::CSVKw));
+                    // Get CSV name
+                    let cpath = handle!(self.ident());
+                    // Expect FROM 
+                    handle!(self.pop_expect(TokenKind::FromKw));
+                    // Get table name
+                    let tname = handle!(self.ident());
+                    // Put query together
+                    Ok(types::Query::ExportCSV(cpath, tname))
+                },
                 TokenKind::CreateKw => {
                     match handle!(self.pop()).kind {
                         TokenKind::TableKw => {
