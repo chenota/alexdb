@@ -773,7 +773,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(_, _, _, _, _) => assert!(true),
+            types::Query::Select(_, _, _, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -787,7 +787,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(_, _, _, _, _) => assert!(true),
+            types::Query::Select(_, _, _, _, _, _) => assert!(true),
             _ => assert!(false)
         }
         Ok(())
@@ -899,7 +899,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(ids, _, _, _, _) => {
+            types::Query::Select(ids, _, _, _, _, _) => {
                 match ids {
                     None => assert!(true),
                     _ => assert!(false)
@@ -918,7 +918,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(_ , _, whr, _, lim) => {
+            types::Query::Select(_ , _, whr, _, lim, _) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
@@ -941,7 +941,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(_ , _, whr, _, lim) => {
+            types::Query::Select(_ , _, whr, _, lim, _) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
@@ -964,7 +964,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(_ , _, whr, srt, lim) => {
+            types::Query::Select(_ , _, whr, srt, lim, _) => {
                 match lim {
                     Some(_) => assert!(true),
                     _ => assert!(false)
@@ -991,7 +991,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(_ , _, _, srt, _) => {
+            types::Query::Select(_ , _, _, srt, _, _) => {
                 match srt {
                     Some(s) => assert_eq!(s.0, "test1"),
                     _ => assert!(false)
@@ -1010,7 +1010,7 @@ mod parser_tests {
         // Assert correct AST
         match ast {
             // Should be exprscript
-            types::Query::Select(_ , _, _, srt, _) => {
+            types::Query::Select(_ , _, _, srt, _, _) => {
                 match srt {
                     Some(s) => assert_eq!(s.0, "x"),
                     _ => assert!(false)
