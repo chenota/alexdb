@@ -90,7 +90,7 @@ pub mod table {
             // Check that column exists
             if !self.headers.contains(name) { return Err("Invalid column name ".to_string() + name) }
             // Find column index
-            Ok(self.headers.iter().position(|r| *r == *name).unwrap())
+            Ok(match self.headers.iter().position(|r| *r == *name) {Some(i) => i, None => return Err("Column ".to_string() + " does not exist")})
         }
         pub fn get_column(&self, name: &String) -> Result<&Column, String> {
             // Return column at index

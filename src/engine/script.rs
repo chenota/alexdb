@@ -277,7 +277,7 @@ pub mod engine {
                 match &v1 {
                     Val::ClosureVal(fr, il, body) => {
                         // Make sure args match parameters
-                        if el.len() != il.len() { panic!("Call error") };
+                        if el.len() != il.len() { return Err("Incorrect number of arguments supplied to function".to_string()) };
                         // New frame
                         let mut arg_frame = Frame::new();
                         // Add args to new frame
