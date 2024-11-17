@@ -526,7 +526,7 @@ pub mod engine {
                     // If so, push mapping of table header idx -> column index
                     Some(idx) => h_map.push(Some((col_types[i], idx))),
                     // Otherwise, push none
-                    None => {println!("{}", table_header); h_map.push(None)}
+                    None => h_map.push(None)
                 }
                 // Increment I
                 i += 1;
