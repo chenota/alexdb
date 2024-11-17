@@ -142,7 +142,6 @@ pub mod table {
             };
             // Create iterator
             TableIterator {
-                table: self,
                 col_iters: citers
             }
         }
@@ -304,7 +303,6 @@ pub mod table {
     }
 
     pub struct TableIterator<'a> {
-        table: &'a Table,
         col_iters: Vec<IterCont<'a>>
     }
     impl<'a> Iterator for TableIterator<'a> {

@@ -4,6 +4,8 @@ pub mod generic {
         fn insert(&mut self, data: Option<T>) -> ();
         fn iter<'a>(&'a self) -> Box<dyn Iterator<Item=Option<T>> + 'a>;
         fn len(&self) -> usize;
+        #[allow(dead_code)]
+        // Used for testing
         fn uncompress(&self) -> Vec<Option<T>> {
             let mut data = Vec::new();
             for item in self.iter() {

@@ -5,7 +5,7 @@ pub mod engine {
     use crate::sqlscript::types::types::*;
     use super::super::script::env::*;
     use super::super::script::engine::*;
-    use std::{fs::File, rc::Rc};
+    use std::rc::Rc;
 
     macro_rules! handle{
         ($e:expr) => {
@@ -640,7 +640,8 @@ pub mod engine {
             }
         }
         pub fn get_table_index(&self, name: &String) -> Result<usize, String> { match self.table_names.iter().position(|r| *r == *name) { Some(i) => Ok(i), None => Err("Table ".to_string() + name + " does not exist")  } }
-        pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
+        #[allow(dead_code)]
+        pub fn get_table_names(&self) -> &Vec<String> { &self.table_names } // Testing
         pub fn default_environment(&self) -> Environment {  
             // New environment
             let mut def_env = Environment::new();

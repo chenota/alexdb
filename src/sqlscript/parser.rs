@@ -27,7 +27,7 @@ pub mod parser {
             let lexer = Lexer::new(stream);
             Parser {
                 lexer: lexer,
-                token: Token { kind: TokenKind::Dot, value: TokenValue::None, start: 0, end: 0 }
+                token: Token { kind: TokenKind::Dot, value: TokenValue::None}
             }
         }
         // Program control
@@ -128,7 +128,8 @@ pub mod parser {
                 }
             }
         }
-        // Parsing entry point
+        // Parsing entry point (testing)
+        #[allow(dead_code)]
         pub fn parse_script(&mut self) -> Result<types::Block, String> {
             // Reset lexer
             self.lexer.reset();
@@ -586,7 +587,7 @@ pub mod parser {
                         _ => handle!(self.exprlist())
                     };
                     // Expect RParen
-                    self.pop_expect(TokenKind::RParen);
+                    handle!(self.pop_expect(TokenKind::RParen));
                     // Construct expression
                     Ok(types::Expr::CallExpr(Rc::new(first), elist))
                 },
@@ -617,7 +618,7 @@ pub mod parser {
                     // Parse script
                     let script = handle!(self.block());
                     // Expect right curly bracket, pop it
-                    self.pop_expect(TokenKind::RCBracket);
+                    handle!(self.pop_expect(TokenKind::RCBracket));
                     // Return parsed expression
                     Ok(types::Expr::BlockExpr(script))
                 },

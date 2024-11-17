@@ -99,9 +99,7 @@ pub mod lexer {
     #[derive(Clone)]
     pub struct Token {
         pub kind: TokenKind,
-        pub value: TokenValue,
-        pub start: usize,
-        pub end: usize
+        pub value: TokenValue
     }
     // Add carrot to start
     macro_rules! reg{
@@ -115,14 +113,14 @@ pub mod lexer {
     fn ident_value(s: &str) -> TokenValue { TokenValue::String(s.to_string()) }
     fn bool_value(s: &str) -> TokenValue { TokenValue::Boolean(s == "true") }
     fn string_value(s: &str) -> TokenValue { TokenValue::String(s[1..(s.len()-1)].to_string()) } // Remove leading and trailing quotes
-    fn num_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Number) }
-    fn str_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::String) }
-    fn bool_type_value(s: &str) -> TokenValue { TokenValue::Type(ColType::Boolean) }
+    fn num_type_value(_: &str) -> TokenValue { TokenValue::Type(ColType::Number) }
+    fn str_type_value(_: &str) -> TokenValue { TokenValue::Type(ColType::String) }
+    fn bool_type_value(_: &str) -> TokenValue { TokenValue::Type(ColType::Boolean) }
     fn sort_value(s: &str) -> TokenValue { if s == "ASC" { TokenValue::SortType(SortType::Ascending) } else { TokenValue::SortType(SortType::Descending) } }
-    fn compression_value_none (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::Uncompressed) }
-    fn compression_value_xor (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::Xor) }
-    fn compression_value_bitmap (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::BitMap) }
-    fn compression_value_runlen (s: &str) -> TokenValue { TokenValue::CompressionType(CompressType::RunLength) }
+    fn compression_value_none (_: &str) -> TokenValue { TokenValue::CompressionType(CompressType::Uncompressed) }
+    fn compression_value_xor (_: &str) -> TokenValue { TokenValue::CompressionType(CompressType::Xor) }
+    fn compression_value_bitmap (_: &str) -> TokenValue { TokenValue::CompressionType(CompressType::BitMap) }
+    fn compression_value_runlen (_: &str) -> TokenValue { TokenValue::CompressionType(CompressType::RunLength) }
     // Associates a kind of token with a regular expression that matches it, a function to derive a value.
     // If token kind is none, won't generate a token
     const TOKEN_MAP: &[(Option<TokenKind>, &str, fn(&str) -> TokenValue)] = &[
@@ -249,7 +247,7 @@ pub mod lexer {
                                 // Check type of longest match
                                 match token.0 {
                                     Some(kind) =>
-                                        longest_token = Some(Token { kind: kind, value: (token.2)(mat.as_str()), start: mat.start() + self.pos, end: mat.end() + self.pos }),
+                                        longest_token = Some(Token { kind: kind, value: (token.2)(mat.as_str())}),
                                     None => 
                                         longest_token = None
                                 }
@@ -276,9 +274,7 @@ pub mod lexer {
                 // Return EOF token if at end of stream
                 Ok(Token {
                     kind: TokenKind::EOF, 
-                    value: TokenValue::None, 
-                    start: self.stream.len(), 
-                    end: self.stream.len()
+                    value: TokenValue::None
                 })
             }
         }
@@ -292,10 +288,6 @@ pub mod lexer {
         }
         pub fn get_pos(&self) -> usize {
             self.pos
-        }
-        // Testing
-        pub fn remaining_stream(&self) -> &str {
-            &self.stream.as_str()[self.pos..]
         }
     }
 }

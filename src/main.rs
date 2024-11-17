@@ -6,5 +6,8 @@ mod repl;
 use crate::repl::repl::repl::*;
 
 fn main() {
-    repl_main();
+    match repl_main() {
+        Ok(_) => std::process::exit(0),
+        _ => std::process::exit(1)
+    };
 }

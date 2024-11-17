@@ -335,15 +335,15 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Boolean, CompressType::Uncompressed);
-        test_table.add_column(&col_name2, ColType::Boolean, CompressType::Uncompressed);
+        test_table.add_column(&col_name1, ColType::Boolean, CompressType::Uncompressed).unwrap();
+        test_table.add_column(&col_name2, ColType::Boolean, CompressType::Uncompressed).unwrap();
         // Create row
         let row1 = vec![
             Val::BoolVal(false),
             Val::NullVal
         ];
         // Add row to table
-        test_table.add_row(row1);
+        test_table.add_row(row1).unwrap();
         // Assert correct values
         match test_table.get_column(&col_name1).unwrap() {
             Column::Boolean(x) => {
@@ -372,15 +372,15 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
-        test_table.add_column(&col_name2, ColType::Number, CompressType::Uncompressed);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed).unwrap();
+        test_table.add_column(&col_name2, ColType::Number, CompressType::Uncompressed).unwrap();
         // Create row
         let row1 = vec![
             Val::NumVal(12.5),
             Val::NullVal
         ];
         // Add row to table
-        test_table.add_row(row1);
+        test_table.add_row(row1).unwrap();
         // Assert correct values
         match test_table.get_column(&col_name1).unwrap() {
             Column::Number(x) => {
@@ -409,15 +409,15 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::String, CompressType::Uncompressed);
-        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
+        test_table.add_column(&col_name1, ColType::String, CompressType::Uncompressed).unwrap();
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed).unwrap();
         // Create row
         let row1 = vec![
             Val::StrVal("Hello".to_string()),
             Val::NullVal
         ];
         // Add row to table
-        test_table.add_row(row1);
+        test_table.add_row(row1).unwrap();
         // Assert correct values
         match test_table.get_column(&col_name1).unwrap() {
             Column::String(x) => {
@@ -446,15 +446,15 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
-        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed).unwrap();
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed).unwrap();
         // Create row
         let row1 = vec![
             Val::NumVal(112.0),
             Val::StrVal("Hello".to_string())
         ];
         // Add row to table
-        test_table.add_row(row1);
+        test_table.add_row(row1).unwrap();
         // Assert correct values
         match test_table.get_column(&col_name1).unwrap() {
             Column::Number(x) => {
@@ -483,8 +483,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
-        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed).unwrap();
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed).unwrap();
         // Create row
         let row1 = vec![
             Val::NumVal(112.2),
@@ -496,8 +496,8 @@ mod table_tests {
             Val::StrVal("Goodbye".to_string())
         ];
         // Add rows to table
-        test_table.add_row(row1);
-        test_table.add_row(row2);
+        test_table.add_row(row1).unwrap();
+        test_table.add_row(row2).unwrap();
         // Assert correct values
         match test_table.get_column(&col_name1).unwrap() {
             Column::Number(x) => {
@@ -526,8 +526,8 @@ mod table_tests {
         let col_name1 = "Test1".to_string();
         let col_name2 = "Test2".to_string();
         // Create new columns
-        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed);
-        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed);
+        test_table.add_column(&col_name1, ColType::Number, CompressType::Uncompressed).unwrap();
+        test_table.add_column(&col_name2, ColType::String, CompressType::Uncompressed).unwrap();
         // Create row
         let row1 = vec![
             Val::NumVal(112.2),
@@ -539,8 +539,8 @@ mod table_tests {
             Val::StrVal("Goodbye".to_string())
         ];
         // Add rows to table
-        test_table.add_row(row1);
-        test_table.add_row(row2);
+        test_table.add_row(row1).unwrap();
+        test_table.add_row(row2).unwrap();
         // Iterate
         let mut i: usize = 0;
         for row in test_table.iter() {
