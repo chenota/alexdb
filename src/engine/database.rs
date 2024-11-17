@@ -526,6 +526,7 @@ pub mod engine {
             }
         }
         pub fn get_table_index(&self, name: &String) -> Option<usize> { self.table_names.iter().position(|r| *r == *name) }
+        pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
         pub fn default_environment(&self) -> Environment {  
             // New environment
             let mut def_env = Environment::new();
