@@ -111,7 +111,7 @@ pub mod engine {
             Val::ClosureVal(_, _, _) => Val::BoolVal(true)
         }
     }
-    fn extract_bool(val: &Val) -> bool {
+    pub fn extract_bool(val: &Val) -> bool {
         match to_bool(val) {
             Val::BoolVal(x) => x,
             _ => panic!("Unexpected value")
@@ -137,7 +137,7 @@ pub mod engine {
             Val::TupVal(_) => Val::NumVal(f64::NAN),
         }
     }
-    fn extract_num(val: &Val) -> f64 {
+    pub fn extract_num(val: &Val) -> f64 {
         match to_num(val) {
             Val::NumVal(x) => x,
             _ => panic!("Unexpected value")
@@ -154,7 +154,7 @@ pub mod engine {
             Val::TupVal(_) => Val::StrVal("[Tuple]".to_string())
         }
     }
-    fn extract_str(val: &Val) -> String {
+    pub fn extract_str(val: &Val) -> String {
         match to_str(val) {
             Val::StrVal(x) => x.clone(),
             _ => panic!("Unexpected value")

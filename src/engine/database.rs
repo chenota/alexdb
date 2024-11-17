@@ -5,7 +5,7 @@ pub mod engine {
     use crate::sqlscript::types::types::*;
     use super::super::script::env::*;
     use super::super::script::engine::*;
-    use std::{env, error::Error, fs::File, process, ffi::OsString, rc::Rc};
+    use std::{fs::File, rc::Rc};
 
     macro_rules! handle{
         ($e:expr) => {
@@ -502,14 +502,12 @@ pub mod engine {
         fn import_csv(&mut self, cname: &String, tname: &String) -> QueryResult {
             // Get index of table
             let table_idx = handle!(self.get_table_index(tname));
-            let table = &mut self.tables[table_idx];
-            // Open CSV file
-            let file = match File::open(cname) {
-                Ok(f) => f,
-                _ => return QueryResult::Error("Could not open file ".to_string() + cname)
-            };
+            let table = &self.tables[table_idx];
             // CSV reader
-            let mut rdr = csv::Reader::from_reader(file);
+            let mut rdr = match csv::Reader::from_path(cname) {
+                Ok(r) => r,
+                Err(_) => return QueryResult::Error("Error opening csv".to_string())
+            };
             // First row should be headers
             let headers = match rdr.headers() {
                 Ok(h) => h,
@@ -568,6 +566,39 @@ pub mod engine {
             };
             QueryResult::Success("Import ".to_string() + cname)
         }
+        fn export_csv(&self, cname: &String, tname: &String) -> QueryResult {
+            // Get index of table
+            let table_idx = handle!(self.get_table_index(tname));
+            let table = &self.tables[table_idx];
+            // Export CSV
+            match self.export_csv_table(cname, table) {
+                Ok(()) => (),
+                Err(s) => return QueryResult::Error(s)
+            };
+            // Return
+            QueryResult::Success("Export ".to_string() + tname)
+        }
+        fn export_csv_table(&self, cname: &String, table: &Table) -> Result<(), String> {
+            // CSV writer
+            let mut wtr = match csv::Writer::from_path(cname) {
+                Ok(r) => r,
+                Err(_) => return Err("Error opening csv".to_string())
+            };
+            // Write headers
+            match wtr.write_record(table.get_headers()) {
+                Ok(_) => (),
+                Err(_) => return Err("Error writing table headers".to_string())
+            };
+            // Loop through rows
+            for row in table.iter() {
+                let val_strs = row.iter().map(|r| extract_str(r));
+                match wtr.write_record(val_strs) {
+                    Ok(_) => (),
+                    Err(_) => return Err("Error writing record".to_string())
+                };
+            };
+            Ok(())
+        }
         pub fn execute(&mut self, q: String) -> QueryResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -590,7 +621,7 @@ pub mod engine {
                 Query::Script(expr, tname) => self.script(expr, tname),
                 Query::Exit => QueryResult::Exit,
                 Query::ImportCSV(cname, tname) => self.import_csv(cname, tname),
-                _ => panic!("Unimplemented")
+                Query::ExportCSV(cname, tname) => self.export_csv(cname, tname)
             }
         }
         pub fn new() -> Database {
