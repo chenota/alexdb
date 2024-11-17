@@ -90,11 +90,9 @@ pub mod repl {
                     }
                 },
                 Err(ReadlineError::Interrupted) => {
-                    println!("SIGINT");
                     break
                 },
                 Err(ReadlineError::Eof) => {
-                    println!("EOF");
                     break
                 },
                 Err(err) => {

@@ -290,6 +290,17 @@ pub mod table {
             };
             Ok(())
         }
+        pub fn get_col_types(&self) -> Vec<ColType> {
+            let mut col_types = Vec::new();
+            for column in &self.table {
+                col_types.push(match column {
+                    Column::Boolean(_) => ColType::Boolean,
+                    Column::Number(_) => ColType::Number,
+                    Column::String(_) => ColType::String
+                })
+            };
+            col_types
+        }
     }
 
     pub struct TableIterator<'a> {

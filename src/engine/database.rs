@@ -5,7 +5,7 @@ pub mod engine {
     use crate::sqlscript::types::types::*;
     use super::super::script::env::*;
     use super::super::script::engine::*;
-    use std::rc::Rc;
+    use std::{env, error::Error, fs::File, process, ffi::OsString, rc::Rc};
 
     macro_rules! handle{
         ($e:expr) => {
@@ -78,6 +78,12 @@ pub mod engine {
                 // Increment i
                 i += 1;
             }
+            // Call insert and update
+            self.insert_and_update(table_name, table_idx, values_insert)
+        }
+        fn insert_and_update(&mut self, table_name: &String, table_idx: usize, values_insert: Vec<Val>) -> QueryResult {
+            // Borrow table as immutable
+            let table = &self.tables[table_idx];
             // Is this the first row?
             let first_row = table.len() == 0;
             // Calculate aggregates
@@ -131,7 +137,7 @@ pub mod engine {
             // Add computations
             handle!(table.update_computations(&cmp_vals));
             // Return
-            QueryResult::Success("Insert success on ".to_string() + table_name)
+            QueryResult::Success("Insert on ".to_string() + table_name)
         }
         fn create_table(&mut self, table_name: &String, schema: &Vec<(String, ColType, Option<CompressType>)>) -> QueryResult {
             // Check that table doesn't already exist
@@ -493,6 +499,75 @@ pub mod engine {
             // Return value
             QueryResult::Value(val)
         }
+        fn import_csv(&mut self, cname: &String, tname: &String) -> QueryResult {
+            // Get index of table
+            let table_idx = handle!(self.get_table_index(tname));
+            let table = &mut self.tables[table_idx];
+            // Open CSV file
+            let file = match File::open(cname) {
+                Ok(f) => f,
+                _ => return QueryResult::Error("Could not open file ".to_string() + cname)
+            };
+            // CSV reader
+            let mut rdr = csv::Reader::from_reader(file);
+            // First row should be headers
+            let headers = match rdr.headers() {
+                Ok(h) => h,
+                Err(_) => return QueryResult::Error("Error reading CSV headers".to_string())
+            };
+            // Column types of each table column
+            let col_types = table.get_col_types();
+            // Map table headers to CSV headersd
+            let mut h_map = Vec::new();
+            let mut i = 0;
+            for table_header in table.get_headers() {
+                // Does table header exist in CSV headers?
+                match headers.iter().position(|r| r.trim() == table_header) {
+                    // If so, push mapping of table header idx -> column index
+                    Some(idx) => h_map.push(Some((col_types[i], idx))),
+                    // Otherwise, push none
+                    None => {println!("{}", table_header); h_map.push(None)}
+                }
+                // Increment I
+                i += 1;
+            };
+            // Insert rows
+            for row in rdr.records() {
+                match row {
+                    // Row success
+                    Ok(rec) => {
+                        // Add data for each table row
+                        let mut vals_insert = Vec::new();
+                        for h in &h_map {
+                            match h {
+                                Some((ctype, row_idx)) => {
+                                    // Get string of value to insert
+                                    let val_str = &rec[*row_idx];
+                                    // If value is empty, insert null
+                                    if val_str == "" {
+                                        vals_insert.push(Val::NullVal)
+                                    }
+                                    else {
+                                        // Convert value and add according to column type
+                                        vals_insert.push(match ctype {
+                                            ColType::Boolean => Val::BoolVal(if val_str == "true" { true } else if val_str == "false" {false} else { return QueryResult::Error("Unexpeced boolean value ".to_string() + val_str + ". Expect either true or false") } ),
+                                            ColType::Number => Val::NumVal(match val_str.parse() { Ok(f) => f, Err(_) => return QueryResult::Error("Error parsing float value ".to_string() + val_str) }),
+                                            ColType::String => Val::StrVal(val_str.to_string())
+                                        })
+                                    }
+                                },
+                                None => vals_insert.push(Val::NullVal)
+                            }
+                        };
+                        // Insert values into table
+                        self.insert_and_update(tname, table_idx, vals_insert);
+                    },
+                    // Row not successful
+                    Err(_) => continue
+                }
+            };
+            QueryResult::Success("Import ".to_string() + cname)
+        }
         pub fn execute(&mut self, q: String) -> QueryResult {
             // Parse given query
             let mut query_parser = Parser::new(q);
@@ -514,6 +589,7 @@ pub mod engine {
                 Query::Compress(table_name, fields, strats) => self.compress(table_name, fields, strats),
                 Query::Script(expr, tname) => self.script(expr, tname),
                 Query::Exit => QueryResult::Exit,
+                Query::ImportCSV(cname, tname) => self.import_csv(cname, tname),
                 _ => panic!("Unimplemented")
             }
         }

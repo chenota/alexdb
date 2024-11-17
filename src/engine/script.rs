@@ -100,7 +100,7 @@ pub mod engine {
         }
     }
 
-    fn to_bool(val: &Val) -> Val {
+    pub fn to_bool(val: &Val) -> Val {
         match val {
             Val::BoolVal(x) => Val::BoolVal(*x),
             Val::NumVal(x) => Val::BoolVal(*x != 0.0),
@@ -117,7 +117,7 @@ pub mod engine {
             _ => panic!("Unexpected value")
         }
     }
-    fn to_num(val: &Val) -> Val {
+    pub fn to_num(val: &Val) -> Val {
         match val {
             Val::BoolVal(x) => Val::NumVal(if *x {1.0} else {0.0}),
             Val::NumVal(x) => Val::NumVal(*x),
@@ -143,7 +143,7 @@ pub mod engine {
             _ => panic!("Unexpected value")
         }
     }
-    fn to_str(val: &Val) -> Val {
+    pub fn to_str(val: &Val) -> Val {
         match val {
             Val::BoolVal(x) => Val::StrVal(if *x {"true".to_string()} else {"false".to_string()}),
             Val::NumVal(x) => Val::StrVal(x.to_string()),

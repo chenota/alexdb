@@ -331,7 +331,10 @@ pub mod parser {
                     // Pop expect CSV
                     handle!(self.pop_expect(TokenKind::CSVKw));
                     // Get CSV name
-                    let cpath = handle!(self.ident());
+                    let cpath = match handle!(self.pop()).value {
+                        TokenValue::String(s) => s,
+                        _ => perr!(self)
+                    };
                     // Expect INTO 
                     handle!(self.pop_expect(TokenKind::IntoKw));
                     // Get table name
@@ -343,7 +346,10 @@ pub mod parser {
                     // Pop expect CSV
                     handle!(self.pop_expect(TokenKind::CSVKw));
                     // Get CSV name
-                    let cpath = handle!(self.ident());
+                    let cpath = match handle!(self.pop()).value {
+                        TokenValue::String(s) => s,
+                        _ => perr!(self)
+                    };
                     // Expect FROM 
                     handle!(self.pop_expect(TokenKind::FromKw));
                     // Get table name
