@@ -30,7 +30,7 @@ pub mod engine {
     impl Database {
         fn insert(&mut self, table_name: &String, fields: &Option<Vec<String>>, values: &Vec<Rc<Expr>>) -> QueryResult {
             // Get referenced table
-            let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx];
             // Create environment
             let mut default_env = Environment::new();
@@ -304,7 +304,7 @@ pub mod engine {
         }
         fn create_column(&mut self, t: &ColType, s: &Option<CompressType>, col_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
             // Get index of table
-            let table_idx = self.get_table_index(table_name).unwrap();
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx];
             // Calculate values for existing rows
             let col = match t {
@@ -385,7 +385,7 @@ pub mod engine {
         }
         fn create_aggregate(&mut self, ag_name: &String, expr: &Expr, init: &Option<Expr>, table_name: &String) -> QueryResult {
             // Get index of table
-            let table_idx = self.get_table_index(table_name).unwrap();
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx];
             // Value of aggregate
             let mut ag_val = Val::NullVal;
@@ -428,14 +428,14 @@ pub mod engine {
         }
         fn select_aggregate(&mut self, ag_name: &String, table_name: &String) -> QueryResult {
             // Get index of table
-            let table_idx = self.get_table_index(table_name).unwrap();
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx];
             // Return aggregate
             QueryResult::Value(handle!(table.get_aggregate(ag_name)))
         }
         fn create_computation(&mut self, cmp_name: &String, expr: &Expr, table_name: &String) -> QueryResult {
             // Get index of table
-            let table_idx = self.get_table_index(table_name).unwrap();
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx]; 
             // Get value of computation (null if table is empty)
             let comp_val = match table.len() == 0 {
@@ -456,14 +456,14 @@ pub mod engine {
         }
         fn select_computation(&mut self, cmp_name: &String, table_name: &String) -> QueryResult {
             // Get index of table
-            let table_idx = self.get_table_index(table_name).unwrap();
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx];
             // Return aggregate
             QueryResult::Value(handle!(table.get_computation(cmp_name)))
         }
         fn compress(&mut self, table_name: &String, fields: &Vec<String>, strats: &Vec<CompressType>) -> QueryResult {
             // Get index of table
-            let table_idx = self.get_table_index(table_name).unwrap();
+            let table_idx = handle!(self.get_table_index(table_name));
             let table = &mut self.tables[table_idx];
             // Check fields and strats len
             if fields.len() != strats.len() { panic!("Unequal amount of fields and strategies") }
@@ -481,7 +481,7 @@ pub mod engine {
             match tname {
                 Some(table_name) => {
                     // Get index of table
-                    let table_idx = self.get_table_index(table_name).unwrap();
+                    let table_idx = handle!(self.get_table_index(table_name));
                     let table = &mut self.tables[table_idx];
                     // Load table into env
                     table.push_all(&mut env);
@@ -525,7 +525,7 @@ pub mod engine {
                 calculated: Vec::new()
             }
         }
-        pub fn get_table_index(&self, name: &String) -> Option<usize> { self.table_names.iter().position(|r| *r == *name) }
+        pub fn get_table_index(&self, name: &String) -> Result<usize, String> { match self.table_names.iter().position(|r| *r == *name) { Some(i) => Ok(i), None => Err("Table ".to_string() + name + " does not exist")  } }
         pub fn get_table_names(&self) -> &Vec<String> { &self.table_names }
         pub fn default_environment(&self) -> Environment {  
             // New environment
