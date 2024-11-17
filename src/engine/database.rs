@@ -161,7 +161,7 @@ pub mod engine {
             }
             QueryResult::Success("Created table ".to_string() + table_name)
         }
-        fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<(String, SortType)>, limit: &Option<Expr>) -> QueryResult {
+        fn select(&mut self, fields: &Option<Vec<String>>, table_name: &String, where_: &Option<Expr>, sort_by: &Option<(String, SortType)>, limit: &Option<Expr>, ecsv: &Option<String>) -> QueryResult {
             // Get referenced table
             let table_idx = self.table_names.iter().position(|r| *r == *table_name).unwrap();
             let table = &self.tables[table_idx];
@@ -291,7 +291,14 @@ pub mod engine {
                         handle!(table_project.add_row(added_rows.pop().unwrap()))
                     };
                 }
-            }
+            };
+            match ecsv {
+                Some(path) => match self.export_csv_table(path, &table_project) {
+                    Ok(_) => (),
+                    Err(_) => println!("Warning: Error exporting result")
+                },
+                None => ()
+            };
             // Return new table
             QueryResult::Table(table_project)
         }
@@ -610,7 +617,7 @@ pub mod engine {
             match &parsed_query {
                 Query::CreateTable(table_name, schema) => self.create_table(table_name, schema),
                 Query::Insert(table_name, fields, values) => self.insert(table_name, fields, values),
-                Query::Select(fields, table_name, where_, sort_by, limit) => self.select(fields, table_name, where_, sort_by, limit),
+                Query::Select(fields, table_name, where_, sort_by, limit, ecsv) => self.select(fields, table_name, where_, sort_by, limit, ecsv),
                 Query::Const(name, expr) => self.create_const(name, expr),
                 Query::Column(t, s, col_name, expr, table_name) => self.create_column(t, s, col_name, expr, table_name),
                 Query::Aggregate(ag_name, expr, init, table_name) => self.create_aggregate(ag_name, expr, init, table_name),

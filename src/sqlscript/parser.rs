@@ -235,8 +235,23 @@ pub mod parser {
                                 },
                                 _ => None
                             };
+                            let exportcsv = match self.peek().kind {
+                                TokenKind::ExportKw => {
+                                    // Pop export
+                                    handle!(self.pop());
+                                    // Expect CSV
+                                    handle!(self.pop_expect(TokenKind::CSVKw));
+                                    // Get CSV name
+                                    let cpath = match handle!(self.pop()).value {
+                                        TokenValue::String(s) => s,
+                                        _ => perr!(self)
+                                    };
+                                    Some(cpath)
+                                },
+                                _ => None
+                            };
                             // Put everything together
-                            Ok(types::Query::Select(ilist, tableid, wherescript, sortscript, limitscript))
+                            Ok(types::Query::Select(ilist, tableid, wherescript, sortscript, limitscript, exportcsv))
                         }
                     }
                 },
