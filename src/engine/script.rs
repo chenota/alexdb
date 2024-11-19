@@ -48,7 +48,7 @@ pub mod env {
         pub fn compress(&self) -> Frame {
             let mut new_frame = Frame::new();
             for i in 0..(self.frames.len()) {
-                let frame_data = self.frames[i].data();
+                let frame_data = self.frames[self.frames.len() - i - 1].data();
                 for j in 0..(frame_data.len()) {
                     let data = &frame_data[j];
                     if !(new_frame.contains(&data.0)) {
