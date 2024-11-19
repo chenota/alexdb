@@ -22,7 +22,7 @@ To determine if $a \prec b$, the following must be true:
 1. $\forall i \in \{1..n\} ~ a_i \leq b_i$
 2. $\exists i \in \{1..n\} ~ a_i < b_i$
 
-If $\neg (a \prec b \lor b \prec a \lor a \equiv b)$, then $a\|\|b$, which means that you can't say anything about the order of $a$ and $b$.
+If $\neg (a \prec b \lor b \prec a \lor a \equiv b)$, then $a \parallel b$, which means that you can't say anything about the order of $a$ and $b$.
 
 ### Implementing in AlexDB
 
