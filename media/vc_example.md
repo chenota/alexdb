@@ -91,4 +91,4 @@ msg
 
 ### Conclusion
 
-We used AlexDB to store received messages and create a vector clock tracker for a single process in a distributed system. This example demonstrates the modularity and power of AlexDB.
+We used AlexDB to store received messages and create a vector clock tracker for a single process in a distributed system. This example demonstrates how AlexDB can be trivially adapted to a wide variety of circumstances that it wasn't necessarily designed for.
