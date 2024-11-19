@@ -58,11 +58,11 @@ Should be pretty self-explanitory. Now that we have a `max` function, let's defi
 > CREATE AGGREGATE my_vc = [max(current.0, vc0) + 1, max(current.1, vc1), max(current.2, vc2)] INIT [vc0 + 1, vc1, vc2] INTO messages
 ```
 
-Effectively, this aggregate stores the maximum of its current value the the received vector clock value, and increments our process' value by one. If we did this correctly, we should get a vector clock value of `[1, 1, 2]`, so let's see how we did!
+Effectively, this aggregate stores the maximum of its current value the the received vector clock value, and increments our process' value by one. If we did this correctly, we should get a vector clock value of `[2, 1, 2]`, so let's see how we did!
 
 ```
 > SELECT AGGREGATE my_vc FROM messages
-[1, 1, 2]
+[2, 1, 2]
 ```
 
 Perfect! Let's insert a couple more values just to make sure we're right.
@@ -71,7 +71,7 @@ Perfect! Let's insert a couple more values just to make sure we're right.
 > INSERT INTO messages VALUES ('Another message', 1, 3, 1)
 > INSERT INTO messages VALUES ('Hello Again Again', 1, 2, 4)
 > SELECT AGGREGATE my_vc FROM messages
-[2, 3, 4]
+[4, 3, 4]
 ```
 
 All right! Seems like our AlexDB relation is correctly updaing our process' vector clock. We can take this even further and write a `SELECT` query that selects messages that come before a certain vector clock value. Of course, we need a way of knowing if two clocks are causally ordered, so let's implement that first.
