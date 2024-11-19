@@ -230,6 +230,22 @@ mod test_script {
         Ok(())
     }
     #[test]
+    fn fn_lexical_scope_2() -> Result<(), String> {
+        // Setup
+        let test_input: String = "x = 5; f = {x = 10; fun -> x}; f()".to_string();
+        let mut test_environment = Environment::new();
+        let mut test_parser = Parser::new(test_input);
+        let ast = types::Expr::BlockExpr(match test_parser.parse_script() { Ok(x) => x, _ => panic!("false") });
+        // Evaluate input
+        let test_val = eval(&ast, &mut test_environment).unwrap();
+        // Check output value
+        match test_val {
+            types::Val::NumVal(10.0) => assert!(true),
+            _ => assert!(false)
+        }
+        Ok(())
+    }
+    #[test]
     fn scope_1() -> Result<(), String> {
         // Setup
         let test_input: String = "x = 30; y = {x = 50; x}; x".to_string();
