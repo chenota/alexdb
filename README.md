@@ -293,6 +293,10 @@ Available for: `num`
 
 You may have noticed that `bool`s have been left out of every stated compression scheme, which is because `bool`s can be stored very efficiently in a bit vector and the only strategy that could *possibly* improve compression, `runlen`, would only do so under very specific and unlikely circumstances.
 
+## Examples
+
+- [Vector Clock Messaging System](media/vc_example.md)
+
 ## Future Work
 
 AlexDB could be reasonably extended in the following ways:
