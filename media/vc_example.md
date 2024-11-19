@@ -22,7 +22,7 @@ To determine if $a \prec b$, the following must be true:
 1. $\forall i \in \{1..n\} ~ a_i \leq b_i$
 2. $\exists i \in \{1..n\} ~ a_i < b_i$
 
-If $\neg (a \prec b \lor b \prec a \lor a \equiv b)$, then $a\|b$, which means that you can't say anything about the order of $a$ and $b$.
+If $\neg (a \prec b \lor b \prec a \lor a \equiv b)$, then $a\|\|b$, which means that you can't say anything about the order of $a$ and $b$.
 
 ### Implementing in AlexDB
 
@@ -74,7 +74,7 @@ Perfect! Let's insert a couple more values just to make sure we're right.
 [4, 3, 4]
 ```
 
-All right! Seems like our AlexDB relation is correctly updaing our process' vector clock. We can take this even further and write a `SELECT` query that selects messages that come before a certain vector clock value. Of course, we need a way of knowing if two clocks are causally ordered, so let's implement that first.
+All right! Seems like our AlexDB relation is correctly updaing our process' vector clock. We can take this even further and write a `SELECT` query that selects messages that came before a certain vector clock value. Of course, we need a way of knowing if two clocks are causally ordered, so let's implement that first.
 
 ```
 > CREATE CONST is_causal_before = fun a, b -> (a.0 <= b.0 && a.1 <= b.1 && a.2 <= b.2) && (a.0 < b.0 || a.1 < b.1 || a.2 < b.2)
