@@ -33,7 +33,7 @@ pub mod engine {
             let table_idx = handle!(self.get_table_index(table_name));
             let table = &self.tables[table_idx];
             // Create environment
-            let mut default_env = Environment::new();
+            let mut default_env = self.default_environment();
             // Evaluate given values
             let mut values_insert: Vec<Val> = Vec::new();
             let mut i: usize = 0;
