@@ -296,6 +296,7 @@ You may have noticed that `bool`s have been left out of every stated compression
 ## Examples
 
 - [Vector Clock Messaging System](media/vc_example.md)
+- [Album Analysis](media/album_example.md)
 
 ## Future Work
 
