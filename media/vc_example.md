@@ -29,7 +29,7 @@ If $\neg (a \prec b \lor b \prec a \lor a \equiv b)$, then $a \parallel b$, whic
 First, we need to define a schema for our database to hold received messages. Let's keep the schema simple, so we'll only consider a distributed system with three processes (we're process zero) and only store messages and vector clock values in the database. It's likely that received vector clock values will be close to each other, so we can add XOR compression to those fields.
 
 ```
-> CREATE TABLE messages (msg str, vc0 num xor, vc1 num xor, vc2 num xor)
+CREATE TABLE messages (msg str, vc0 num xor, vc1 num xor, vc2 num xor)
 ```
 
 We have a schema, so let's "receive" a couple of messages and see what the relation looks like with data in it.
