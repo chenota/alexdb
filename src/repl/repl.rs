@@ -5,7 +5,7 @@ pub mod repl {
     use crate::sqlscript::types::types::Val;
     use crate::storage::table::table::*;
 
-    const MAX_PRINT_ROWS: usize = 10;
+    const MAX_PRINT_ROWS: usize = 5;
     const COL_PADDING: usize = 3;
 
     fn pretty_print(v: Val) -> String {
@@ -65,6 +65,11 @@ pub mod repl {
             // Determine next column
             col_num = (col_num + 1) % num_cols;
             if col_num == 0 { println!("") }
+        }
+        // If more than five rows, print elipses and remaining number of rows
+        if t.len() > MAX_PRINT_ROWS {
+            println!("...");
+            println!("[{} more rows]", t.len() - MAX_PRINT_ROWS)
         }
     }
 
