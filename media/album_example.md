@@ -8,7 +8,7 @@
 
 ##  AlexDB Album Analysis Example
 
-I've compiled a list of albums I have listened to over the years, and included some basic information about each album as well as a score out of ten I would give each album.
+I've compiled a list of some albums I have listened to over the years, and included some basic information about each album as well as a subjective score out of ten I would give each album.
 
 ### Dataset
 
@@ -58,4 +58,4 @@ name                                               artist                       
 
 ### Conclusion
 
-You can import and export CSV data to/from AlexDB, and Alex has a *very* good taste in music.
+You can easily import and export CSV data to/from AlexDB, and I have a good taste in music.
