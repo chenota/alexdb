@@ -19,19 +19,22 @@ I've compiled a list of albums I have listened to over the years, and included s
 Before loading a CSV file, you must create a schema to load the data into; let's do that now.
 
 ```
-> CREATE TABLE albums (name str, artist str, year num, runtime num, num_songs num, score num)
+CREATE TABLE albums (name str, artist str, year num, runtime num, num_songs num, score num)
 ```
 
 Now we can load the data from the given CSV file.
 
 ```
-> IMPORT CSV 'datasets/albums.csv' INTO albums
+IMPORT CSV 'datasets/albums.csv' INTO albums
 ```
 
 Let's see what my top three favorite albums of all time are:
 
 ```
-> SELECT name, artist FROM albums ORDER BY score DESC LIMIT 3
+SELECT name, artist FROM albums ORDER BY score DESC LIMIT 3
+```
+
+```
 name            artist
 'OK Computer'   'Radiohead'
 'In Rainbows'   'Radiohead'
@@ -41,7 +44,10 @@ name            artist
 Now, let's rank the five longest albums by runtime and export that query as a CSV for safekeeping.
 
 ```
-> SELECT name, artist, runtime FROM albums ORDER BY runtime DESC LIMIT 5 EXPORT CSV 'longest_songs.csv'
+SELECT name, artist, runtime FROM albums ORDER BY runtime DESC LIMIT 5 EXPORT CSV 'longest_songs.csv'
+```
+
+```
 name                                               artist                          runtime
 'Nervous Young Man'                                'Car Seat Headrest'             128
 'To Be Kind'                                       'Swans'                         121
