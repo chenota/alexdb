@@ -18,6 +18,11 @@ AlexDB provides a REPL that acts as its main entry point; `main.rs` loads the RE
 
 If you wish to use AlexDB as a library, the database object (found in `engine/database.rs`) is the main entry point into AlexDB; a single instance of `Database` is a single instance of AlexDB. You can create a new database by using `Database::new()` and execute queries on the database by calling `database.execute(query: str)`, which returns a `QueryResult`. Some other useful constructs to be aware of are the types found under `sqlscript/types` (specifically `Val` which holds the SQLScript types) and the `Table` object found under `storage/table`.
 
+## Examples
+
+- [Vector Clock Messaging System](media/vc_example.md)
+- [Album Analysis](media/album_example.md)
+
 ## SQLScript
 
 SQLScript is a novel variant of SQL that embeds a scripting language directly in queries, which allows queries to be very complex while not needing to build much complexity into the system itself. There's a lot of moving parts here, so let's break it down.
@@ -292,11 +297,6 @@ Available for: `num`
 ### Booleans
 
 You may have noticed that `bool`s have been left out of every stated compression scheme, which is because `bool`s can be stored very efficiently in a bit vector and the only strategy that could *possibly* improve compression, `runlen`, would only do so under very specific and unlikely circumstances.
-
-## Examples
-
-- [Vector Clock Messaging System](media/vc_example.md)
-- [Album Analysis](media/album_example.md)
 
 ## Future Work
 
