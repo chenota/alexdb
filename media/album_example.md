@@ -41,6 +41,17 @@ name            artist
 'Jen'           'Plums'
 ```
 
+What about the score I gave BRAT by Charli XCX?
+
+```
+SELECT score FROM albums WHERE artist == 'Charli XCX' && name == 'BRAT' 
+```
+
+```
+score
+8
+```
+
 Now, let's rank the five longest albums by runtime and export that query as a CSV for safekeeping.
 
 ```
@@ -72,6 +83,20 @@ SELECT * FROM albums LIMIT 2
 name                artist            year   runtime   num_songs   score   is_perfect
 'Imaginal Disk'     'Magdalena Bay'   2024   54        15          9       false
 'Mercurial World'   'Magdalena Bay'   2021   46        14          8       false
+```
+
+We can query this new column to easily find all perfect albums.
+
+```
+SELECT name, artist FROM albums WHERE is_perfect
+```
+
+```
+'OK Computer'                                      'Radiohead'
+'In Rainbows'                                      'Radiohead'
+'Jen'                                              'Plums'
+'The Money Store'                                  'Death Grips'
+'Lift Your Skinny Fists Like Antennas to Heaven'   'Godspeed You! Black Emperor'
 ```
 
 Finally, let's export this table so we can give it to our music-interested acquaintance.
