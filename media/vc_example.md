@@ -68,6 +68,9 @@ Effectively, this aggregate stores the maximum of its current value the the rece
 
 ```
 SELECT AGGREGATE my_vc FROM messages
+```
+
+```
 [2, 1, 2]
 ```
 
