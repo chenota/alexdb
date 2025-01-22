@@ -10,6 +10,15 @@
 
 AlexDB is an aggregation-focused relational database system for statistical analysis. It provides a dialect of SQL called SQLScript that embeds a functional scripting language in SQL queries.
 
+## Paper
+
+[Read the AlexDB paper here!](media/Paper.pdf)
+
+## Examples
+
+- [Vector Clock Messaging System](media/vc_example.md)
+- [Album Analysis](media/album_example.md)
+
 ## Using AlexDB: Standalone
 
 AlexDB provides a REPL that acts as its main entry point; `main.rs` loads the REPL, thus it's started by simply executing the main program.
@@ -17,11 +26,6 @@ AlexDB provides a REPL that acts as its main entry point; `main.rs` loads the RE
 ## Using AlexDB: Library
 
 If you wish to use AlexDB as a library, the database object (found in `engine/database.rs`) is the main entry point into AlexDB; a single instance of `Database` is a single instance of AlexDB. You can create a new database by using `Database::new()` and execute queries on the database by calling `database.execute(query: str)`, which returns a `QueryResult`. Some other useful constructs to be aware of are the types found under `sqlscript/types` (specifically `Val` which holds the SQLScript types) and the `Table` object found under `storage/table`.
-
-## Examples
-
-- [Vector Clock Messaging System](media/vc_example.md)
-- [Album Analysis](media/album_example.md)
 
 ## SQLScript
 
